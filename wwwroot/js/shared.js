@@ -1244,7 +1244,7 @@ function duplicateRecordsToOtherVehicles(ids, source) {
             break;
     }
 
-    $.get(`/Home/GetVehicleSelector?vehicleId=${GetVehicleId().vehicleId}`, function (data) {
+    $.get(`/Home/GetVehicleSelector?vehicleId=${GetVehicleId().vehicleId}&importMode=${source}`, function (data) {
         if (data) {
             //prompt user to select a vehicle
             Swal.fire({

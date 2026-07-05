@@ -1138,6 +1138,7 @@ namespace CarCareTracker.Controllers
                         {
                             var existingRecord = _supplyRecordDataAccess.GetSupplyRecordById(recordId);
                             existingRecord.Id = default;
+                            existingRecord.RequisitionHistory = new List<SupplyUsageHistory>();
                             if (existingRecord.VehicleId != default) //only check vehicle access if not duplicating from shop supplies
                             {
                                 if (!_userLogic.UserCanEditVehicle(GetUserID(), existingRecord.VehicleId, HouseholdPermission.View))
