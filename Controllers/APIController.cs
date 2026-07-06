@@ -154,8 +154,8 @@ namespace CarCareTracker.Controllers
                 Version = StaticHelper.VersionNumber
             };
             DateTime startTime = DateTime.Now;
-            viewModel.Database = _dbHealthCheck.GetDatabaseHealth();
-            viewModel.Status = viewModel.Database.Status;
+            var databaseHealth = _dbHealthCheck.GetDatabaseHealth();
+            viewModel.Checks.Add(databaseHealth);
             DateTime endTime = DateTime.Now;
             var secondsElapsed = endTime - startTime;
             viewModel.TotalDuration = secondsElapsed;

@@ -13,7 +13,7 @@ namespace CarCareTracker.External.Implementations
             pgDataSource = NpgsqlDataSource.Create(config["POSTGRES_CONNECTION"] ?? string.Empty);
             _logger = logger;
         }
-        public DatabaseHealth GetDatabaseHealth()
+        public ServerHealthCheck GetDatabaseHealth()
         {
             try
             {
@@ -29,15 +29,19 @@ namespace CarCareTracker.External.Implementations
                 }
                 if (!string.IsNullOrWhiteSpace(result))
                 {
-                    return new DatabaseHealth { DatabaseName = "Postgres", Version = result, Status = "pass" };
+                    return new ServerHealthCheck { 
+                        Name = "LubeLogger database connections health check", 
+                        Status = "pass",
+                        Success = true
+                    };
                 } else
                 {
-                    return new DatabaseHealth();
+                    return new ServerHealthCheck { Name = "LubeLogger database connections health check" };
                 }
             } catch (Exception ex)
             {
                 _logger.LogError(ex.Message);
-                return new DatabaseHealth();
+                return new ServerHealthCheck { Name = "LubeLogger database connections health check" };
             }
         }
     }

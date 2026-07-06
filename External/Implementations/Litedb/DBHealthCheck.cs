@@ -13,21 +13,21 @@ namespace CarCareTracker.External.Implementations
             _liteDB = liteDB;
             _logger = logger;
         }
-        public DatabaseHealth GetDatabaseHealth()
+        public ServerHealthCheck GetDatabaseHealth()
         {
             try
             {
                 var db = _liteDB.GetLiteDB();
-                return new DatabaseHealth
+                return new ServerHealthCheck
                 {
-                    DatabaseName = "LiteDB",
-                    Version = db.UserVersion.ToString(),
-                    Status = "pass"
+                    Name = "LubeLogger database connections health check",
+                    Status = "pass",
+                    Success = true
                 };
             } catch (Exception ex)
             {
                 _logger.LogError(ex.Message);
-                return new DatabaseHealth();
+                return new ServerHealthCheck { Name = "LubeLogger database connections health check" };
             }
         }
     }
