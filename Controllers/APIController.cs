@@ -145,7 +145,7 @@ namespace CarCareTracker.Controllers
             }
         }
         [HttpGet]
-        [Route("/healthz")]
+        [Route("/health")]
         [AllowAnonymous]
         public async Task<IActionResult> GetServerHealth()
         {
