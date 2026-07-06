@@ -1537,16 +1537,20 @@ function selectEveryRowInBetween(rowId) {
         let endIndex = $(`[data-rowId='${rowId}'`).index();
         if (startIndex > endIndex) {
             for (let i = endIndex; i < startIndex; i++) {
-                $('.vehicleDetailTabContainer .table tbody tr:visible').eq(i).map((index, elem) => {
-                    $(elem).addClass('table-active');
-                    addToSelectedRows($(elem).attr('data-rowId'));
+                $('.vehicleDetailTabContainer .table tbody tr').eq(i).map((index, elem) => {
+                    if ($(elem).is(':visible')) {
+                        $(elem).addClass('table-active');
+                        addToSelectedRows($(elem).attr('data-rowId'));
+                    }
                 });
             }
         } else {
             for (let i = endIndex; i > startIndex; i--) {
-                $('.vehicleDetailTabContainer .table tbody tr:visible').eq(i).map((index, elem) => {
-                    $(elem).addClass('table-active');
-                    addToSelectedRows($(elem).attr('data-rowId'));
+                $('.vehicleDetailTabContainer .table tbody tr').eq(i).map((index, elem) => {
+                    if ($(elem).is(':visible')) {
+                        $(elem).addClass('table-active');
+                        addToSelectedRows($(elem).attr('data-rowId'));
+                    }
                 });
             }
         }
@@ -1556,22 +1560,15 @@ function handleTableRowClick(e, callBack, rowId) {
     var selectMode = $("#chkSelectMode").length > 0 ? $("#chkSelectMode").is(":checked") : false;
     if (!(event.ctrlKey || event.metaKey || event.shiftKey || selectMode)) {
         callBack(rowId);
-    } else if (!$(e).hasClass('table-active')) {
-        if (event.shiftKey) {
-            selectEveryRowInBetween($(e).attr('data-rowId'));
-        }
-        else {
-            addToSelectedRows($(e).attr('data-rowId'));
-            $(e).addClass('table-active');
-        }
+    } else if (event.shiftKey) {
+        selectEveryRowInBetween($(e).attr('data-rowId'));
+    }
+    else if (!$(e).hasClass('table-active')) {
+        addToSelectedRows($(e).attr('data-rowId'));
+        $(e).addClass('table-active');
     } else if ($(e).hasClass('table-active')) {
-        if (event.shiftKey) {
-            selectEveryRowInBetween($(e).attr('data-rowId'));
-        }
-        else {
-            removeFromSelectedRows($(e).attr('data-rowId'));
-            $(e).removeClass('table-active');
-        }
+        removeFromSelectedRows($(e).attr('data-rowId'));
+        $(e).removeClass('table-active');
     }
 }
 
