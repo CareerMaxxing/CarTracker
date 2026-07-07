@@ -34,7 +34,7 @@ namespace CarCareTracker.Helper
         public List<GasRecordViewModel> GetGasRecordViewModels(List<GasRecord> result, bool useMPG, bool useUKMPG, bool isElectric)
         {
             //need to order by to get correct results
-            result = result.OrderBy(x => x.Date).ThenBy(x => x.Mileage).ToList();
+            result = result.OrderBy(x => x.Date).ThenBy(x => x.Mileage).ThenBy(x=>x.EndingSoc).ToList();
             var computedResults = new List<GasRecordViewModel>();
             int previousMileage = 0;
             int previousEndingSoc = 0;
@@ -56,6 +56,10 @@ namespace CarCareTracker.Helper
                         {
                             decimal currentBatteryCapacity = currentObject.Gallons / (convertedEndSoc - convertedStartSoc);
                             convertedConsumption = convertedPreviousEndingSoc > 0.00M ? (convertedPreviousEndingSoc - convertedStartSoc) * currentBatteryCapacity : 0.00M;
+                            if (convertedConsumption < 0.00M) //negative consumption values can be caused by start soc greater than previous ending soc
+                            {
+                                convertedConsumption = 0.00M;
+                            }
                         }
                         catch
                         {

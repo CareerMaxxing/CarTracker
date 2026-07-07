@@ -20,7 +20,7 @@ namespace CarCareTracker.Controllers
             var computedResults = _gasHelper.GetGasRecordViewModels(result, useMPG, useUKMPG, vehicleData.IsElectric);
             if (userConfig.UseDescending)
             {
-                computedResults = computedResults.OrderByDescending(x => DateTime.Parse(x.Date)).ThenByDescending(x => x.Mileage).ToList();
+                computedResults = computedResults.OrderByDescending(x => DateTime.Parse(x.Date)).ThenByDescending(x => x.Mileage).ThenByDescending(x=>x.EndingSoc).ToList();
             }
             var vehicleIsElectric = vehicleData.IsElectric;
             var vehicleUseHours = vehicleData.UseHours;
