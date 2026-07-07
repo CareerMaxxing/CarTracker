@@ -8,9 +8,11 @@
         @:eventDates.push({ id: @reminderRecord.Id, date: decodeHTMLEntities('@StaticHelper.GetEpochFromDateTime(reminderRecord.Date)'), description: decodeHTMLEntities('@reminderRecord.Description'), urgency: decodeHTMLEntities('@reminderRecord.Urgency.ToString()') });
     }
 </script>
-<div class="row vehicleDetailTabContainer">
-    <div class="col-12 reminderCalendarView">
-        <div class="reminderCalendarViewContent" style="height:60vh;">
+<div class="d-flex vehicleTabPane">
+    <div class="row vehicleDetailTabContainer">
+        <div class="col-12 reminderCalendarView d-flex flex-column">
+            <div class="reminderCalendarViewContent flex-grow-1">
+            </div>
         </div>
     </div>
 </div>
