@@ -55,7 +55,7 @@ namespace CarCareTracker.Helper
                         try
                         {
                             decimal currentBatteryCapacity = currentObject.Gallons / (convertedEndSoc - convertedStartSoc);
-                            convertedConsumption = convertedPreviousEndingSoc > 0.00M ? currentObject.Gallons + ((convertedPreviousEndingSoc - convertedEndSoc) * currentBatteryCapacity) : 0.00M;
+                            convertedConsumption = convertedPreviousEndingSoc > 0.00M ? (convertedPreviousEndingSoc - convertedStartSoc) * currentBatteryCapacity : 0.00M;
                         }
                         catch
                         {
