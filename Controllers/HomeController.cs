@@ -550,7 +550,7 @@ namespace CarCareTracker.Controllers
             {
                 vehiclesStored.RemoveAll(x => !string.IsNullOrWhiteSpace(x.SoldDate));
             }
-            if (importMode == ImportMode.SupplyRecord && _config.GetServerEnableShopSupplies())
+            if (importMode == ImportMode.SupplyRecord && _config.GetServerEnableShopSupplies() && vehicleId != default)
             {
                 vehiclesStored.Add(new Vehicle { Id = 0, Make = _translationHelper.Translate(_config.GetUserConfig(User).UserLanguage, "Shop Supplies") });
             }
