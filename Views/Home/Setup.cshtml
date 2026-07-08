@@ -26,13 +26,25 @@
 @model ServerSettingsViewModel
 <div class="setup-wizard-container d-flex flex-column">
     <div class="setup-wizard-nav" style="display:none;">
-        <div class="d-flex flex-wrap gap-2 justify-content-between p-2">
-            <div class="col-12 col-md-1 flex-grow-1 text-center break-all d-grid"><a class="btn btn-outline-primary" onclick="loadSetupPage(1)" data-page-nav="1">@translator.Translate(userLanguage, "Server Settings")</a></div>
-            <div class="col-12 col-md-1 flex-grow-1 text-center break-all d-grid"><a class="btn btn-outline-primary" onclick="loadSetupPage(2)" data-page-nav="2">@translator.Translate(userLanguage, "SMTP")</a></div>
-            <div class="col-12 col-md-1 flex-grow-1 text-center break-all d-grid"><a class="btn btn-outline-primary" onclick="loadSetupPage(3)" data-page-nav="3">@translator.Translate(userLanguage, "Server Endpoints")</a></div>
-            <div class="col-12 col-md-1 flex-grow-1 text-center break-all d-grid"><a class="btn btn-outline-primary" onclick="loadSetupPage(4)" data-page-nav="4">@translator.Translate(userLanguage, "Single Sign On")</a></div>
-            <div class="col-12 col-md-1 flex-grow-1 text-center break-all d-grid"><a class="btn btn-outline-primary" onclick="loadSetupPage(5)" data-page-nav="5">@translator.Translate(userLanguage, "Automated Events")</a></div>
-            <div class="col-12 col-md-1 flex-grow-1 text-center break-all d-grid"><a class="btn btn-outline-primary" onclick="loadSetupPage(6)" data-page-nav="6">@translator.Translate(userLanguage, "Miscellaneous")</a></div>
+        <div class="d-none d-md-block">
+            <div class="d-flex flex-wrap gap-2 justify-content-between p-2">
+                <div class="col-12 col-md-1 flex-grow-1 text-center break-all d-grid"><a class="btn btn-outline-primary" onclick="loadSetupPage(1)" data-page-nav="1">@translator.Translate(userLanguage, "Server Settings")</a></div>
+                <div class="col-12 col-md-1 flex-grow-1 text-center break-all d-grid"><a class="btn btn-outline-primary" onclick="loadSetupPage(2)" data-page-nav="2">@translator.Translate(userLanguage, "SMTP")</a></div>
+                <div class="col-12 col-md-1 flex-grow-1 text-center break-all d-grid"><a class="btn btn-outline-primary" onclick="loadSetupPage(3)" data-page-nav="3">@translator.Translate(userLanguage, "Server Endpoints")</a></div>
+                <div class="col-12 col-md-1 flex-grow-1 text-center break-all d-grid"><a class="btn btn-outline-primary" onclick="loadSetupPage(4)" data-page-nav="4">@translator.Translate(userLanguage, "Single Sign On")</a></div>
+                <div class="col-12 col-md-1 flex-grow-1 text-center break-all d-grid"><a class="btn btn-outline-primary" onclick="loadSetupPage(5)" data-page-nav="5">@translator.Translate(userLanguage, "Automated Events")</a></div>
+                <div class="col-12 col-md-1 flex-grow-1 text-center break-all d-grid"><a class="btn btn-outline-primary" onclick="loadSetupPage(6)" data-page-nav="6">@translator.Translate(userLanguage, "Miscellaneous")</a></div>
+            </div>
+        </div>
+        <div class="d-md-none p-2">
+            <select class="form-select" onchange="handleWizardNavBarDropDownChange()" id="setupWizardNavBarDropDown">
+                <!option value="1">@translator.Translate(userLanguage, "Server Settings")</!option>
+                <!option value="2">@translator.Translate(userLanguage, "SMTP")</!option>
+                <!option value="3">@translator.Translate(userLanguage, "Server Endpoints")</!option>
+                <!option value="4">@translator.Translate(userLanguage, "Single Sign On")</!option>
+                <!option value="5">@translator.Translate(userLanguage, "Automated Events")</!option>
+                <!option value="6">@translator.Translate(userLanguage, "Miscellaneous")</!option>
+            </select>
         </div>
         <hr />
     </div>
