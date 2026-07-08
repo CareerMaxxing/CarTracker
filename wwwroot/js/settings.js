@@ -478,3 +478,19 @@ function loadTooltips() {
         event.preventDefault();
     })
 }
+function handleTranslationSearchKeyPress(event) {
+    if (event.keyCode == 13) {
+        searchTranslations();
+    } else {
+        setDebounce(searchTranslations);
+    }
+}
+function searchTranslations() {
+    let searchTerm = $('#translationSearchInput').val();
+    if (searchTerm.trim() == '') {
+        $('.lubelog-translation-row').show();
+    } else {
+        $('.lubelog-translation-row').hide();
+        $(`.lubelog-translation-row span:containsNC('${searchTerm}')`).closest('.lubelog-translation-row').show();
+    }
+}

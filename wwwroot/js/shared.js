@@ -1244,7 +1244,7 @@ function duplicateRecordsToOtherVehicles(ids, source) {
             break;
     }
 
-    $.get(`/Home/GetVehicleSelector?vehicleId=${GetVehicleId().vehicleId}`, function (data) {
+    $.get(`/Home/GetVehicleSelector?vehicleId=${GetVehicleId().vehicleId}&importMode=${source}`, function (data) {
         if (data) {
             //prompt user to select a vehicle
             Swal.fire({
@@ -1537,16 +1537,20 @@ function selectEveryRowInBetween(rowId) {
         let endIndex = $(`[data-rowId='${rowId}'`).index();
         if (startIndex > endIndex) {
             for (let i = endIndex; i < startIndex; i++) {
-                $('.vehicleDetailTabContainer .table tbody tr:visible').eq(i).map((index, elem) => {
-                    $(elem).addClass('table-active');
-                    addToSelectedRows($(elem).attr('data-rowId'));
+                $('.vehicleDetailTabContainer .table tbody tr').eq(i).map((index, elem) => {
+                    if ($(elem).is(':visible')) {
+                        $(elem).addClass('table-active');
+                        addToSelectedRows($(elem).attr('data-rowId'));
+                    }
                 });
             }
         } else {
             for (let i = endIndex; i > startIndex; i--) {
-                $('.vehicleDetailTabContainer .table tbody tr:visible').eq(i).map((index, elem) => {
-                    $(elem).addClass('table-active');
-                    addToSelectedRows($(elem).attr('data-rowId'));
+                $('.vehicleDetailTabContainer .table tbody tr').eq(i).map((index, elem) => {
+                    if ($(elem).is(':visible')) {
+                        $(elem).addClass('table-active');
+                        addToSelectedRows($(elem).attr('data-rowId'));
+                    }
                 });
             }
         }
@@ -1556,22 +1560,15 @@ function handleTableRowClick(e, callBack, rowId) {
     var selectMode = $("#chkSelectMode").length > 0 ? $("#chkSelectMode").is(":checked") : false;
     if (!(event.ctrlKey || event.metaKey || event.shiftKey || selectMode)) {
         callBack(rowId);
-    } else if (!$(e).hasClass('table-active')) {
-        if (event.shiftKey) {
-            selectEveryRowInBetween($(e).attr('data-rowId'));
-        }
-        else {
-            addToSelectedRows($(e).attr('data-rowId'));
-            $(e).addClass('table-active');
-        }
+    } else if (event.shiftKey) {
+        selectEveryRowInBetween($(e).attr('data-rowId'));
+    }
+    else if (!$(e).hasClass('table-active')) {
+        addToSelectedRows($(e).attr('data-rowId'));
+        $(e).addClass('table-active');
     } else if ($(e).hasClass('table-active')) {
-        if (event.shiftKey) {
-            selectEveryRowInBetween($(e).attr('data-rowId'));
-        }
-        else {
-            removeFromSelectedRows($(e).attr('data-rowId'));
-            $(e).removeClass('table-active');
-        }
+        removeFromSelectedRows($(e).attr('data-rowId'));
+        $(e).removeClass('table-active');
     }
 }
 
@@ -2299,4 +2296,42 @@ function downloadQR() {
         downloadLink.click();
         URL.revokeObjectURL(url);
     };
+}
+
+function handleDualRangeSlider(e) {
+    let isMinSlider = $(e).attr('data-handle') == 'min';
+    let minSlider = $(e).closest('.dual-range').find('[data-handle="min"]');
+    let maxSlider = $(e).closest('.dual-range').find('[data-handle="max"]');
+    let maxRangeValue = parseInt(maxSlider.val());
+    let minRangeValue = parseInt(minSlider.val());
+    let rangePadding = 2;
+    let maxRangeLimit = maxRangeValue - rangePadding;
+    let minRangeLimit = minRangeValue + rangePadding;
+    let rangeHighlight = $(e).closest('.dual-range').find('.dual-range-highlight');
+    if (isMinSlider) {
+        if (minRangeValue >= maxRangeLimit) {
+            minSlider.val(maxRangeLimit);
+        }
+        minSlider.addClass('dual-range-top');
+        maxSlider.removeClass('dual-range-top');
+    } else {
+        if (maxRangeValue <= minRangeLimit) {
+            maxSlider.val(minRangeLimit);
+        }
+        minSlider.removeClass('dual-range-top');
+        maxSlider.addClass('dual-range-top');
+    }
+    //update range highlight
+    rangeHighlight.css('left', (minRangeValue + '%'));
+    rangeHighlight.css('width', ((maxRangeValue - minRangeValue) + '%'));
+    //update labels
+    let minRangeLabel = $(e).closest('.dual-range-container').find('[data-range-label="min"]');
+    let maxRangeLabel = $(e).closest('.dual-range-container').find('[data-range-label="max"]');
+    minRangeLabel.text(`${minSlider.val()}%`);
+    maxRangeLabel.text(`${maxSlider.val()}%`);
+}
+function removeVehicleThumbnail() {
+    uploadedFile = "";
+    $("#inputImageReplaceLabel").addClass('d-none');
+    $("#inputImageUploadLabel").removeClass('d-none');
 }

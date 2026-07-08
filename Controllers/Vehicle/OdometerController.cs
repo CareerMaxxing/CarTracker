@@ -32,11 +32,11 @@ namespace CarCareTracker.Controllers
             bool _useDescending = _config.GetUserConfig(User).UseDescending;
             if (_useDescending)
             {
-                result = result.OrderByDescending(x => x.Date).ThenByDescending(x => x.Mileage).ToList();
+                result = result.OrderByDescending(x => x.Date).ThenByDescending(x => x.Mileage).ThenByDescending(x=>x.InitialMileage).ToList();
             }
             else
             {
-                result = result.OrderBy(x => x.Date).ThenBy(x => x.Mileage).ToList();
+                result = result.OrderBy(x => x.Date).ThenBy(x => x.Mileage).ThenBy(x=>x.InitialMileage).ToList();
             }
             return PartialView("Odometer/_OdometerRecords", result);
         }

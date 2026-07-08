@@ -41,6 +41,7 @@ namespace CarCareTracker.Controllers
         private readonly IWebHostEnvironment _webEnv;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IEventLogic _eventLogic;
+        private readonly IDBHealthCheck _dbHealthCheck;
         public APIController(IVehicleDataAccess dataAccess,
             IGasHelper gasHelper,
             IEquipmentHelper equipmentHelper,
@@ -67,7 +68,8 @@ namespace CarCareTracker.Controllers
             IOdometerLogic odometerLogic,
             IEventLogic eventLogic,
             IWebHostEnvironment webEnv,
-            IHttpClientFactory httpClientFactory)
+            IHttpClientFactory httpClientFactory,
+            IDBHealthCheck dbHealthCheck)
         {
             _dataAccess = dataAccess;
             _noteDataAccess = noteDataAccess;
@@ -96,6 +98,7 @@ namespace CarCareTracker.Controllers
             _config = config;
             _webEnv = webEnv;
             _httpClientFactory = httpClientFactory;
+            _dbHealthCheck = dbHealthCheck;
         }
         public IActionResult Index()
         {
@@ -140,6 +143,27 @@ namespace CarCareTracker.Controllers
             {
                 return Json(result);
             }
+        }
+        [HttpGet]
+        [Route("/health")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetServerHealth()
+        {
+            var viewModel = new ServerHealth
+            {
+                Version = StaticHelper.VersionNumber
+            };
+            DateTime startTime = DateTime.Now;
+            var databaseHealth = _dbHealthCheck.GetDatabaseHealth();
+            viewModel.Checks.Add(databaseHealth);
+            DateTime endTime = DateTime.Now;
+            var secondsElapsed = endTime - startTime;
+            viewModel.TotalDuration = secondsElapsed;
+            if (viewModel.Status == "fail")
+            {
+                Response.StatusCode = 500;
+            }
+            return Json(viewModel);
         }
         [HttpGet]
         [Route("/api/info")]

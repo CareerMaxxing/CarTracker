@@ -534,7 +534,7 @@ namespace CarCareTracker.Controllers
                 return Json(OperationResponse.Failed());
             }
         }
-        public IActionResult GetVehicleSelector(int vehicleId)
+        public IActionResult GetVehicleSelector(int vehicleId, ImportMode importMode)
         {
             var vehiclesStored = _dataAccess.GetVehicles();
             if (!User.IsInRole(nameof(UserData.IsRootUser)))
@@ -549,6 +549,10 @@ namespace CarCareTracker.Controllers
             if (userConfig.HideSoldVehicles)
             {
                 vehiclesStored.RemoveAll(x => !string.IsNullOrWhiteSpace(x.SoldDate));
+            }
+            if (importMode == ImportMode.SupplyRecord && _config.GetServerEnableShopSupplies() && vehicleId != default)
+            {
+                vehiclesStored.Add(new Vehicle { Id = 0, Make = _translationHelper.Translate(_config.GetUserConfig(User).UserLanguage, "Shop Supplies") });
             }
             return PartialView("_VehicleSelector", vehiclesStored);
         }
