@@ -1323,6 +1323,7 @@
                
             ],
             "hasBody":true,
+			"bodySampleNames":["Gas/Diesel", "EV"],
             "bodySample":[{
                "id":1,
                "date":"2026-01-03",
@@ -1345,7 +1346,33 @@
                      "location":"https://lubelogger.com"
                   }
                ]
-            }]
+            },
+			{
+			   "id": 1,
+               "date":"2026-01-03",
+               "odometer":15000,
+			   "startingSoc": 20,
+			   "endingSoc": 80,
+               "fuelConsumed":12.34,
+               "cost":123.45,
+               "isFillToFull":true,
+               "missedFuelUp":false,
+               "notes":"test",
+               "tags":"testing",
+               "extraFields":[
+                  {
+                     "name":"location",
+                     "value":"Price Utah"
+                  }
+               ],
+               "files":[
+                  {
+                     "name":"Attachment Example",
+                     "location":"https://lubelogger.com"
+                  }
+               ]
+            }
+			]
          },
          {
             "path":"/api/vehicle/gasrecords/delete",
