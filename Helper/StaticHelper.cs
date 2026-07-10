@@ -994,6 +994,11 @@ namespace CarCareTracker.Helper
             JsonSerializerOptions serializerOption = new JsonSerializerOptions { Encoder = JavaScriptEncoder.Create(UnicodeRanges.All) };
             return serializerOption;
         }
+        public static JsonSerializerOptions GetAPIDocumentationSerializerOption()
+        {
+            JsonSerializerOptions serializerOption = new JsonSerializerOptions { Encoder = JavaScriptEncoder.Create(UnicodeRanges.All), WriteIndented = true };
+            return serializerOption;
+        }
         public static string GetAPIMethodColor(APIMethodType method)
         {
             switch (method)

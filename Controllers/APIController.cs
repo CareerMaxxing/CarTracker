@@ -106,18 +106,6 @@ namespace CarCareTracker.Controllers
             var apiDocFilePath = _fileHelper.GetFullFilePath("/defaults/api.json");
             var apiDocText = _fileHelper.GetFileText(apiDocFilePath);
             var apiDocData = JsonSerializer.Deserialize<List<APIDocumentation>>(apiDocText) ?? new List<APIDocumentation>();
-            var apiSerializeOptions = StaticHelper.GetNoEncodingOption();
-            apiSerializeOptions.WriteIndented = true;
-            foreach(APIDocumentation apiDocumentation in apiDocData)
-            {
-                foreach(APIMethod apiMethod in apiDocumentation.Methods)
-                {
-                    if (apiMethod.HasBody)
-                    {
-                        apiMethod.BodySampleString = JsonSerializer.Serialize(apiMethod.BodySample, apiSerializeOptions);
-                    }
-                }
-            }
             return View(apiDocData);
         }
         private int GetUserID()
