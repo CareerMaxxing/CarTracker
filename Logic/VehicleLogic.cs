@@ -24,6 +24,7 @@ namespace CarCareTracker.Logic
         List<string> GetVehicleThumbnails(List<Vehicle> vehicles);
         List<string> GetVehicleDocuments(List<Vehicle> vehicles);
         List<string> GetStoreSupplyDocuments();
+        bool DeleteVehicleRecords(int vehicleId);
     }
     public class VehicleLogic: IVehicleLogic
     {
@@ -617,6 +618,25 @@ namespace CarCareTracker.Logic
             List<string> vehicleDocuments = new List<string>();
             vehicleDocuments.AddRange(_supplyRecordDataAccess.GetSupplyRecordsByVehicleId(0).SelectMany(x => x.Files).Select(y => Path.GetFileName(y.Location)));
             return vehicleDocuments;
+        }
+        public bool DeleteVehicleRecords(int vehicleId)
+        {
+            var result = _gasRecordDataAccess.DeleteAllGasRecordsByVehicleId(vehicleId) &&
+                _serviceRecordDataAccess.DeleteAllServiceRecordsByVehicleId(vehicleId) &&
+                _collisionRecordDataAccess.DeleteAllCollisionRecordsByVehicleId(vehicleId) &&
+                _taxRecordDataAccess.DeleteAllTaxRecordsByVehicleId(vehicleId) &&
+                _noteDataAccess.DeleteAllNotesByVehicleId(vehicleId) &&
+                _reminderRecordDataAccess.DeleteAllReminderRecordsByVehicleId(vehicleId) &&
+                _upgradeRecordDataAccess.DeleteAllUpgradeRecordsByVehicleId(vehicleId) &&
+                _planRecordDataAccess.DeleteAllPlanRecordsByVehicleId(vehicleId) &&
+                _planRecordTemplateDataAccess.DeleteAllPlanRecordTemplatesByVehicleId(vehicleId) &&
+                _inspectionRecordDataAccess.DeleteAllInspectionRecordsByVehicleId(vehicleId) &&
+                _inspectionRecordTemplateDataAccess.DeleteAllInspectionReportTemplatesByVehicleId(vehicleId) &&
+                _equipmentRecordDataAccess.DeleteAllEquipmentRecordsByVehicleId(vehicleId) &&
+                _supplyRecordDataAccess.DeleteAllSupplyRecordsByVehicleId(vehicleId) &&
+                _odometerRecordDataAccess.DeleteAllOdometerRecordsByVehicleId(vehicleId) &&
+                _dataAccess.DeleteVehicle(vehicleId);
+            return result;
         }
     }
 }

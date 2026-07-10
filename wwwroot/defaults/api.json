@@ -95,7 +95,21 @@
                   }
                ]
             }]
-         }
+         },
+		 {
+			 "path":"/api/vehicles/delete",
+			 "description":"Deletes a vehicle",
+			 "methodType":3,
+			 "queryParams":[
+				{
+					"name":"id",
+					"description":"Id of the vehicle",
+					"required":true
+				}
+			 ],
+			 "hasBody":false,
+			 "bodySample":null
+		 }
       ]
    },
    {

@@ -339,6 +339,29 @@ namespace CarCareTracker.Controllers
                 return Json(OperationResponse.Failed(ex.Message));
             }
         }
+        [TypeFilter(typeof(APIKeyFilter), Arguments = new object[] { HouseholdPermission.Delete })]
+        [HttpDelete]
+        [Route("/api/vehicles/delete")]
+        public IActionResult DeleteVehicle(int id)
+        {
+            var existingVehicle = _dataAccess.GetVehicleById(id);
+            if (existingVehicle == null || existingVehicle.Id == default)
+            {
+                Response.StatusCode = 400;
+                return Json(OperationResponse.Failed("Invalid Vehicle Id"));
+            }
+            if (!_userLogic.UserCanDirectlyEditVehicle(GetUserID(), id))
+            {
+                Response.StatusCode = 401;
+                return Json(OperationResponse.Failed("Access Denied, you don't have access to this vehicle."));
+            }
+            var result = _userLogic.DeleteAllAccessToVehicle(id) && _vehicleLogic.DeleteVehicleRecords(id);
+            if (result)
+            {
+                _eventLogic.PublishEvent(GetUserID(), WebHookPayload.Generic($"Deleted Vehicle - Id: {id} via API", "vehicle.delete.api", User.Identity?.Name ?? string.Empty, id.ToString()));
+            }
+            return Json(OperationResponse.Conditional(result, "Vehicle Deleted", StaticHelper.GenericErrorMessage));
+        }
         [TypeFilter(typeof(APIKeyFilter), Arguments = new object[] { HouseholdPermission.Edit })]
         [HttpPut]
         [Route("/api/vehicles/update")]

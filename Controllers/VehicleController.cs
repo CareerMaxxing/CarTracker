@@ -168,22 +168,7 @@ namespace CarCareTracker.Controllers
         public IActionResult DeleteVehicle(int vehicleId)
         {
             //Delete all service records, gas records, notes, etc.
-            var result = _gasRecordDataAccess.DeleteAllGasRecordsByVehicleId(vehicleId) &&
-                _serviceRecordDataAccess.DeleteAllServiceRecordsByVehicleId(vehicleId) &&
-                _collisionRecordDataAccess.DeleteAllCollisionRecordsByVehicleId(vehicleId) &&
-                _taxRecordDataAccess.DeleteAllTaxRecordsByVehicleId(vehicleId) &&
-                _noteDataAccess.DeleteAllNotesByVehicleId(vehicleId) &&
-                _reminderRecordDataAccess.DeleteAllReminderRecordsByVehicleId(vehicleId) &&
-                _upgradeRecordDataAccess.DeleteAllUpgradeRecordsByVehicleId(vehicleId) &&
-                _planRecordDataAccess.DeleteAllPlanRecordsByVehicleId(vehicleId) &&
-                _planRecordTemplateDataAccess.DeleteAllPlanRecordTemplatesByVehicleId(vehicleId) &&
-                _inspectionRecordDataAccess.DeleteAllInspectionRecordsByVehicleId(vehicleId) &&
-                _inspectionRecordTemplateDataAccess.DeleteAllInspectionReportTemplatesByVehicleId(vehicleId) &&
-                _equipmentRecordDataAccess.DeleteAllEquipmentRecordsByVehicleId(vehicleId) &&
-                _supplyRecordDataAccess.DeleteAllSupplyRecordsByVehicleId(vehicleId) &&
-                _odometerRecordDataAccess.DeleteAllOdometerRecordsByVehicleId(vehicleId) &&
-                _userLogic.DeleteAllAccessToVehicle(vehicleId) &&
-                _dataAccess.DeleteVehicle(vehicleId);
+            var result = _userLogic.DeleteAllAccessToVehicle(vehicleId) && _vehicleLogic.DeleteVehicleRecords(vehicleId);
             if (result)
             {
                 _eventLogic.PublishEvent(GetUserID(), WebHookPayload.Generic($"Deleted Vehicle - Id: {vehicleId}", "vehicle.delete", User.Identity?.Name ?? string.Empty, vehicleId.ToString()));
@@ -198,22 +183,7 @@ namespace CarCareTracker.Controllers
             foreach (int vehicleId in vehicleIds)
             {
                 //Delete all service records, gas records, notes, etc.
-                var result = _gasRecordDataAccess.DeleteAllGasRecordsByVehicleId(vehicleId) &&
-                    _serviceRecordDataAccess.DeleteAllServiceRecordsByVehicleId(vehicleId) &&
-                    _collisionRecordDataAccess.DeleteAllCollisionRecordsByVehicleId(vehicleId) &&
-                    _taxRecordDataAccess.DeleteAllTaxRecordsByVehicleId(vehicleId) &&
-                    _noteDataAccess.DeleteAllNotesByVehicleId(vehicleId) &&
-                    _reminderRecordDataAccess.DeleteAllReminderRecordsByVehicleId(vehicleId) &&
-                    _upgradeRecordDataAccess.DeleteAllUpgradeRecordsByVehicleId(vehicleId) &&
-                    _planRecordDataAccess.DeleteAllPlanRecordsByVehicleId(vehicleId) &&
-                    _planRecordTemplateDataAccess.DeleteAllPlanRecordTemplatesByVehicleId(vehicleId) &&
-                    _inspectionRecordDataAccess.DeleteAllInspectionRecordsByVehicleId(vehicleId) &&
-                    _inspectionRecordTemplateDataAccess.DeleteAllInspectionReportTemplatesByVehicleId(vehicleId) &&
-                    _equipmentRecordDataAccess.DeleteAllEquipmentRecordsByVehicleId(vehicleId) &&
-                    _supplyRecordDataAccess.DeleteAllSupplyRecordsByVehicleId(vehicleId) &&
-                    _odometerRecordDataAccess.DeleteAllOdometerRecordsByVehicleId(vehicleId) &&
-                    _userLogic.DeleteAllAccessToVehicle(vehicleId) &&
-                    _dataAccess.DeleteVehicle(vehicleId);
+                var result = _userLogic.DeleteAllAccessToVehicle(vehicleId) && _vehicleLogic.DeleteVehicleRecords(vehicleId);
                 if (result)
                 {
                     _eventLogic.PublishEvent(GetUserID(), WebHookPayload.Generic($"Deleted Vehicle - Id: {vehicleId}", "vehicle.delete", User.Identity?.Name ?? string.Empty, vehicleId.ToString()));
