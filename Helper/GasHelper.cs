@@ -80,7 +80,7 @@ namespace CarCareTracker.Helper
                             Gallons = convertedConsumption,
                             Cost = currentObject.Cost,
                             DeltaMileage = deltaMileage,
-                            CostPerGallon = convertedConsumption > 0.00M ? currentObject.Cost / convertedConsumption : 0,
+                            CostPerGallon = currentObject.Gallons > 0.00M ? currentObject.Cost / currentObject.Gallons : 0,
                             StartingSoc = currentObject.StartingSoc,
                             EndingSoc = currentObject.EndingSoc,
                             IsFillToFull = currentObject.IsFillToFull,
