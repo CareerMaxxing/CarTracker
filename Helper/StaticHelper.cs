@@ -14,7 +14,7 @@ namespace CarCareTracker.Helper
     /// </summary>
     public static class StaticHelper
     {
-        public const string VersionNumber = "1.6.9";
+        public const string VersionNumber = "1.7.0";
         public const string DbName = "data/cartracker.db";
         public const string UserConfigPath = "data/config/userConfig.json";
         public const string ServerConfigPath = "data/config/serverConfig.json";
@@ -358,6 +358,11 @@ namespace CarCareTracker.Helper
             {
                 Directory.CreateDirectory("data/translations");
                 Console.WriteLine("Created translations directory");
+            }
+            if (!Directory.Exists("data/themes"))
+            {
+                Directory.CreateDirectory("data/themes");
+                Console.WriteLine("Created themes directory");
             }
             if (!Directory.Exists("data/temp"))
             {
@@ -992,6 +997,11 @@ namespace CarCareTracker.Helper
         public static JsonSerializerOptions GetNoEncodingOption()
         {
             JsonSerializerOptions serializerOption = new JsonSerializerOptions { Encoder = JavaScriptEncoder.Create(UnicodeRanges.All) };
+            return serializerOption;
+        }
+        public static JsonSerializerOptions GetAPIDocumentationSerializerOption()
+        {
+            JsonSerializerOptions serializerOption = new JsonSerializerOptions { Encoder = JavaScriptEncoder.Create(UnicodeRanges.All), WriteIndented = true };
             return serializerOption;
         }
         public static string GetAPIMethodColor(APIMethodType method)

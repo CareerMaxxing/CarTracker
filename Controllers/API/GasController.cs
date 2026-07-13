@@ -173,8 +173,8 @@ namespace CarCareTracker.Controllers
                     Gallons = decimal.Parse(input.FuelConsumed),
                     IsFillToFull = bool.Parse(input.IsFillToFull),
                     MissedFuelUp = bool.Parse(input.MissedFuelUp),
-                    StartingSoc = int.Parse(input.StartingSoc),
-                    EndingSoc = int.Parse(input.EndingSoc),
+                    StartingSoc = string.IsNullOrWhiteSpace(input.StartingSoc) ? 20 : int.Parse(input.StartingSoc),
+                    EndingSoc = string.IsNullOrWhiteSpace(input.EndingSoc) ? 80 : int.Parse(input.EndingSoc),
                     Notes = string.IsNullOrWhiteSpace(input.Notes) ? "" : input.Notes,
                     Cost = decimal.Parse(input.Cost),
                     ExtraFields = input.ExtraFields,
@@ -273,8 +273,8 @@ namespace CarCareTracker.Controllers
                     existingRecord.Gallons = decimal.Parse(input.FuelConsumed);
                     existingRecord.IsFillToFull = bool.Parse(input.IsFillToFull);
                     existingRecord.MissedFuelUp = bool.Parse(input.MissedFuelUp);
-                    existingRecord.StartingSoc = int.Parse(input.StartingSoc);
-                    existingRecord.EndingSoc = int.Parse(input.EndingSoc);
+                    existingRecord.StartingSoc = string.IsNullOrWhiteSpace(input.StartingSoc) ? 20 : int.Parse(input.StartingSoc);
+                    existingRecord.EndingSoc = string.IsNullOrWhiteSpace(input.EndingSoc) ? 80 : int.Parse(input.EndingSoc);
                     existingRecord.Notes = string.IsNullOrWhiteSpace(input.Notes) ? "" : input.Notes;
                     existingRecord.Cost = decimal.Parse(input.Cost);
                     existingRecord.ExtraFields = input.ExtraFields;

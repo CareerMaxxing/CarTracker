@@ -142,10 +142,12 @@ namespace CarCareTracker.Controllers
         {
             var userConfig = _config.GetUserConfig(User);
             var languages = _fileHelper.GetLanguages();
+            var themes = _fileHelper.GetThemes();
             var viewModel = new SettingsViewModel
             {
                 UserConfig = userConfig,
-                UILanguages = languages
+                UILanguages = languages,
+                UIThemes = themes
             };
             return PartialView("_Settings", viewModel);
         }
