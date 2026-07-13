@@ -17,6 +17,8 @@ namespace CarCareTracker.Helper
         bool RestoreBackup(string fileName, bool clearExisting = false);
         string MakeAttachmentsExport(List<GenericReportModel> exportData);
         List<string> GetLanguages();
+        List<string> GetThemes();
+        string GetTheme(string themeName);
         int ClearTempFolder();
         List<string> GetTempFiles();
         int ClearUnlinkedThumbnails(List<string> linkedImages);
@@ -51,6 +53,35 @@ namespace CarCareTracker.Helper
                 }
             }
             return defaultList;
+        }
+        public List<string> GetThemes()
+        {
+            var themePath = Path.Combine(_webEnv.ContentRootPath, "data", "themes");
+            var defaultList = new List<string>();
+            if (Directory.Exists(themePath))
+            {
+                var listOfThemes = Directory.GetFiles(themePath);
+                if (listOfThemes.Any())
+                {
+                    defaultList.AddRange(listOfThemes.Select(x => Path.GetFileNameWithoutExtension(x)));
+                }
+            }
+            return defaultList;
+        }
+        public string GetTheme(string themeName)
+        {
+            var themePath = Path.Combine(_webEnv.ContentRootPath, "data", "themes");
+            var themeContent = string.Empty;
+            if (Directory.Exists(themePath))
+            {
+                var listOfThemes = Directory.GetFiles(themePath);
+                if (listOfThemes.Any(x=>Path.GetFileNameWithoutExtension(x) == themeName))
+                {
+                    string themeFile = listOfThemes.First(x => Path.GetFileNameWithoutExtension(x) == themeName);
+                    themeContent = GetFileText(themeFile);
+                }
+            }
+            return themeContent;
         }
         public bool RenameFile(string currentFilePath, string newName)
         {
@@ -145,6 +176,7 @@ namespace CarCareTracker.Helper
                 var imagePath = Path.Combine(tempPath, "images");
                 var documentPath = Path.Combine(tempPath, "documents");
                 var translationPath = Path.Combine(tempPath, "translations");
+                var themePath = Path.Combine(tempPath, "themes");
                 var dataPath = Path.Combine(tempPath, StaticHelper.DbName);
                 var widgetPath = Path.Combine(tempPath, StaticHelper.AdditionalWidgetsPath);
                 var configPath = Path.Combine(tempPath, StaticHelper.LegacyUserConfigPath);
@@ -210,6 +242,28 @@ namespace CarCareTracker.Helper
                     }
                     //copy each files from temp folder to newPath
                     var filesToUpload = Directory.GetFiles(translationPath);
+                    foreach (string file in filesToUpload)
+                    {
+                        File.Copy(file, $"{existingPath}/{Path.GetFileName(file)}", true);
+                    }
+                }
+                if (Directory.Exists(themePath))
+                {
+                    var existingPath = Path.Combine(_webEnv.ContentRootPath, "data", "themes");
+                    if (!Directory.Exists(existingPath))
+                    {
+                        Directory.CreateDirectory(existingPath);
+                    }
+                    else if (clearExisting)
+                    {
+                        var filesToDelete = Directory.GetFiles(existingPath);
+                        foreach (string file in filesToDelete)
+                        {
+                            File.Delete(file);
+                        }
+                    }
+                    //copy each files from temp folder to newPath
+                    var filesToUpload = Directory.GetFiles(themePath);
                     foreach (string file in filesToUpload)
                     {
                         File.Copy(file, $"{existingPath}/{Path.GetFileName(file)}", true);
@@ -310,6 +364,7 @@ namespace CarCareTracker.Helper
             var imagePath = Path.Combine(_webEnv.ContentRootPath, "data", "images");
             var documentPath = Path.Combine(_webEnv.ContentRootPath, "data", "documents");
             var translationPath = Path.Combine(_webEnv.ContentRootPath, "data", "translations");
+            var themePath = Path.Combine(_webEnv.ContentRootPath, "data", "themes");
             var dataPath = StaticHelper.DbName;
             var widgetPath = StaticHelper.AdditionalWidgetsPath;
             var configPath = StaticHelper.UserConfigPath;
@@ -342,6 +397,16 @@ namespace CarCareTracker.Helper
                 foreach(var file in files)
                 {
                     var newPath = Path.Combine(tempPath, "translations");
+                    Directory.CreateDirectory(newPath);
+                    File.Copy(file, $"{newPath}/{Path.GetFileName(file)}");
+                }
+            }
+            if (Directory.Exists(themePath))
+            {
+                var files = Directory.GetFiles(themePath);
+                foreach (var file in files)
+                {
+                    var newPath = Path.Combine(tempPath, "themes");
                     Directory.CreateDirectory(newPath);
                     File.Copy(file, $"{newPath}/{Path.GetFileName(file)}");
                 }
@@ -406,6 +471,10 @@ namespace CarCareTracker.Helper
                 currentFilePath = currentFilePath.Substring(1);
             }
             string filePath = Path.Combine(_webEnv.ContentRootPath, "data", currentFilePath);
+            if (!filePath.StartsWith(_webEnv.ContentRootPath))
+            {
+                return false; //path traversal
+            }
             if (File.Exists(filePath))
             {
                 File.Delete(filePath);

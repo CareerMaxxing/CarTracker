@@ -28,6 +28,7 @@ namespace CarCareTracker.Helper
         string GetLogoUrl();
         string GetSmallLogoUrl();
         string GetServerLanguage();
+        string GetServerTheme();
         bool GetServerDisabledRegistration();
         bool GetServerEnableShopSupplies();
         bool GetServerAuthEnabled();
@@ -212,6 +213,11 @@ namespace CarCareTracker.Helper
         {
             var serverLanguage = CheckString(nameof(UserConfig.UserLanguage), "en_US");
             return serverLanguage;
+        }
+        public string GetServerTheme()
+        {
+            var serverTheme = CheckString(nameof(UserConfig.UserTheme));
+            return serverTheme;
         }
         public bool GetServerDisabledRegistration()
         {
@@ -472,6 +478,7 @@ namespace CarCareTracker.Helper
                 PreferredGasUnit = CheckString(nameof(UserConfig.PreferredGasUnit)),
                 UseUnitForFuelCost = CheckBool(CheckString(nameof(UserConfig.UseUnitForFuelCost))),
                 UserLanguage = CheckString(nameof(UserConfig.UserLanguage), "en_US"),
+                UserTheme = CheckString(nameof(UserConfig.UserTheme)),
                 HideSoldVehicles = CheckBool(CheckString(nameof(UserConfig.HideSoldVehicles))),
                 EnableShopSupplies = CheckBool(CheckString(nameof(UserConfig.EnableShopSupplies))),
                 ShowCalendar = CheckBool(CheckString(nameof(UserConfig.ShowCalendar))),

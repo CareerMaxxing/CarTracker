@@ -359,6 +359,11 @@ namespace CarCareTracker.Helper
                 Directory.CreateDirectory("data/translations");
                 Console.WriteLine("Created translations directory");
             }
+            if (!Directory.Exists("data/themes"))
+            {
+                Directory.CreateDirectory("data/themes");
+                Console.WriteLine("Created themes directory");
+            }
             if (!Directory.Exists("data/temp"))
             {
                 Directory.CreateDirectory("data/temp");

@@ -45,6 +45,27 @@ namespace CarCareTracker.Controllers
             }
             return Json(OperationResponse.Failed());
         }
+        [Authorize(Roles = nameof(UserData.IsRootUser))]
+        [HttpPost]
+        public IActionResult HandleThemeFileUpload(IFormFile file)
+        {
+            //check if extension is css
+            if (Path.GetExtension(file.FileName) != ".css")
+            {
+                return Json(OperationResponse.Failed());
+            }
+            var originalFileName = Path.GetFileNameWithoutExtension(file.FileName);
+            var fileName = UploadFile(file);
+            //move file from temp to themes folder.
+            var uploadedFilePath = _fileHelper.MoveFileFromTemp(fileName, "themes/");
+            //rename uploaded file so that it preserves original name.
+            if (!string.IsNullOrWhiteSpace(uploadedFilePath))
+            {
+                var result = _fileHelper.RenameFile(uploadedFilePath, originalFileName);
+                return Json(OperationResponse.Conditional(result));
+            }
+            return Json(OperationResponse.Failed());
+        }
 
         [HttpPost]
         public IActionResult HandleMultipleFileUpload(List<IFormFile> file)

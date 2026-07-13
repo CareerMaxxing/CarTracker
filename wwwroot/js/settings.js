@@ -21,19 +21,13 @@ function deleteLanguage() {
         updateSettings();
     });
 }
-function updateColorModeSettings(e) {
-    var colorMode = $(e).prop("id");
-    switch (colorMode) {
-        case "enableDarkMode":
-            //uncheck system prefernce
-            $("#useSystemColorMode").prop('checked', false);
-            updateSettings();
-            break;
-        case "useSystemColorMode":
-            $("#enableDarkMode").prop('checked', false);
-            updateSettings();
-            break;
-    }
+function deleteTheme() {
+    var themeFileLocation = `/themes/${$("#defaultTheme").val()}.css`;
+    $.post('/Files/DeleteFiles', { fileLocation: themeFileLocation }, function (data) {
+        //reset user theme
+        $("#defaultTheme").val('');
+        updateSettings();
+    });
 }
 function updateSettings() {
     var visibleTabs = getCheckedTabs();
@@ -44,8 +38,8 @@ function updateSettings() {
     var tabOrder = getTabOrder();
 
     var userConfigObject = {
-        useDarkMode: $("#enableDarkMode").is(':checked'),
-        useSystemColorMode: $("#useSystemColorMode").is(':checked'),
+        useDarkMode: $('#defaultColorMode').val() == "1",
+        useSystemColorMode: $('#defaultColorMode').val() == "2",
         enableCsvImports: $("#enableCsvImports").is(':checked'),
         useMPG: $("#useMPG").is(':checked'),
         useDescending: $("#useDescending").is(':checked'),
@@ -68,6 +62,7 @@ function updateSettings() {
         preferredGasUnit: $("#preferredGasUnit").val(),
         preferredGasMileageUnit: $("#preferredFuelMileageUnit").val(),
         userLanguage: $("#defaultLanguage").val(),
+        userTheme: $("#defaultTheme").val(),
         useUnitForFuelCost: $("#useUnitForFuelCost").is(":checked"),
         useGridInMobile: $("#useGridInMobile").is(":checked"),
         visibleTabs: visibleTabs,
@@ -101,6 +96,32 @@ function uploadLanguage(event) {
     sloader.show();
     $.ajax({
         url: "/Files/HandleTranslationFileUpload",
+        data: formData,
+        cache: false,
+        processData: false,
+        contentType: false,
+        type: 'POST'
+    }).done((response) => {
+        sloader.hide();
+        if (response.success) {
+            setTimeout(function () { window.location.href = '/Home/Index?tab=settings' }, 500);
+        } else {
+            errorToast(response.message);
+        }
+    }).fail(() => {
+        sloader.hide();
+        errorToast("An error has occurred, please check the file size and try again later.");
+    });
+}
+function openUploadTheme() {
+    $("#inputTheme").trigger('click');
+}
+function uploadTheme(event) {
+    let formData = new FormData();
+    formData.append("file", event.files[0]);
+    sloader.show();
+    $.ajax({
+        url: "/Files/HandleThemeFileUpload",
         data: formData,
         cache: false,
         processData: false,
