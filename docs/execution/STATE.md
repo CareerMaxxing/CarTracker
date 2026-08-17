@@ -86,8 +86,8 @@ Last validation:     dotnet build (0 errors); on a throwaway vehicle (created an
                      was applied across all 13 controllers; rendered Documents tab HTML confirmed the
                      Category column, filter pills, and data-tags all reflect real per-file types
                      across multiple record types — 2026-08-17.
-Last commit:         d7fb8b3 — "Record Phase 9 commit hash in STATE.md" (Phase 10's commit not yet
-                     made - pending user confirmation of this phase first).
+Last commit:         299cd0e — "Phase 10: document type categorization" — user confirmed and
+                     approved moving to Phase 11, 2026-08-17.
 ```
 
 ## Environment notes for future sessions
