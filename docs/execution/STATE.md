@@ -25,26 +25,30 @@ Last completed:      Phase 4 finished (browsable Documents tab, see PHASE_04.md)
                      edit (harmless today since nothing consumes it yet, but would have silently
                      undone tracked consumption once a future increment wires that up) - fixed by
                      making new-vs-edit handling explicit in the controller.
-Next task:           Open decision: what's next - candidates are Phase 6 (Planned Engineering Work),
-                     wiring Parts consumption into Service/Gas/Plan records (deferred from this
-                     phase), a dedicated Parts catalog browse/edit screen (deferred from this phase),
-                     the shared.js checkNavBarOverflow() candidate bug (Phase 3, still unverified),
-                     or richer reminder summarization (Phase 3, deferred). Ask the user before
-                     starting Phase 6 or any other new work, per CLAUDE.md's phase-boundary rule.
+Next task:           User decision (2026-08-17): all deferred items accumulated so far are
+                     intentionally left for a finishing-touches pass at the end (see
+                     docs/execution/DEFERRED.md - the consolidated list, replaces tracking individual
+                     deferred items per-phase in this file going forward) rather than being
+                     addressed now. Proceed to Phase 6 (Planned Engineering Work) next per
+                     ROADMAP.md.
 Known blockers:      1. No browser/screenshot tool in this environment - the "review locally as I
                         go" workflow with the user (implement + diff/API-verify, they confirm live)
                         continues to work well for interactive-markup work.
                      2. Global search technical approach undecided (REQUIREMENTS.md FR-SEARCH-01,
                         not urgent, resolve at Phase 11).
                      3. No test project exists yet (candidate: Phase 7 idempotency fix).
-                     4. Candidate bug in shared.js checkNavBarOverflow() (see PHASE_03.md) - found,
-                        not fixed, not verified. Not blocking anything currently since it only
-                        manifests under genuine tab overflow, which requires non-default VisibleTabs.
-Open decisions:      What to build next - pending user input (see "Next task" candidates above).
-Do not:              Start Phase 6 (or any further phase/major new scope) without the user's
-                     go-ahead, per CLAUDE.md's phase-boundary rule. Do not assume SQLite is available
-                     anywhere in this codebase. Do not treat "Planned Work -> Service Record" as
-                     unbuilt - it exists and needs hardening (Phase 7). Do not assume a fresh
+                     4. See docs/execution/DEFERRED.md for the full consolidated list of
+                        intentionally-punted items (UI polish, dashboard richness, Parts domain
+                        follow-ups, the shared.js checkNavBarOverflow() candidate bug) - all deferred
+                        to a finishing-touches pass, not forgotten.
+Open decisions:      None pending - proceeding to Phase 6 per explicit user instruction.
+Do not:              Start any phase beyond Phase 6 without the user's go-ahead, per CLAUDE.md's
+                     phase-boundary rule. Do not re-litigate or re-surface items already tracked in
+                     DEFERRED.md as if they were forgotten - they're intentionally parked. Do not
+                     assume SQLite is available anywhere in this codebase. Do not treat "Planned
+                     Work -> Service Record" as unbuilt - it exists and needs hardening (Phase 7,
+                     itself likely a DEFERRED.md-style finishing touch given how small the actual gap
+                     is). Do not assume a fresh
                      vehicle/user has any tabs visible beyond Dashboard - VisibleTabs defaults to
                      [Dashboard] only; if testing anything on a vehicle detail page, check/set
                      VisibleTabs first or use the API directly to avoid re-discovering this "vehicle

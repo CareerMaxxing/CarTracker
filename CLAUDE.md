@@ -141,6 +141,8 @@ docs/
 └── execution/
     ├── ROADMAP.md                 ordered phases and tasks
     ├── STATE.md                   persistent execution state — read this first, every session
+    ├── DEFERRED.md                consolidated finishing-touches list — items intentionally
+    │                               punted from earlier phases, to revisit near V1 hardening
     ├── PHASE_00.md, PHASE_01.md, ...
 ```
 
