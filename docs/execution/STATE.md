@@ -81,8 +81,8 @@ Last validation:     dotnet build (0 errors); on a throwaway vehicle (created an
                      suppressed the warning; editing the Service-sourced record via the manual form
                      preserved Source=ServiceRecord; rendered Odometer tab HTML confirmed showing the
                      provenance icon with correct tooltip — 2026-08-17.
-Last commit:         04d6f8b — "Record Phase 8 commit hash in STATE.md" (Phase 9's commit not yet
-                     made - pending user confirmation of this phase first).
+Last commit:         935ba06 — "Phase 9: odometer reading provenance + suspicious regression
+                     flagging" — user confirmed and approved moving to Phase 10, 2026-08-17.
 ```
 
 ## Environment notes for future sessions
