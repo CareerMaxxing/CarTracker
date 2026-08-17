@@ -30,7 +30,7 @@ Do not:              Start Phase 2 (or any product feature work) before the huma
                      Record" as unbuilt — it exists and needs hardening, not a new implementation.
 Last validation:     dotnet build (0 errors, same 209 pre-existing nullable warnings, no product
                      code changed) — 2026-08-17.
-Last commit:         (pending — Phase 1 documentation commit, created immediately after this file)
+Last commit:         c58c3f4 — "Phase 1: requirements and architecture reconciliation"
 ```
 
 ## Environment notes for future sessions
