@@ -248,3 +248,7 @@ app.MapControllerRoute(
 app.MapHub<EventHubLogic>("/api/ws");
 
 app.Run();
+
+//top-level statement programs generate an internal Program class by default - a separate test
+//assembly needs it public to reference as WebApplicationFactory<Program>'s type parameter.
+public partial class Program { }

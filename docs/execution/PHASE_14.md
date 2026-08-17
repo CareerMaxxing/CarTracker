@@ -2,10 +2,10 @@
 
 Explicitly open-ended per the roadmap (tests, accessibility, responsive/mobile validation,
 performance, security review, error handling). Rather than attempt all of it at once, the user was
-asked to prioritize; they chose **security review** first. This document covers that increment.
-Other V1 Hardening areas (automated tests, accessibility, mobile/responsive validation, performance)
-remain open - not deferred/declined, just not yet started - and should get their own increments here
-under this same PHASE_14.md rather than a new phase number.
+asked to prioritize each time; they chose **security review** first, then **automated tests**. This
+document covers both increments so far. Other V1 Hardening areas (accessibility, mobile/responsive
+validation, performance) remain open - not deferred/declined, just not yet started - and should get
+their own increments here under this same PHASE_14.md rather than a new phase number.
 
 ## Increment 1: Security review
 
@@ -150,3 +150,134 @@ Both confirmed findings fixed and verified. Real vehicle data was read-only thro
 genuine document used for testing was never modified or deleted); all other verification used
 throwaway uploads cleaned up afterward. Remaining Phase 14 areas (tests, accessibility, mobile/
 responsive, performance) are open for a future increment.
+
+## Increment 2: Automated test project
+
+### Task packet
+
+```
+TASK ID: PHASE-14-02
+TITLE: Stand up the automated test project deferred since Phase 7
+OBJECTIVE: Turn the concrete, already-documented Phase 7 findings (DEFERRED.md's "Test
+  infrastructure" section) into a real, working xUnit + WebApplicationFactory integration test
+  project, isolated from the developer's real data/ directory, with an initial suite covering the
+  highest-risk flows already identified across this project's phases.
+INPUTS: docs/execution/DEFERRED.md's Test infrastructure section (the concrete findings from Phase
+  7's investigation - DbName's CWD-relative resolution, the need for `public partial class Program`,
+  parallel-test-safety concerns), Program.cs, CarCareTracker.csproj.
+ALLOWED SCOPE: `public partial class Program { }` in Program.cs; a new CarCareTracker.Tests project
+  (xUnit + Microsoft.AspNetCore.Mvc.Testing) added to the solution; a shared WebApplicationFactory-
+  based test fixture with correct data isolation; an initial test suite covering flows already
+  identified as high-risk in prior phase docs (Phase 7's idempotency fix, Phase 12's two reliability
+  bugs, Phase 9's regression warning, Phase 14 Increment 1's upload validation fix); excluding the
+  new Tests/ directory from the main project's compilation (a build-glob conflict discovered while
+  implementing, not anticipated in the original DEFERRED.md notes).
+NON-SCOPE: Exhaustive coverage of every endpoint/flow in the app (a full test-writing pass across 14
+  phases of work is its own multi-session effort, not a single increment); CI/CD pipeline wiring (no
+  CI system is configured for this repo yet); performance/load testing (a different Phase 14 area).
+IMPLEMENTATION REQUIREMENTS:
+  - Program.cs: append `public partial class Program { }` after `app.Run()` (top-level statement
+    programs generate this class `internal` by default; a separate test assembly needs it public to
+    reference as `WebApplicationFactory<Program>`'s type parameter).
+  - CarCareTracker.csproj: exclude `Tests/**/*.cs` (and Content/None) from the main project's
+    default recursive globs, since SDK-style projects otherwise compile every .cs file under the
+    project root including a nested test project's xUnit-only sources - not something DEFERRED.md's
+    original Phase 7 notes anticipated, discovered empirically while wiring the new project in.
+  - CarTrackerWebApplicationFactory: switches the process's current directory to a fresh temp folder
+    per factory instance before the host builds (StaticHelper.DbName/UserConfigPath/etc. are CWD-
+    relative, not ContentRootPath-relative, per Phase 7's finding) so tests never touch the real
+    developer's data/ directory; explicitly resolves the app's actual content root (wwwroot/Views) by
+    walking up from AppContext.BaseDirectory looking for CarCareTracker.csproj by name, rather than
+    trusting WebApplicationFactory's own auto-detection (which assumes a "solution/ProjectName/
+    ProjectName.csproj" layout this repo's flat structure doesn't match) or Directory.
+    GetCurrentDirectory() (which `dotnet test`'s VSTest host sets to the test assembly's own bin
+    output folder before any test code runs, not wherever `dotnet test` was invoked from - neither
+    assumption anticipated in the original notes either).
+  - One shared CarTrackerWebApplicationFactory instance via ICollectionFixture, with every test class
+    tagged [Collection("CarTracker")] to force full serialization - Directory.SetCurrentDirectory is
+    process-wide, so parallel instances would race (matches DEFERRED.md's flagged parallel-safety
+    concern; serialization was chosen as the simpler of its two suggested strategies over per-test
+    temp directories, appropriate for this project's current test volume).
+DELIVERABLES: A working test project, 4 test classes covering idempotency/reliability/security/
+  regression-warning flows, all passing against the real application code (not a stub).
+ACCEPTANCE CRITERIA:
+  - `dotnet test` runs the full suite against real HTTP endpoints and a real (isolated) LiteDB
+    instance, with 0 failures.
+  - No test run touches the developer's real data/ directory or real vehicle - verified directly,
+    not just inferred from the isolation design.
+  - The main app's normal `dotnet build`/`dotnet run` are unaffected by the new project's presence.
+  - Each test covers a real, previously-identified risk (not an arbitrary smoke test): Phase 7's
+    idempotent plan completion, both Phase 12 Part/PartPurchase reliability bugs, Phase 14
+    Increment 1's upload-extension blocklist, and Phase 9's odometer regression warning (including
+    the HasOdometerAdjustment exemption).
+VALIDATION COMMANDS:
+  dotnet build (main solution, confirms no regression from the new project's presence)
+  dotnet test Tests/CarCareTracker.Tests.csproj (the new suite itself)
+  dotnet run (confirms the real app still starts and serves the real vehicle normally after
+  Program.cs's and CarCareTracker.csproj's changes)
+STOP CONDITION: All 10 tests passing, confirmed isolated from real data, real app confirmed
+  unaffected, changes committed.
+```
+
+### What was done
+
+1. Re-read `DEFERRED.md`'s existing Phase 7 test-infrastructure findings rather than re-deriving them
+   from scratch - they already correctly identified the CWD-relative `DbName` path, the need for a
+   public partial `Program` class, and the parallel-test-safety hazard.
+2. Scaffolded `Tests/CarCareTracker.Tests.csproj` (xUnit + `Microsoft.AspNetCore.Mvc.Testing`,
+   referencing the main project), added it to `CarCareTracker.sln`.
+3. Hit a build error immediately: the main `CarCareTracker.csproj`'s default SDK-style recursive glob
+   was also compiling every `.cs` file under the newly-created `Tests/` subdirectory into the *main*
+   app (which doesn't reference xUnit), since `Tests/` is nested under the main project's own root.
+   Fixed by explicitly excluding `Tests/**/*.cs` (and `Content`/`None`) from the main project's globs
+   - a real gap in the original Phase 7 notes, only discoverable by actually wiring the project in.
+4. Built `CarTrackerWebApplicationFactory`, implementing DEFERRED.md's CWD-isolation finding (switch
+   the process's current directory to a fresh temp folder before the host builds, so `data/
+   cartracker.db` and friends resolve there instead of the real project's `data/`).
+5. Hit two further, unanticipated problems getting the host to actually start under test, both
+   diagnosed empirically (adding temporary diagnostic output and re-running, not guessed at):
+   - `WebApplicationFactory`'s built-in content-root auto-detection guessed
+     `<repo>\CarCareTracker\` (assuming a "solution/ProjectName/ProjectName.csproj" folder layout)
+     instead of `<repo>\` itself, since this repo's actual layout is flat
+     (`CarCareTracker.csproj` lives directly in the repo root). This produced a
+     `DirectoryNotFoundException` before any of my own code ran.
+   - Switching to an explicit `ConfigureWebHost` + `UseContentRoot(Directory.GetCurrentDirectory())`
+     call produced a *different* failure (`WebRootPath` came back null, crashing
+     `StaticHelper.CheckMigration`) - diagnostic output revealed `Directory.GetCurrentDirectory()`
+     at that point was already `Tests\bin\Debug\net10.0` (the test assembly's own build output
+     folder), because `dotnet test`'s VSTest host sets the process's working directory there before
+     any test code executes, not wherever `dotnet test` was actually invoked from.
+   - Fixed by walking up from `AppContext.BaseDirectory` looking for `CarCareTracker.csproj` by name
+     - the one content-root-finding approach that depends on neither WebApplicationFactory's
+     layout assumption nor the process's current-directory state at any point in time.
+6. Wrote 4 test classes (10 tests total), each covering a specific, previously-identified risk rather
+   than a generic smoke test:
+   - `PlanCompletionIdempotencyTests` (Phase 7): completes the same plan record 3 times, asserts
+     exactly 1 resulting `ServiceRecord`.
+   - `PartPurchaseReliabilityTests` (Phase 12): asserts deleting a vehicle also deletes its
+     `PartPurchase` records; asserts a `PartPurchase`'s attachment survives a deep-clean sweep.
+   - `FileUploadSecurityTests` (Phase 14 Increment 1): asserts `.html`/`.svg`/`.js` uploads are
+     rejected, a normal `.txt` upload succeeds, and a mixed multi-file batch keeps only the
+     legitimate file.
+   - `OdometerRegressionTests` (Phase 9): asserts a lower-mileage entry is flagged but still saved,
+     and that `HasOdometerAdjustment` suppresses the flag.
+7. Debugged one test failure that turned out to be a test-authoring mistake, not an app bug: the
+   idempotency test's plan-add payload used `priority: "Medium"`, which isn't a valid `PlanPriority`
+   value (`Critical`/`Normal`/`Low` are) - the API correctly rejected it with 400; fixed the test.
+8. Verified the full suite passes twice in a row (stability, not a one-off pass), confirmed the real
+   app's `dotnet build`/`dotnet run` are unaffected by the new project's presence, and confirmed
+   directly (not just by isolation design) that the real vehicle and `data/` directory were untouched
+   by any test run.
+9. Noted one minor, accepted limitation: `LiteDBHelper` doesn't implement `IDisposable`, so its
+   underlying `LiteDatabase` file handle isn't guaranteed released by the time the test host disposes
+   - the fixture's temp-directory cleanup is therefore best-effort and can leave an empty-ish folder
+   in the OS temp directory after a run. Never contains real data (only throwaway test-run state),
+   and not worth changing the app's production DI lifecycle just for test cleanup - left as a known,
+   low-cost trade-off rather than "fixed."
+
+### Result
+
+Complete. A real, working, isolated integration test project now exists, covering four previously-
+identified high-risk flows with 10 passing tests. Not exhaustive coverage of the whole app - a
+starting point per DEFERRED.md's own framing, ready for more tests to be added incrementally as
+future work touches other areas.

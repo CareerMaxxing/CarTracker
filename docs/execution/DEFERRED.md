@@ -160,26 +160,20 @@ doc that first identified it, with enough context to pick back up cold.
 
 ## Test infrastructure (from Phase 7 — Planned Work → Service Record)
 
-- **Automated test project** — no xUnit/integration-test project exists anywhere in this codebase.
-  Phase 7's idempotency fix was specifically flagged (in `CLAUDE.md` and multiple prior phase docs)
-  as the natural first candidate for one, and was investigated in detail before being deferred
-  again by explicit user decision. Concrete findings preserved so a future increment can start
-  without re-deriving them (full detail in `PHASE_07.md`):
-  - `Helper/StaticHelper.cs`'s `DbName = "data/cartracker.db"` is a relative path resolved against
-    the process's working directory (via `LiteDBHelper`) — test isolation is achievable by
-    controlling the test process's working directory before first DB access, **no production code
-    changes needed** for this part.
-  - Needs `public partial class Program { }` appended to `Program.cs` so a separate test assembly
-    can reference it as `WebApplicationFactory<Program>`'s type parameter (top-level statement
-    programs generate this class `internal` by default).
-  - Needs a new test project (xUnit + `Microsoft.AspNetCore.Mvc.Testing`), added to
-    `CarCareTracker.sln`.
-  - Needs a parallel-test-safety strategy (xUnit parallelizes test classes by default; multiple
-    classes sharing one working-directory-relative DB path would interfere with each other) —
-    shared fixture, `[Collection]`-based serialization, or per-test temp directories.
-  - Given this codebase's fat controllers (20+ constructor dependencies each), `WebApplicationFactory`-
-    based HTTP-level integration testing is the practical approach here, not per-action unit tests
-    with mocked dependencies.
+- **Automated test project** — ✅ built in Phase 14 Increment 2 (`Tests/CarCareTracker.Tests.csproj`,
+  xUnit + `WebApplicationFactory`), no longer deferred. 10 tests passing, covering Phase 7's
+  idempotency fix, both Phase 12 Part/PartPurchase reliability bugs, Phase 14's upload-extension
+  blocklist, and Phase 9's odometer regression warning. See `PHASE_14.md` Increment 2 for what it
+  covers, how isolation from the real `data/` directory works, and two content-root-resolution
+  quirks (`WebApplicationFactory`'s layout assumption, `dotnet test`'s VSTest CWD behavior) that
+  weren't anticipated in the original investigation below but were resolved.
+  - **Not yet covered**: everything else. This is a starting point, not exhaustive coverage - add
+    tests incrementally as future work touches other areas, rather than a single dedicated pass.
+  - Original Phase 7 investigation findings (superseded by the above, kept for history): `DbName`'s
+    CWD-relative resolution, the need for `public partial class Program`, and the parallel-test-safety
+    hazard (xUnit parallelizes test classes by default) were all confirmed accurate and used as-is;
+    the parallel-safety strategy chosen was full `[Collection]`-based serialization via one shared
+    `ICollectionFixture`, not per-test temp directories.
 - **Gas/Tax CSV import/export awareness for planned work** — `Controllers/Vehicle/ImportController.cs`'s
   CSV column mapping for `PlanRecord` wasn't checked/extended for the two new target types added in
   Phase 7. Narrower gap than the ActualCost one already listed above; same general category.

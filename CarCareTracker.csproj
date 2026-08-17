@@ -14,4 +14,12 @@
     <PackageReference Include="Npgsql" Version="9.0.5" />
   </ItemGroup>
 
+  <!-- Tests/ is a sibling project directory nested under this one - exclude it from this project's
+       default recursive globs so its xUnit-only source files aren't compiled into the main app. -->
+  <ItemGroup>
+    <Compile Remove="Tests/**/*.cs" />
+    <Content Remove="Tests/**/*" />
+    <None Remove="Tests/**/*" />
+  </ItemGroup>
+
 </Project>

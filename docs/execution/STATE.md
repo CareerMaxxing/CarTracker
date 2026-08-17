@@ -5,74 +5,84 @@ conversation history.
 
 ```
 PROJECT STATUS
-Current phase:      Phase 14 — V1 Hardening (Increment 1: Security Review)
-Current task:       PHASE-14-01 (see docs/execution/PHASE_14.md) — security review of Phases 1-12
-Status:             Complete. Found and fixed two real, empirically-confirmed vulnerabilities (not
-                     just theoretical): a static-file auth bypass on /documents,/images,/temp, and
-                     unrestricted file-type upload enabling stored XSS. Both explicitly approved by
-                     the user before implementing (security-sensitive architectural decisions per
-                     CLAUDE.md's mandatory stop conditions), both curl-verified fixed with no
-                     regression to the default EnableAuth=off mode or to public static assets. Real
-                     vehicle data was read-only throughout testing.
-Last completed:      Phase 13 confirmed deferred (AI/OCR, no implementation, per CLAUDE.md's locked
-                     decision). User then chose "security review" as Phase 14's first priority (of
-                     four offered: security/tests/error-handling/accessibility). Findings:
-                     (1) StaticFileOptions.OnPrepareResponse's Response.Redirect() cannot stop
-                     StaticFileMiddleware from writing a file's body - it fires after the middleware
-                     has already committed to serving 200 + content. Verified live: an unauthenticated
-                     request for a real document, with EnableAuth on, returned the full PDF despite a
-                     302 status. Compounded by app.UseAuthentication() never being called anywhere,
-                     so HttpContext.User was never populated for the static-file pipeline at all -
-                     the IsAuthenticated check was evaluating a permanently-default identity.
-                     (2) FilesController.UploadFile accepted any file type; since /documents and
-                     /images serve files back same-origin with content-type inferred from extension,
-                     an uploaded .html/.svg with embedded script becomes stored XSS reachable by any
-                     collaborator who opens it. Verified live: uploaded an alert()-payload .html file,
-                     confirmed it was accepted. Fixed both after user sign-off: added
-                     app.UseAuthentication() + a short-circuiting gate middleware before
-                     UseStaticFiles for the three protected roots; added a fixed extension blocklist
-                     in UploadFile (script/executable/active-content types), rejecting silently
-                     (empty response) to match the existing convention already relied on by
-                     uploadFileAsync's caller in shared.js.
-Next task:           Phase 14 takes increments, not one pass - remaining areas (automated tests,
-                     accessibility, mobile/responsive validation, performance) are open. Ask the user
-                     which to prioritize next, or whether this is a good stopping point for now.
-Known blockers:      1. No browser/screenshot tool in this environment - this increment was entirely
-                        backend/pipeline-level and fully curl-verifiable; a live browser check isn't
-                        especially valuable for it (no new UI surface).
-                     2. No test project exists yet - investigated in Phase 7, concrete technical path
-                        documented in DEFERRED.md, deferred again by explicit user choice at the time;
-                        now also a candidate for a future Phase 14 increment if the user wants it.
-                     3. See docs/execution/DEFERRED.md for the full consolidated list of
-                        intentionally-punted items. This increment added: CSRF token infrastructure
-                        (not deeply investigated, plausible-by-design given the API-first
-                        Basic-Auth/API-key threat model, but unverified), Content-Security-Policy (no
-                        header set anywhere, would need an inline-script/style audit first).
+Current phase:      Phase 14 — V1 Hardening (Increment 2: Automated Test Project)
+Current task:       PHASE-14-02 (see docs/execution/PHASE_14.md) — stand up the test project deferred
+                     since Phase 7
+Status:             Complete. Tests/CarCareTracker.Tests.csproj (xUnit + WebApplicationFactory) now
+                     exists, 10 tests passing covering Phase 7's idempotency fix, both Phase 12
+                     Part/PartPurchase reliability bugs, Phase 14 Increment 1's upload blocklist, and
+                     Phase 9's odometer regression warning. Verified: suite passes twice in a row
+                     (stability), real dotnet build/dotnet run unaffected, real vehicle/data
+                     directory confirmed untouched by any test run (not just inferred from the
+                     isolation design - checked directly).
+Last completed:      Phase 14 Increment 1 (security review) finished and pushed. User then chose
+                     "automated test project" as Increment 2 (of four offered: tests/error-handling/
+                     accessibility/pause-here). Implementation: added `public partial class Program`
+                     to Program.cs; scaffolded the new test project and added it to the .sln; hit and
+                     fixed a build-glob conflict (the main csproj was compiling Tests/'s xUnit-only
+                     source files into itself, since Tests/ nests under the main project's root -
+                     fixed by excluding Tests/**/*.cs from the main project); built
+                     CarTrackerWebApplicationFactory implementing the CWD-isolation approach Phase 7
+                     had already identified, then hit two further problems NOT anticipated in the
+                     original investigation, both diagnosed empirically (temporary diagnostic output,
+                     not guessed at): (1) WebApplicationFactory's content-root auto-detection assumes
+                     a "solution/ProjectName/ProjectName.csproj" layout and guessed wrong for this
+                     repo's flat layout; (2) `dotnet test`'s VSTest host sets the process's working
+                     directory to the test assembly's own bin output folder before test code runs, so
+                     Directory.GetCurrentDirectory() couldn't be trusted for finding the real app
+                     either. Fixed by walking up from AppContext.BaseDirectory looking for
+                     CarCareTracker.csproj by name - the one approach depending on neither assumption.
+                     Wrote 4 test classes (10 tests), debugged one real test-authoring mistake (used
+                     an invalid PlanPriority value), got to a stable, real, all-passing suite.
+Next task:           Phase 14 takes increments - accessibility, mobile/responsive validation, and
+                     performance review remain open. Ask the user for the next priority, or whether
+                     to pause here.
+Known blockers:      1. No browser/screenshot tool in this environment - this increment was backend/
+                        tooling-only (a new test project), no UI surface to review live.
+                     2. See docs/execution/DEFERRED.md for the full consolidated list of
+                        intentionally-punted items. The "Test infrastructure" entry there is now
+                        marked done (not deferred) with a pointer to what it covers and what it
+                        doesn't (everything outside those 4 flows - not exhaustive coverage, a
+                        starting point).
 Open decisions:      What to prioritize next within Phase 14 (or elsewhere) - ask the user rather
                      than assume. Standing instruction: verify and approve each increment/phase
                      before the next one starts.
-Do not:              Assume Phase 14 is "done" - it's an open-ended phase taken in increments; only
-                     the security-review increment is complete. Do not implement CSRF tokens or a CSP
-                     header without discussing first - both are real scope (the latter needs an
-                     inline-script/style audit to avoid breaking the UI) and neither was requested
-                     yet. Do not re-add the old OnPrepareResponse-based auth checks on the static
-                     file routes - they're structurally incapable of blocking content (this was the
-                     actual bug); any future change to those routes' auth must go through the gate
-                     middleware in Program.cs, not StaticFileOptions callbacks. Do not assume
-                     SQLite is available anywhere in this codebase. Do not assume a fresh vehicle/
-                     user has any tabs visible beyond Dashboard - VisibleTabs defaults to
-                     [Dashboard] only. Do not add a "MOT"/"Part"/etc. (any non-record-type) value to
-                     the ImportMode enum - use a dedicated enum or a plain string instead. When any
-                     controller does a "move files from temp"/reconstruct-UploadedFiles step, it MUST
-                     explicitly copy every field it wants to keep. When adding a new entity type with
-                     its own Files/attachments, wire it into GetVehicleDocuments/
-                     DeleteVehicleRecords/ClearUnlinkedDocuments in Logic/VehicleLogic.cs (this
-                     exact bug already happened once for real, for Part/PartPurchase - Phase 12).
-                     Any enum embedded directly in a type used as a JSON request-body wire format
-                     needs its own JsonStringEnumConverter. When calling record-add API endpoints for
-                     testing, field names/casing are inconsistent across export models and dates must
-                     match the server's locale (dd/mm/yyyy here). Note records require both
-                     Description AND NoteText. Some fields (e.g. Vehicle.HasOdometerAdjustment) are
+Do not:              Assume Phase 14 is "done" - security review and automated tests are the only
+                     two increments complete; accessibility/mobile/performance remain open. Do not
+                     assume `dotnet test` can be run from just anywhere - CarTrackerWebApplicationFactory
+                     finds the real app's content root by walking up from AppContext.BaseDirectory
+                     looking for CarCareTracker.csproj, which works regardless of invocation
+                     directory, but the test project must stay physically under the main repo for
+                     that walk-up to succeed. Do not add new files directly under Tests/ expecting
+                     them to run in parallel with each other - every test class must carry
+                     [Collection("CarTracker")] to share the one serialized fixture instance
+                     (Directory.SetCurrentDirectory inside the fixture is process-wide; parallel
+                     instances would race). Do not be alarmed by an empty-ish leftover folder in the
+                     OS temp directory named CarTrackerTests_* after a test run - LiteDBHelper isn't
+                     IDisposable so cleanup is best-effort; it never contains real data, just
+                     throwaway test-run state, and is a known accepted trade-off, not a bug to chase.
+                     If the main CarCareTracker.csproj is ever modified, remember it explicitly
+                     excludes Tests/**/*.cs/Content/None from its own globs - don't remove that
+                     exclusion without re-verifying the main app still builds standalone. Do not
+                     re-add the old OnPrepareResponse-based auth checks on the static file routes -
+                     they're structurally incapable of blocking content; any future change to those
+                     routes' auth must go through the gate middleware in Program.cs. Do not implement
+                     CSRF tokens or a CSP header without discussing first - both are real scope and
+                     neither was requested yet. Do not assume SQLite is available anywhere in this
+                     codebase. Do not assume a fresh vehicle/user has any tabs visible beyond
+                     Dashboard - VisibleTabs defaults to [Dashboard] only. Do not add a "MOT"/"Part"/
+                     etc. (any non-record-type) value to the ImportMode enum. When any controller
+                     does a "move files from temp"/reconstruct-UploadedFiles step, it MUST explicitly
+                     copy every field it wants to keep. When adding a new entity type with its own
+                     Files/attachments, wire it into GetVehicleDocuments/DeleteVehicleRecords/
+                     ClearUnlinkedDocuments in Logic/VehicleLogic.cs. Any enum embedded directly in a
+                     type used as a JSON request-body wire format needs its own
+                     JsonStringEnumConverter. When calling record-add API endpoints for testing
+                     (curl or the new test project), field names/casing are inconsistent across
+                     export models and dates must match the server's locale (dd/mm/yyyy here). Note
+                     records require both Description AND NoteText. PlanRecord's Priority must be one
+                     of Critical/Normal/Low (not e.g. "Medium" - a real mistake caught while writing
+                     this increment's tests). Some fields (e.g. Vehicle.HasOdometerAdjustment) are
                      MVC-only, not exposed on the API's *ImportModel DTOs. Part is NOT vehicle-scoped
                      (global catalog) but PartPurchase IS (VehicleId, 0=shop-wide).
                      PartPurchase.QuantityRemaining must be set explicitly by the caller, never by
@@ -82,21 +92,13 @@ Do not:              Assume Phase 14 is "done" - it's an open-ended phase taken 
                      preserved (not reset to Manual) on manual edits of auto-inserted records. The
                      root/dev user's config (EnableAuth=false) reads directly from
                      data/config/userConfig.json but is cached in-memory for up to 1 hour - restart
-                     the app after editing it. curl's `-d "key=/path/with/slashes"` can silently fail
-                     to bind a form field in ways `--data-urlencode` or a query-string param won't.
-Last validation:     dotnet build (0 errors); with EnableAuth temporarily enabled (userConfig.json
-                     backed up first, restored byte-identical after, app restarted before and after
-                     each toggle): unauthenticated request to a real document returned
-                     Content-Length: 0 after the fix (previously the full file despite a 302);
-                     EnableAuth=off mode confirmed unaffected (same document still loads normally);
-                     /css/site.css confirmed still anonymous in both modes. Upload blocklist: .html
-                     and .svg payloads with embedded script both rejected (empty response, no file
-                     written); a normal .txt upload unaffected; a mixed multi-file batch kept only the
-                     legitimate file. Real vehicle data read-only throughout (the one genuine document
-                     used for the auth-bypass test was never modified or deleted) — 2026-08-17.
-Last commit:         76b43d6 — "Phase 14 (security review): fix static-file auth bypass +
-                     unrestricted upload" — both fixes approved by the user before implementation,
-                     verified live, pushed 2026-08-17.
+                     the app after editing it.
+Last validation:     dotnet build (main solution, 0 errors); dotnet test Tests/CarCareTracker.Tests.csproj
+                     (10/10 passing, run twice for stability); dotnet run (real app confirmed starting
+                     normally, real vehicle - id 1, BMW Z4 - confirmed present and unaffected) —
+                     2026-08-17.
+Last commit:         a5fbbe6 — "Record Phase 14 security review commit hash in STATE.md" (this
+                     increment's commit not yet made - pending user confirmation first).
 ```
 
 ## Environment notes for future sessions
@@ -107,3 +109,6 @@ Last commit:         76b43d6 — "Phase 14 (security review): fix static-file au
   `upstream` = `https://github.com/hargata/lubelog.git` (fetch-only, for tracking upstream fixes).
 - Local run: `dotnet run --urls http://localhost:5299` from the repo root; `data/` is auto-created
   and gitignored.
+- Automated tests: `dotnet test Tests/CarCareTracker.Tests.csproj` from the repo root (or anywhere -
+  content root is found by walking up for CarCareTracker.csproj, not by invocation directory). Fully
+  isolated from real data; safe to run anytime.
