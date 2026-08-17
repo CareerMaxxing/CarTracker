@@ -1,4 +1,4 @@
-@using CarCareTracker.Helper
+﻿@using CarCareTracker.Helper
 @inject IConfigHelper config
 @inject ITranslationHelper translator
 @model Part
@@ -8,7 +8,7 @@
     var userLanguage = userConfig.UserLanguage;
 }
 <div class="modal-header">
-    <h5 class="modal-title">@(isNew ? translator.Translate(userLanguage, "Add New Part") : translator.Translate(userLanguage, "Edit Part"))</h5>
+    <h5 class="modal-title" id="partModalLabel">@(isNew ? translator.Translate(userLanguage, "Add New Part") : translator.Translate(userLanguage, "Edit Part"))</h5>
     <button type="button" class="btn-close" onclick="hideAddPartModal()" aria-label="Close"></button>
 </div>
 <div class="modal-body" onkeydown="handleEnter(this)">

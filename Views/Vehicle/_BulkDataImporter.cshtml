@@ -7,7 +7,7 @@
 }
 @model ImportMode
 <div class="modal-header">
-    <h5 class="modal-title">@translator.Translate(userLanguage, "Import Data from CSV")</h5>
+    <h5 class="modal-title" id="bulkImportModalLabel">@translator.Translate(userLanguage, "Import Data from CSV")</h5>
     <button type="button" class="btn-close" onclick="hideBulkImportModal()" aria-label="Close"></button>
 </div>
 <div class="modal-body">

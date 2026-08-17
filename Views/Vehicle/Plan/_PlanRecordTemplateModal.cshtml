@@ -7,7 +7,7 @@
 }
 @model List<PlanRecordInput>
 <div class="modal-header">
-    <h5 class="modal-title">@translator.Translate(userLanguage,"Select Template")</h5>
+    <h5 class="modal-title" id="planRecordTemplateModalLabel">@translator.Translate(userLanguage,"Select Template")</h5>
     <button type="button" class="btn-close" onclick="hidePlanRecordTemplatesModal()" aria-label="Close"></button>
 </div>
 <div class="modal-body">

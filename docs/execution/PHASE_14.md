@@ -281,3 +281,112 @@ Complete. A real, working, isolated integration test project now exists, coverin
 identified high-risk flows with 10 passing tests. Not exhaustive coverage of the whole app - a
 starting point per DEFERRED.md's own framing, ready for more tests to be added incrementally as
 future work touches other areas.
+
+## Increment 3: Accessibility — modal `aria-labelledby` wiring
+
+A background code-level audit (no browser available in this environment) surveyed the Views tree
+for accessibility issues, since a code audit is the one accessibility technique that doesn't require
+live rendering to verify. It found four issue categories: icon-only buttons/links with no accessible
+name (40+ files), custom `onclick` divs/spans/table-rows with no keyboard support (~29 files), form
+inputs without labels (localized), and Bootstrap modals missing `aria-labelledby` (all ~41 of them).
+Given the scale, the user was asked how much to fix now and chose the narrowest, highest-confidence
+option: modal `aria-labelledby` wiring only. The other three categories are recorded in
+`DEFERRED.md` for a future increment.
+
+### Task packet
+
+```
+TASK ID: PHASE-14-03
+TITLE: Wire aria-labelledby on every Bootstrap modal
+OBJECTIVE: Give every modal dialog in the app a screen-reader-announced purpose on open, without
+  changing any visible UI.
+INPUTS: The accessibility audit's modal findings; every Views/**/*.cshtml file containing
+  `class="modal fade"` or `class="modal-title"`.
+ALLOWED SCOPE: Adding `id` to each modal's title element (or reusing one if it already had one -
+  several already did) and `aria-labelledby` (or `aria-label` for the few modals with no title text
+  at all) to the corresponding outer `.modal.fade` shell. Fixing any id collision surfaced along the
+  way (a title `id` reused by two different modals is worse than no `id` - aria-labelledby would
+  resolve to whichever element happens to come first in the DOM).
+NON-SCOPE: Icon-only buttons, keyboard-operability of custom click handlers, unlabeled form inputs,
+  image alt text - all real findings from the same audit, deferred to a future increment by explicit
+  user choice, not overlooked. A generic Parts-catalog-style `vehicleDataTableModal` (reused for
+  several different report views with no single fixed title) and `inputSuppliesModal` (JS-templated
+  content, no clean static title to hook) were left unresolved rather than force a bad pairing -
+  noted in DEFERRED.md instead of guessed at.
+IMPLEMENTATION REQUIREMENTS:
+  - This app's modals are almost universally AJAX-loaded: a persistent outer shell
+    (`<div class="modal fade" id="XModal">` with an empty `<div class="modal-content"
+    id="XModalContent">`) lives in one file, populated at runtime from a separate partial view (e.g.
+    `Service/_ServiceRecordModal.cshtml`) that contains the actual `.modal-title`. Both the shell's
+    `id` and the partial's title `id` are static strings baked into the Razor source, so
+    `aria-labelledby` on the shell can safely reference an `id` that doesn't exist in the DOM until
+    that content loads - by the time a modal is actually opened, the referenced content is already
+    there (every `showXModal()` JS function loads content before calling `.modal('show')`).
+  - Correctly pair each of the 41 modal shells with its actual content-providing partial by tracing
+    the real AJAX call chain (JS `$.get(url).html(data)` → matching controller action → its
+    `PartialView("...")` call), not by guessing from naming convention alone - several pairings
+    weren't obvious from names (e.g. `inspectionRecordTemplateModal`'s content partial is named
+    `_InspectionRecordTemplateSelector`, not anything containing "Modal").
+  - Prefer an already-existing `id` on a modal's title over inventing a new one, to avoid touching
+    more than necessary - several modals already had one (apparently for other purposes) that just
+    needed to be wired up on the outer shell.
+DELIVERABLES: aria-labelledby (or aria-label) added to every modal shell that could be confidently
+  paired with real content; two real id-collision bugs found and fixed along the way.
+ACCEPTANCE CRITERIA:
+  - Every modal's outer shell has aria-labelledby pointing at an id that actually exists in its
+    paired content partial (or aria-label, for the handful with no title text at all).
+  - No two modal-title elements that can appear on the same page share the same id.
+  - The main app's build and the full automated test suite are both unaffected.
+VALIDATION COMMANDS:
+  dotnet build
+  dotnet test Tests/CarCareTracker.Tests.csproj
+  dotnet run, then curl the rendered HTML for a representative sample across different pages
+  (Vehicle/Index tab partials, Home/Index, Admin/Index, Home Settings) confirming each
+  aria-labelledby value matches a real id in the corresponding rendered content.
+STOP CONDITION: Build and test suite green, spot-checked rendering confirms correct pairing across a
+  representative sample, changes committed.
+```
+
+### What was done
+
+1. Enumerated all 41 distinct modal shell `id`s across the Views tree (`grep` for
+   `class="modal fade"`), then wrote a small Python analysis pass to classify each as
+   AJAX-content-loaded (nearly all of them) versus having an inline title already.
+2. Traced the real content-providing partial for each shell by following the actual runtime chain -
+   JS function → AJAX URL → controller action → its `PartialView(...)` call - rather than guessing
+   from filename similarity, since several pairings weren't obvious from naming alone.
+3. Wrote a batch Python script (not 40+ manual edits) that, per modal: added an `id` to the content
+   partial's `.modal-title` (or detected and reused an existing one), then added the matching
+   `aria-labelledby` to every outer shell referencing that content.
+4. The script's own output surfaced two real, pre-existing bugs, both fixed:
+   - `_AccountModal.cshtml` and `_AttachmentPreview.cshtml` used the exact same `id`
+     (`updateAccountModalLabel`) on their title elements - clearly `_AttachmentPreview.cshtml`'s was
+     copy-pasted from the account modal and never renamed. Since both can appear on the same page
+     (`Home/Index.cshtml` has both), this was a real duplicate-id bug, not just an accessibility gap
+     - fixed by giving `_AttachmentPreview.cshtml` its own unique id.
+   - `Home/_Settings.cshtml`'s `tabReorderModal` used `id="translationEditorModalLabel"` on its own
+     title - copy-pasted from the actual translation editor modal in the same file. Fixed the same
+     way.
+5. Handled three modals with no clean AJAX-loaded title to pair against individually rather than
+   force a fit: `globalSearchModal` and `vehicleCustomWidgetsModal` have no title text at all (used
+   `aria-label` matching their trigger button's own text instead); `tokenModal` is fully
+   self-contained in one file (added both `id` and `aria-labelledby` directly there).
+6. Left two modals unresolved, documented in `DEFERRED.md` rather than guessed at:
+   `vehicleDataTableModal` (reused for several different report drill-down views with no single
+   fixed title) and `inputSuppliesModal` (content built from JS-templated HTML strings, no clean
+   static title to hook an id onto).
+7. Verified: full `dotnet build` (0 errors) and the automated test suite (10/10 passing, confirming
+   this UI-only change didn't regress any application logic); confirmed no remaining id collisions
+   across the whole Views tree by grepping for duplicate `.modal-title` ids (the two benign
+   "duplicates" that remain - `householdModalLabel` used by two admin-only vs. user-only modals that
+   never appear on the same page, and `attachmentPreviewModalLabel` used by two mutually-exclusive
+   `@if/else` branches within the same partial - are both non-issues); spot-checked rendered HTML
+   across Vehicle tab partials, Home, Admin, and Settings pages, confirming every `aria-labelledby`
+   resolves to a real id in the actually-rendered content.
+
+### Result
+
+Complete for the scope chosen. All confidently-pairable modals (39 of 41) now correctly announce
+their purpose to screen readers on open, plus two real duplicate-id bugs fixed as a side effect of
+the same pass. Icon-only buttons, keyboard-operability, and form-label gaps remain for a future
+increment (see `DEFERRED.md`).

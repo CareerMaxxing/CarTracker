@@ -158,6 +158,37 @@ doc that first identified it, with enough context to pick back up cold.
   performance review are all still open (see `PHASE_14.md`'s framing note - Phase 14 takes
   increments rather than one pass). Not deferred/declined, just not yet started.
 
+## Accessibility (from Phase 14 Increment 3 — background code audit + modal fixes)
+
+A code-level accessibility audit (no browser in this environment, so this was a static read of the
+Views tree, not live-rendered verification) found four issue categories. Only the first was fixed
+this increment (user's explicit scope choice); the rest are open for a future increment:
+
+- **Icon-only buttons/links with no accessible name** — dominant pattern, 40+ files. Nearly every
+  row-action button (edit/delete/toolbar icons) is a Bootstrap icon alone inside a `<button>`/`<a>`
+  with no `aria-label`/`title`. One good pattern already exists in the codebase
+  (`<span class="visually-hidden">Toggle Dropdown</span>` on Bootstrap split-dropdown toggles) that
+  could be the fix template for the rest.
+- **Custom `onclick` divs/spans/table-rows with no keyboard support** — ~29 files. Highest-value
+  targets if this gets picked up: the Garage page's vehicle cards
+  (`Views/Home/_GarageDisplay.cshtml`) and global search result rows
+  (`Views/Vehicle/_GlobalSearchResult.cshtml`) - the app's two primary click-driven navigation
+  surfaces, currently not operable by keyboard alone. Every record-list table row shares the same
+  pattern (`<tr onclick="...">`) but is lower priority (diminishing returns given tables matter less
+  to keyboard-only flows than primary navigation).
+- **Form inputs without labels** — localized, not widespread (most record-edit modals already label
+  inputs correctly). The exceptions are toolbar/search inputs: the global search box
+  (`Views/Vehicle/Index.cshtml`) and the Garage search box (`Views/Home/_GarageDisplay.cshtml`).
+- **Images without alt text** — universal but mostly low-severity (the app logo, repeated as
+  branding, would just need `alt=""`). A few meaningful content images do need real alt text:
+  vehicle thumbnails (`Views/Vehicle/Index.cshtml`, `Views/Home/_GarageDisplay.cshtml`) and
+  uploaded-document previews (`Views/Files/_AttachmentPreview.cshtml`).
+- **Two modals left unresolved** (out of 41) rather than force a bad pairing: `vehicleDataTableModal`
+  (`Views/Vehicle/Report/_Report.cshtml`) is reused for several different report drill-down views
+  with no single fixed title; `inputSuppliesModal` (`Views/Vehicle/Index.cshtml`, content built in
+  `Views/Vehicle/Supply/_SupplyStore.cshtml`) generates its content from JS-templated HTML strings,
+  not a Razor partial with a stable title element to hook an id onto.
+
 ## Test infrastructure (from Phase 7 — Planned Work → Service Record)
 
 - **Automated test project** — ✅ built in Phase 14 Increment 2 (`Tests/CarCareTracker.Tests.csproj`,
