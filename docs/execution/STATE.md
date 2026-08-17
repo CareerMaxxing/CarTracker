@@ -97,8 +97,9 @@ Last validation:     dotnet build (main solution, 0 errors); dotnet test Tests/C
                      (10/10 passing, run twice for stability); dotnet run (real app confirmed starting
                      normally, real vehicle - id 1, BMW Z4 - confirmed present and unaffected) —
                      2026-08-17.
-Last commit:         a5fbbe6 — "Record Phase 14 security review commit hash in STATE.md" (this
-                     increment's commit not yet made - pending user confirmation first).
+Last commit:         68e7c67 — "Phase 14 (automated tests): stand up the test project deferred since
+                     Phase 7" — pushed 2026-08-17, awaiting user confirmation before the next
+                     increment.
 ```
 
 ## Environment notes for future sessions
