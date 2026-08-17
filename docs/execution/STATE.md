@@ -5,16 +5,12 @@ conversation history.
 
 ```
 PROJECT STATUS
-Current phase:      Phase 12 — Local Reliability / Offline Hardening
-Current task:       PHASE-12-01 (see docs/execution/PHASE_12.md) — Part/PartPurchase reliability
-                     gaps + attachment integrity diagnostic
-Status:             Complete. Curl-verified end-to-end on throwaway vehicles/parts (deleted after):
-                     reproduced then fixed two real bugs (deep-clean would have permanently deleted
-                     a live PartPurchase attachment; deleting a vehicle orphaned its PartPurchase
-                     rows forever), added and verified a broken-attachment-link diagnostic, and
-                     confirmed a full backup-delete-restore round trip works. Real vehicle (id 1)
-                     confirmed untouched. Not yet shown to the user live in browser - offering that
-                     before Phase 13.
+Current phase:      Phase 13 — AI/OCR (confirmed deferred, no implementation)
+Current task:       None - PHASE_13.md records the explicit decision not to build anything here,
+                     per CLAUDE.md's locked "AI/OCR: deferred" rule and REQUIREMENTS.md
+                     NFR-NONGOAL-01. Verified via grep that no AI/OCR code exists anywhere.
+Status:             Complete by design (nothing implemented, matching the locked decision). Phase 12
+                     (Local Reliability) is also complete and committed - see below.
 Last completed:      Phase 11 finished (cross-vehicle global search, see PHASE_11.md), user confirmed
                      and approved moving to Phase 12. Phase 12: audited MakeBackup/RestoreBackup
                      (confirmed whole-DB-file-copy already covers Part/PartPurchase, no code change
@@ -27,10 +23,10 @@ Last completed:      Phase 11 finished (cross-vehicle global search, see PHASE_1
                      pattern), and added a new GetBrokenAttachmentLinks diagnostic (the reverse of
                      the existing ClearUnlinkedDocuments - reports, never auto-deletes, DB records
                      pointing at missing files) surfaced in the same /api/cleanup response.
-Next task:           Show the user the /api/cleanup?deepClean=true response (now includes
-                     broken_attachment_links_found) and confirm the fixes look right, then ask
-                     before starting Phase 13 (AI/OCR - explicitly deferred, no feature work) or
-                     Phase 14 (V1 Hardening).
+Next task:           Phase 14 (V1 Hardening) is next and is explicitly open-ended per its roadmap
+                     description (tests, accessibility, responsive/mobile validation, performance,
+                     security review, error handling). Ask the user for scope/priorities before
+                     starting rather than guessing at an unbounded phase.
 Known blockers:      1. No browser/screenshot tool in this environment - Phase 12 is entirely a
                         backend/data-integrity phase, fully curl-verifiable, no UI surface to review
                         live beyond the JSON response shape shown to root users on the Admin cleanup
@@ -90,8 +86,8 @@ Last validation:     dotnet build (0 errors); on throwaway vehicles/parts (creat
                      (confirmed via direct query, not just absence from the UI); a full backup - delete
                      vehicle - restore backup round trip brought the vehicle back exactly as it was —
                      2026-08-17.
-Last commit:         bf28f80 — "Phase 12: fix Part/PartPurchase reliability gaps + attachment
-                     diagnostic" — user confirmed and approved moving to Phase 13, 2026-08-17.
+Last commit:         f6b49d2 — "Record Phase 12 commit hash in STATE.md". Phase 13's PHASE_13.md/
+                     ROADMAP.md updates not yet committed - pending with this STATE.md update.
 ```
 
 ## Environment notes for future sessions

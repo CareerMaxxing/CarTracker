@@ -18,7 +18,7 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
 | 10 | Documents | First-class attachments (invoice, MOT, V5C, insurance, photo, datasheet, other) associated with vehicles, parts, planned work, and service records. | ✅ Complete — DocumentType categorization + Documents tab filtering, curl-verified (PHASE_10.md); a systemic bug where Type was silently dropped on every MVC save was caught and fixed before shipping |
 | 11 | Global Search | Command-palette style search across parts, service records, projects, documents, vehicles. Confirm the right indexing approach given the actual data layer (see ARCHITECTURE.md — LiteDB/Postgres, not SQLite). | ✅ Complete — cross-vehicle search extending existing in-app filtering (decision recorded in ARCHITECTURE.md), curl-verified (PHASE_11.md); deep-linking to a specific record across a vehicle navigation left as a candidate refinement |
 | 12 | Local Reliability / Offline Hardening | Reliable startup, DB integrity, attachment integrity, backup, restore, export/import, recovery from interrupted operations. | ✅ Complete — found and fixed two real data-loss/orphan bugs affecting Part/PartPurchase (missing from cleanup + vehicle-deletion cascade), added a broken-attachment-link diagnostic, backup/restore round-trip curl-verified (PHASE_12.md) |
-| 13 | AI/OCR | Explicitly deferred. Leave clean extension points only; no feature work. | Deferred |
+| 13 | AI/OCR | Explicitly deferred. Leave clean extension points only; no feature work. | ✅ Confirmed deferred — no AI/OCR code exists anywhere in the codebase (verified by grep); see PHASE_13.md |
 | 14 | V1 Hardening | Unit/integration/UI/migration/duplicate-operation/adapter-failure/backup-restore tests, error handling, accessibility, responsive validation, performance, security review. | Not started |
 
 ## Human review checkpoints
@@ -32,7 +32,8 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
 - After Mileage/Odometer (Phase 9): Source provenance + regression warning curl-verified. ✅ done, user approved moving to Phase 10.
 - After Documents (Phase 10): DocumentType categorization curl-verified, including the MVC-save bug fix. ✅ done, user approved moving to Phase 11.
 - After Global Search (Phase 11): cross-vehicle search curl-verified, technical decision recorded in ARCHITECTURE.md. ✅ done, user approved moving to Phase 12.
-- After Local Reliability (Phase 12): two real Part/PartPurchase reliability bugs found and fixed, curl-verified. ✅ done. **← awaiting go-ahead before Phase 13**
+- After Local Reliability (Phase 12): two real Part/PartPurchase reliability bugs found and fixed, curl-verified. ✅ done, user approved moving to Phase 13.
+- Phase 13 (AI/OCR): confirmed deferred, no implementation, per CLAUDE.md's locked decision. ✅ done. **← next is Phase 14 (V1 Hardening) — open-ended, needs scope/priority discussion with the user before starting**
 - Before real DVLA/DVSA adapters: approve credential/API architecture.
 - Before V1: final system review.
 
