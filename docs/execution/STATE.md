@@ -60,7 +60,7 @@ Last validation:     dotnet build (0 errors, 224 warnings - 209 pre-existing + 1
                      verified via curl including cross-vehicle price history and shop-wide purchases;
                      server start + /health verified green throughout; user's real vehicle confirmed
                      untouched — 2026-08-17.
-Last commit:         (pending — Phase 5 commit, created immediately after this file)
+Last commit:         ea5926b — "Phase 5: Part/PartPurchase domain, backend and API"
 ```
 
 ## Environment notes for future sessions
