@@ -6,11 +6,18 @@
     var userLanguage = userConfig.UserLanguage;
 }
 @model List<GenericReportModel>
+@{
+    var documentTypesPresent = Model.SelectMany(x => x.Files).Select(x => x.Type).Distinct();
+}
 <div class="d-flex flex-column vehicleTabPane">
     <div class="row">
         <div class="d-flex justify-content-between">
             <div class="d-flex align-items-center flex-wrap gap-2">
                 <span class="badge bg-success">@($"{translator.Translate(userLanguage, "# of Documents")}: {Model.Sum(x => x.Files.Count)}")</span>
+                @foreach (DocumentType documentType in documentTypesPresent)
+                {
+                    <span onclick="filterTable('documents-tab-pane', this)" class="user-select-none rounded-pill badge bg-secondary tagfilter" style="cursor:pointer;"><i class="bi @StaticHelper.GetDocumentTypeIcon(documentType) me-1"></i>@documentType</span>
+                }
             </div>
         </div>
     </div>
@@ -21,9 +28,10 @@
                 <table class="table table-hover">
                     <thead>
                         <tr class="d-flex">
-                            <th scope="col" class="col-3 text-truncate flex-grow-1 flex-shrink-1">@translator.Translate(userLanguage, "Type")</th>
+                            <th scope="col" class="col-2 text-truncate flex-grow-1 flex-shrink-1">@translator.Translate(userLanguage, "Category")</th>
+                            <th scope="col" class="col-3 text-truncate flex-grow-1 flex-shrink-1">@translator.Translate(userLanguage, "Record Type")</th>
                             <th scope="col" class="col-2 text-truncate flex-grow-1 flex-shrink-1">@translator.Translate(userLanguage, "Date")</th>
-                            <th scope="col" class="col-7 text-truncate flex-grow-1 flex-shrink-1">@translator.Translate(userLanguage, "File")</th>
+                            <th scope="col" class="col-5 text-truncate flex-grow-1 flex-shrink-1">@translator.Translate(userLanguage, "File")</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -31,12 +39,15 @@
                         {
                             @foreach (UploadedFiles file in reportData.Files)
                             {
-                                <tr class="d-flex">
-                                    <td class="col-3 text-truncate flex-grow-1 flex-shrink-1" data-label="@translator.Translate(userLanguage, "Type")">
+                                <tr class="d-flex" data-tags="@file.Type">
+                                    <td class="col-2 text-truncate flex-grow-1 flex-shrink-1" data-label="@translator.Translate(userLanguage, "Category")">
+                                        <i class="bi @StaticHelper.GetDocumentTypeIcon(file.Type) me-2"></i>@translator.Translate(userLanguage, file.Type.ToString())
+                                    </td>
+                                    <td class="col-3 text-truncate flex-grow-1 flex-shrink-1" data-label="@translator.Translate(userLanguage, "Record Type")">
                                         <i class="bi @StaticHelper.GetImportModeIcon(reportData.DataType) me-2"></i>@translator.Translate(userLanguage, StaticHelper.GetImportModeName(reportData.DataType, false))
                                     </td>
                                     <td class="col-2 text-truncate flex-grow-1 flex-shrink-1" data-label="@translator.Translate(userLanguage, "Date")">@reportData.Date.ToShortDateString()</td>
-                                    <td class="col-7 text-truncate flex-grow-1 flex-shrink-1" data-label="@translator.Translate(userLanguage, "File")">
+                                    <td class="col-5 text-truncate flex-grow-1 flex-shrink-1" data-label="@translator.Translate(userLanguage, "File")">
                                         <a style="cursor:pointer;" class="uploadedFileName d-flex align-items-center text-truncate" title="@file.Name" onclick="openAttachmentPreview('@file.Name', '@file.Location')">
                                             <span class="me-2"><i class="bi @StaticHelper.GetIconByFileExtension(file.Location)"></i></span><span class="text-link">@file.Name</span>
                                         </a>

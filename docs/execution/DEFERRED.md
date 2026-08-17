@@ -106,6 +106,17 @@ doc that first identified it, with enough context to pick back up cold.
   `OdometerValue` per MOT test, which could be auto-inserted as odometer history in a future
   increment, mirroring the existing auto-insert pattern.
 
+## Documents (from Phase 10 — Documents)
+
+- **Bulk re-categorization** — no way to select multiple existing attachments and set their
+  `DocumentType` in one action; each file's type is set one at a time via the rename dialog. Fine
+  for now given most vehicles have a modest number of attachments; worth a bulk action if that stops
+  being true.
+- **Dedicated document-management screen** — the Documents tab (Phase 4/10) lists and filters
+  documents but attachments are still added/removed from within each record's own modal, not from
+  the Documents tab itself. A "manage documents" screen with its own upload flow is a bigger UI
+  change than this phase's categorization scope.
+
 ## Test infrastructure (from Phase 7 — Planned Work → Service Record)
 
 - **Automated test project** — no xUnit/integration-test project exists anywhere in this codebase.

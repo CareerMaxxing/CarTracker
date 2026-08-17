@@ -706,21 +706,28 @@ function deleteFileFromUploadedFiles(fileLocation, event) {
         $("#uploadedDocumentsLabel").text("");
     }
 }
+var documentTypes = ['Other', 'Invoice', 'MOT', 'V5C', 'Insurance', 'Photograph', 'Datasheet'];
+var documentTypeIcons = { Other: 'bi-folder2', Invoice: 'bi-receipt', MOT: 'bi-clipboard-check', V5C: 'bi-card-heading', Insurance: 'bi-shield-check', Photograph: 'bi-camera', Datasheet: 'bi-file-earmark-text' };
 function editFileName(fileLocation, event) {
     let currentFileName = $(event.parentElement.parentElement).find('a > .text-link').text();
+    let currentFile = uploadedFiles.find(x => x.location == fileLocation);
+    let currentFileType = (currentFile && currentFile.type) ? currentFile.type : 'Other';
+    let typeOptions = documentTypes.map(t => `<option value="${t}" ${t == currentFileType ? 'selected' : ''}>${t}</option>`).join('');
     Swal.fire({
         title: 'Rename File or Link',
         html: `
                     <input type="text" id="newFileName" class="swal2-input" placeholder="New Name" onkeydown="handleSwalEnter(event)" value="${currentFileName}">
+                    <select id="newFileType" class="swal2-select form-select">${typeOptions}</select>
                     `,
-        confirmButtonText: 'Rename',
+        confirmButtonText: 'Save',
         focusConfirm: false,
         preConfirm: () => {
             const newFileName = $("#newFileName").val();
+            const newFileType = $("#newFileType").val();
             if (!newFileName) {
                 Swal.showValidationMessage(`Please enter a valid name`)
             }
-            return { newFileName }
+            return { newFileName, newFileType }
         },
     }).then(function (result) {
         if (result.isConfirmed) {
@@ -728,6 +735,10 @@ function editFileName(fileLocation, event) {
             linkDisplayObject.text(result.value.newFileName);
             var editFileIndex = uploadedFiles.findIndex(x => x.location == fileLocation);
             uploadedFiles[editFileIndex].name = result.value.newFileName;
+            uploadedFiles[editFileIndex].type = result.value.newFileType;
+            var typeIconObject = $(event.parentElement.parentElement).find('a > .file-type-icon');
+            typeIconObject.attr('class', `bi ${documentTypeIcons[result.value.newFileType]} ms-2 text-body-secondary file-type-icon`);
+            typeIconObject.attr('title', result.value.newFileType);
         }
     });
 }

@@ -476,6 +476,26 @@ namespace CarCareTracker.Helper
                     return "bi-file-bar-graph";
             }
         }
+        public static string GetDocumentTypeIcon(DocumentType documentType)
+        {
+            switch (documentType)
+            {
+                case DocumentType.Invoice:
+                    return "bi-receipt";
+                case DocumentType.MOT:
+                    return "bi-clipboard-check";
+                case DocumentType.V5C:
+                    return "bi-card-heading";
+                case DocumentType.Insurance:
+                    return "bi-shield-check";
+                case DocumentType.Photograph:
+                    return "bi-camera";
+                case DocumentType.Datasheet:
+                    return "bi-file-earmark-text";
+                default:
+                    return "bi-folder2";
+            }
+        }
         public static string GetVehicleIdentifier(Vehicle vehicle)
         {
             if (vehicle.VehicleIdentifier == "LicensePlate")

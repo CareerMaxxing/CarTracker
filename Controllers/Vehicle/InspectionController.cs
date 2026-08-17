@@ -183,7 +183,7 @@ namespace CarCareTracker.Controllers
                 return Json(OperationResponse.Failed("Access Denied"));
             }
             //move files from temp.
-            inspectionRecord.Files = inspectionRecord.Files.Select(x => { return new UploadedFiles { Name = x.Name, Location = _fileHelper.MoveFileFromTemp(x.Location, "documents/") }; }).ToList();
+            inspectionRecord.Files = inspectionRecord.Files.Select(x => { return new UploadedFiles { Name = x.Name, Location = _fileHelper.MoveFileFromTemp(x.Location, "documents/"), Type = x.Type }; }).ToList();
             //push back any reminders
             if (inspectionRecord.ReminderRecordId.Any())
             {
@@ -263,7 +263,7 @@ namespace CarCareTracker.Controllers
                 return Json(OperationResponse.Failed("Access Denied"));
             }
             existingRecord.Tags = inspectionRecord.Tags;
-            existingRecord.Files = inspectionRecord.Files.Select(x => { return new UploadedFiles { Name = x.Name, Location = _fileHelper.MoveFileFromTemp(x.Location, "documents/") }; }).ToList();
+            existingRecord.Files = inspectionRecord.Files.Select(x => { return new UploadedFiles { Name = x.Name, Location = _fileHelper.MoveFileFromTemp(x.Location, "documents/"), Type = x.Type }; }).ToList();
             var result = _inspectionRecordDataAccess.SaveInspectionRecordToVehicle(existingRecord);
             if (result)
             {

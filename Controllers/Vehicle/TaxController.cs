@@ -47,7 +47,7 @@ namespace CarCareTracker.Controllers
                 return Json(OperationResponse.Failed("Access Denied"));
             }
             //move files from temp.
-            taxRecord.Files = taxRecord.Files.Select(x => { return new UploadedFiles { Name = x.Name, Location = _fileHelper.MoveFileFromTemp(x.Location, "documents/") }; }).ToList();
+            taxRecord.Files = taxRecord.Files.Select(x => { return new UploadedFiles { Name = x.Name, Location = _fileHelper.MoveFileFromTemp(x.Location, "documents/"), Type = x.Type }; }).ToList();
             //push back any reminders
             if (taxRecord.ReminderRecordId.Any())
             {

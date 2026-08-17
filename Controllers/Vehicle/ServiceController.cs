@@ -32,7 +32,7 @@ namespace CarCareTracker.Controllers
                 return Json(OperationResponse.Failed("Access Denied"));
             }
             //move files from temp.
-            serviceRecord.Files = serviceRecord.Files.Select(x => { return new UploadedFiles { Name = x.Name, Location = _fileHelper.MoveFileFromTemp(x.Location, "documents/") }; }).ToList();
+            serviceRecord.Files = serviceRecord.Files.Select(x => { return new UploadedFiles { Name = x.Name, Location = _fileHelper.MoveFileFromTemp(x.Location, "documents/"), Type = x.Type }; }).ToList();
             if (serviceRecord.Supplies.Any())
             {
                 serviceRecord.RequisitionHistory.AddRange(RequisitionSupplyRecordsByUsage(serviceRecord.Supplies, DateTime.Parse(serviceRecord.Date), serviceRecord.Description));

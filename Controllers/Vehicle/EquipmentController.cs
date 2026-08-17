@@ -28,7 +28,7 @@ namespace CarCareTracker.Controllers
                 return Json(OperationResponse.Failed("Access Denied"));
             }
             //move files from temp.
-            equipmentRecord.Files = equipmentRecord.Files.Select(x => { return new UploadedFiles { Name = x.Name, Location = _fileHelper.MoveFileFromTemp(x.Location, "documents/") }; }).ToList();
+            equipmentRecord.Files = equipmentRecord.Files.Select(x => { return new UploadedFiles { Name = x.Name, Location = _fileHelper.MoveFileFromTemp(x.Location, "documents/"), Type = x.Type }; }).ToList();
             var convertedRecord = equipmentRecord.ToEquipmentRecord();
             var result = _equipmentRecordDataAccess.SaveEquipmentRecordToVehicle(convertedRecord);
             if (result)

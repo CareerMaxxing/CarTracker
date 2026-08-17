@@ -81,7 +81,7 @@ namespace CarCareTracker.Controllers
                 convertedRecord.RequisitionHistory = existingRecord.RequisitionHistory;
             }
             //move files from temp.
-            convertedRecord.Files = convertedRecord.Files.Select(x => new UploadedFiles { Name = x.Name, Location = _fileHelper.MoveFileFromTemp(x.Location, "documents/") }).ToList();
+            convertedRecord.Files = convertedRecord.Files.Select(x => new UploadedFiles { Name = x.Name, Location = _fileHelper.MoveFileFromTemp(x.Location, "documents/"), Type = x.Type }).ToList();
             var result = _partPurchaseDataAccess.SavePartPurchaseToVehicle(convertedRecord);
             if (result)
             {

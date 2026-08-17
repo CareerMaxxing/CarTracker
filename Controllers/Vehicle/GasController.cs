@@ -40,7 +40,7 @@ namespace CarCareTracker.Controllers
             {
                 return Json(OperationResponse.Failed("Access Denied"));
             }
-            gasRecord.Files = gasRecord.Files.Select(x => { return new UploadedFiles { Name = x.Name, Location = _fileHelper.MoveFileFromTemp(x.Location, "documents/") }; }).ToList();
+            gasRecord.Files = gasRecord.Files.Select(x => { return new UploadedFiles { Name = x.Name, Location = _fileHelper.MoveFileFromTemp(x.Location, "documents/"), Type = x.Type }; }).ToList();
             if (gasRecord.Supplies.Any())
             {
                 gasRecord.RequisitionHistory.AddRange(RequisitionSupplyRecordsByUsage(gasRecord.Supplies, DateTime.Parse(gasRecord.Date), $"Fuel Record {gasRecord.Date}"));
