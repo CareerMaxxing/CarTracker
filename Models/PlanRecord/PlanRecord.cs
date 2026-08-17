@@ -14,7 +14,11 @@
         public ImportMode ImportMode { get; set; }
         public PlanPriority Priority { get; set; }
         public PlanProgress Progress { get; set; }
+        /// <summary>Estimated cost.</summary>
         public decimal Cost { get; set; }
+        /// <summary>Actual cost, entered manually once work is costed/completed - distinct from
+        /// the estimate above. See docs/execution/PHASE_06.md.</summary>
+        public decimal ActualCost { get; set; }
         public List<ExtraField> ExtraFields { get; set; } = new List<ExtraField>();
         public List<SupplyUsageHistory> RequisitionHistory { get; set; } = new List<SupplyUsageHistory>();
     }

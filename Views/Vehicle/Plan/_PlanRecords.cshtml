@@ -6,7 +6,9 @@
     var enableCsvImports = userConfig.EnableCsvImports;
     var hideZero = userConfig.HideZero;
     var userLanguage = userConfig.UserLanguage;
-    var backLogItems = Model.Where(x => x.Progress == PlanProgress.Backlog).OrderBy(x => x.Priority);
+    var backLogItems = Model.Where(x => x.Progress == PlanProgress.Idea).OrderBy(x => x.Priority);
+    var costedItems = Model.Where(x => x.Progress == PlanProgress.Costed).OrderBy(x => x.Priority);
+    var partsSourcedItems = Model.Where(x => x.Progress == PlanProgress.PartsSourced).OrderBy(x => x.Priority);
     var inProgressItems = Model.Where(x => x.Progress == PlanProgress.InProgress).OrderBy(x => x.Priority);
     var testingItems = Model.Where(x => x.Progress == PlanProgress.Testing).OrderBy(x => x.Priority);
     var doneItems = Model.Where(x => x.Progress == PlanProgress.Done).OrderBy(x => x.Priority);
@@ -37,7 +39,19 @@
                         <li class="dropdown-item" draggable="true" ondragstart="handleTableColumnDragStart(event)" ondragover="handleTableColumnDragOver(event)" ondragend="handleTableColumnDragEnd('PlanRecord')">
                             <div class="list-group-item">
                                 <input class="form-check-input col-visible-toggle" data-column-toggle='backlog' onChange="showTableColumns(this, 'PlanRecord')" type="checkbox" id="chkCol_Backlog" checked>
-                                <label class="form-check-label stretched-link" for="chkCol_Backlog">@translator.Translate(userLanguage, "Planned")</label>
+                                <label class="form-check-label stretched-link" for="chkCol_Backlog">@translator.Translate(userLanguage, "Idea")</label>
+                            </div>
+                        </li>
+                        <li class="dropdown-item" draggable="true" ondragstart="handleTableColumnDragStart(event)" ondragover="handleTableColumnDragOver(event)" ondragend="handleTableColumnDragEnd('PlanRecord')">
+                            <div class="list-group-item">
+                                <input class="form-check-input col-visible-toggle" data-column-toggle='costed' onChange="showTableColumns(this, 'PlanRecord')" type="checkbox" id="chkCol_Costed" checked>
+                                <label class="form-check-label stretched-link" for="chkCol_Costed">@translator.Translate(userLanguage, "Costed")</label>
+                            </div>
+                        </li>
+                        <li class="dropdown-item" draggable="true" ondragstart="handleTableColumnDragStart(event)" ondragover="handleTableColumnDragOver(event)" ondragend="handleTableColumnDragEnd('PlanRecord')">
+                            <div class="list-group-item">
+                                <input class="form-check-input col-visible-toggle" data-column-toggle='partssourced' onChange="showTableColumns(this, 'PlanRecord')" type="checkbox" id="chkCol_PartsSourced" checked>
+                                <label class="form-check-label stretched-link" for="chkCol_PartsSourced">@translator.Translate(userLanguage, "Parts Sourced")</label>
                             </div>
                         </li>
                         <li class="dropdown-item" draggable="true" ondragstart="handleTableColumnDragStart(event)" ondragover="handleTableColumnDragOver(event)" ondragend="handleTableColumnDragEnd('PlanRecord')">
@@ -67,10 +81,22 @@
     </div>
     <div class="swimlane-mobile-nav mt-2 mb-2">
         <div class="d-flex row gap-2">
-            <button type="button" data-column="backlog" style="overflow:hidden;" class="btn btn-outline-secondary swimlane-dropzone col-2 flex-grow-1" onclick="hideOtherSwimLanes(this)" ondragover="dragOver(event, this)" ondragleave="planDragLeave(this)" ondrop="dropBox(event, 'Backlog')">
+            <button type="button" data-column="backlog" style="overflow:hidden;" class="btn btn-outline-secondary swimlane-dropzone col-2 flex-grow-1" onclick="hideOtherSwimLanes(this)" ondragover="dragOver(event, this)" ondragleave="planDragLeave(this)" ondrop="dropBox(event, 'Idea')">
                 <span class="text-wrap">
-                    <span>@translator.Translate(userLanguage, "Planned")</span>
+                    <span>@translator.Translate(userLanguage, "Idea")</span>
                     <span class="badge" style="background-color:rgba(0, 0, 0, 0.6);">@backLogItems.Count()</span>
+                </span>
+            </button>
+            <button type="button" data-column="costed" style="overflow:hidden;" class="btn btn-outline-secondary swimlane-dropzone col-2 flex-grow-1" onclick="hideOtherSwimLanes(this)" ondragover="dragOver(event, this)" ondragleave="planDragLeave(this)" ondrop="dropBox(event, 'Costed')">
+                <span class="text-wrap">
+                    <span>@translator.Translate(userLanguage, "Costed")</span>
+                    <span class="badge" style="background-color:rgba(0, 0, 0, 0.6);">@costedItems.Count()</span>
+                </span>
+            </button>
+            <button type="button" data-column="partssourced" style="overflow:hidden;" class="btn btn-outline-secondary swimlane-dropzone col-2 flex-grow-1" onclick="hideOtherSwimLanes(this)" ondragover="dragOver(event, this)" ondragleave="planDragLeave(this)" ondrop="dropBox(event, 'PartsSourced')">
+                <span class="text-wrap">
+                    <span>@translator.Translate(userLanguage, "Parts Sourced")</span>
+                    <span class="badge" style="background-color:rgba(0, 0, 0, 0.6);">@partsSourcedItems.Count()</span>
                 </span>
             </button>
             <button type="button" data-column="inprogress" style="overflow:hidden;" class="btn btn-outline-secondary swimlane-dropzone col-2 flex-grow-1" onclick="hideOtherSwimLanes(this)" ondragover="dragOver(event, this)" ondragleave="planDragLeave(this)" ondrop="dropBox(event, 'InProgress')">
@@ -101,15 +127,43 @@
                 </div>
             </div>
             <div class="d-flex flex-row gap-2 swimlane-container row">
-                <div class="col-2 flex-grow-1 swimlane swimlane-dropzone border rounded pe-2 ps-2" ondragover="dragOver(event, this)" ondragleave="planDragLeave(this)" ondrop="dropBox(event, 'Backlog')" data-column="backlog">
+                <div class="col-2 flex-grow-1 swimlane swimlane-dropzone border rounded pe-2 ps-2" ondragover="dragOver(event, this)" ondragleave="planDragLeave(this)" ondrop="dropBox(event, 'Idea')" data-column="backlog">
                     <div class="d-flex flex-column" style="height:100%;">
                         <div class="sticky-top frosted text-truncate swimlane-header" style="height:5vh;">
                             <div class="d-flex justify-content-between align-items-center">
-                                <span class="display-7 text-truncate">@translator.Translate(userLanguage, "Planned")</span>
+                                <span class="display-7 text-truncate">@translator.Translate(userLanguage, "Idea")</span>
                                 <span class="px-2 py-1 rounded text-bg-secondary">@backLogItems.Count()</span>
                             </div>
                         </div>
                         @foreach (PlanRecord planRecord in backLogItems)
+                        {
+                            @await Html.PartialAsync("Plan/_PlanRecordItem", planRecord)
+                        }
+                    </div>
+                </div>
+                <div class="col-2 flex-grow-1 swimlane swimlane-dropzone border rounded pe-2 ps-2" ondragover="dragOver(event, this)" ondragleave="planDragLeave(this)" ondrop="dropBox(event, 'Costed')" data-column="costed">
+                    <div class="d-flex flex-column" style="height:100%;">
+                        <div class="sticky-top frosted text-truncate swimlane-header" style="height:5vh;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="display-7 text-truncate">@translator.Translate(userLanguage, "Costed")</span>
+                                <span class="px-2 py-1 rounded text-bg-secondary">@costedItems.Count()</span>
+                            </div>
+                        </div>
+                        @foreach (PlanRecord planRecord in costedItems)
+                        {
+                            @await Html.PartialAsync("Plan/_PlanRecordItem", planRecord)
+                        }
+                    </div>
+                </div>
+                <div class="col-2 flex-grow-1 swimlane swimlane-dropzone border rounded pe-2 ps-2" ondragover="dragOver(event, this)" ondragleave="planDragLeave(this)" ondrop="dropBox(event, 'PartsSourced')" data-column="partssourced">
+                    <div class="d-flex flex-column" style="height:100%;">
+                        <div class="sticky-top frosted text-truncate swimlane-header" style="height:5vh;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="display-7 text-truncate">@translator.Translate(userLanguage, "Parts Sourced")</span>
+                                <span class="px-2 py-1 rounded text-bg-secondary">@partsSourcedItems.Count()</span>
+                            </div>
+                        </div>
+                        @foreach (PlanRecord planRecord in partsSourcedItems)
                         {
                             @await Html.PartialAsync("Plan/_PlanRecordItem", planRecord)
                         }
@@ -196,7 +250,9 @@
 
 <ul class="table-context-menu dropdown-menu" style="display:none;">
     <li><h6 class="dropdown-header context-menu-move move-header">@translator.Translate(userLanguage, "Move To")</h6></li>
-    <li><a class="dropdown-item context-menu-move move-planned" href="#"><div class="d-flex justify-content-between"><span class="me-5">@translator.Translate(userLanguage, "Planned")</span><i class="bi bi-list-task"></i></div></a></li>
+    <li><a class="dropdown-item context-menu-move move-planned" href="#"><div class="d-flex justify-content-between"><span class="me-5">@translator.Translate(userLanguage, "Idea")</span><i class="bi bi-list-task"></i></div></a></li>
+    <li><a class="dropdown-item context-menu-move move-costed" href="#"><div class="d-flex justify-content-between"><span class="me-5">@translator.Translate(userLanguage, "Costed")</span><i class="bi bi-currency-dollar"></i></div></a></li>
+    <li><a class="dropdown-item context-menu-move move-partssourced" href="#"><div class="d-flex justify-content-between"><span class="me-5">@translator.Translate(userLanguage, "Parts Sourced")</span><i class="bi bi-box-seam"></i></div></a></li>
     <li><a class="dropdown-item context-menu-move move-doing" href="#"><div class="d-flex justify-content-between"><span class="me-5">@translator.Translate(userLanguage, "Doing")</span><i class="bi bi-tools"></i></div></a></li>
     <li><a class="dropdown-item context-menu-move move-testing" href="#"><div class="d-flex justify-content-between"><span class="me-5">@translator.Translate(userLanguage, "Testing")</span><i class="bi bi-eyeglasses"></i></div></a></li>
     <li><a class="dropdown-item context-menu-move move-done" href="#"><div class="d-flex justify-content-between"><span class="me-5">@translator.Translate(userLanguage, "Done")</span><i class="bi bi-check2-all"></i></div></a></li>

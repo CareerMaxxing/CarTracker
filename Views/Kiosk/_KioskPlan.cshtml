@@ -6,7 +6,9 @@
     var userConfig = config.GetUserConfig(User);
     var userLanguage = userConfig.UserLanguage;
     var userColumnPreferences = userConfig.UserColumnPreferences.Where(x => x.Tab == ImportMode.PlanRecord);
-    var backLogItems = Model.Where(x => x.Progress == PlanProgress.Backlog).OrderBy(x => x.Priority);
+    @* Idea/Costed/PartsSourced share one Kiosk column - keeps this at-a-glance view simple rather
+       than adding two more columns; the full pipeline is visible on the main Planner tab. *@
+    var backLogItems = Model.Where(x => x.Progress == PlanProgress.Idea || x.Progress == PlanProgress.Costed || x.Progress == PlanProgress.PartsSourced).OrderBy(x => x.Priority);
     var inProgressItems = Model.Where(x => x.Progress == PlanProgress.InProgress).OrderBy(x => x.Priority);
     var testingItems = Model.Where(x => x.Progress == PlanProgress.Testing).OrderBy(x => x.Priority);
     var doneItems = Model.Where(x => x.Progress == PlanProgress.Done).OrderBy(x => x.Priority);
@@ -35,7 +37,7 @@
                     <div class="d-flex flex-column">
                         <div class="sticky-top frosted text-truncate swimlane-header" style="height:5vh;">
                             <div class="d-flex justify-content-between align-items-center">
-                                <span class="display-7 text-truncate">@translator.Translate(userLanguage, "Planned")</span>
+                                <span class="display-7 text-truncate">@translator.Translate(userLanguage, "Idea")</span>
                                 <span class="px-2 py-1 rounded text-bg-secondary">@backLogItems.Count()</span>
                             </div>
                         </div>

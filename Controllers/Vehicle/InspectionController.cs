@@ -242,7 +242,7 @@ namespace CarCareTracker.Controllers
                                 Description = inspectionField.ActionItemDescription,
                                 ImportMode = inspectionField.ActionItemType,
                                 Priority = inspectionField.ActionItemPriority,
-                                Progress = PlanProgress.Backlog,
+                                Progress = PlanProgress.Idea,
                                 Notes = $"{_translator.Translate(_config.GetUserConfig(User).UserLanguage, StaticHelper.GetAutoInsertVerbiage(ImportMode.GasRecord, false))}: {inspectionRecord.Description}",
                                 Files = StaticHelper.CreateAttachmentFromRecord(ImportMode.InspectionRecord, convertedRecord.Id, convertedRecord.Description)
                             });

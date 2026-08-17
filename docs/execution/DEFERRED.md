@@ -64,6 +64,14 @@ doc that first identified it, with enough context to pick back up cold.
   purchase exists. A real catalog browse/edit screen (plus surfacing price history somewhere) is a
   natural next increment whenever the Parts UI gets revisited.
 
+## Planned Engineering Work (from Phase 6 — Planned Engineering Work)
+
+- **CSV import/export column mapping for `ActualCost`** — the field exists end-to-end
+  (model/input/API) and the add/edit modal captures it, but `PlanRecordExportModel`'s CSV sample
+  generator and the CSV column mapping in `Controllers/Vehicle/ImportController.cs` weren't
+  extended for it. Round-tripping a plan record through CSV export/import currently loses its
+  `ActualCost` value. See `PHASE_06.md`.
+
 ## Explicitly declined, not deferred (do not resurrect without a fresh ask)
 
 - **Regrouping vehicle nav into the six "Vehicle Experience" categories** (Overview/Maintenance/

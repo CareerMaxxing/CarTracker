@@ -302,7 +302,8 @@ namespace CarCareTracker.Controllers
                         Date = DateTime.Now.Date,
                         Mileage = odometer,
                         Description = existingRecord.Description,
-                        Cost = existingRecord.Cost,
+                        //prefer actual cost if the user recorded one, fall back to the estimate.
+                        Cost = existingRecord.ActualCost != default ? existingRecord.ActualCost : existingRecord.Cost,
                         Notes = existingRecord.Notes,
                         Files = existingRecord.Files,
                         RequisitionHistory = existingRecord.RequisitionHistory,
@@ -319,7 +320,8 @@ namespace CarCareTracker.Controllers
                         Date = DateTime.Now.Date,
                         Mileage = odometer,
                         Description = existingRecord.Description,
-                        Cost = existingRecord.Cost,
+                        //prefer actual cost if the user recorded one, fall back to the estimate.
+                        Cost = existingRecord.ActualCost != default ? existingRecord.ActualCost : existingRecord.Cost,
                         Notes = existingRecord.Notes,
                         Files = existingRecord.Files,
                         RequisitionHistory = existingRecord.RequisitionHistory,
@@ -336,7 +338,8 @@ namespace CarCareTracker.Controllers
                         Date = DateTime.Now.Date,
                         Mileage = odometer,
                         Description = existingRecord.Description,
-                        Cost = existingRecord.Cost,
+                        //prefer actual cost if the user recorded one, fall back to the estimate.
+                        Cost = existingRecord.ActualCost != default ? existingRecord.ActualCost : existingRecord.Cost,
                         Notes = existingRecord.Notes,
                         Files = existingRecord.Files,
                         RequisitionHistory = existingRecord.RequisitionHistory,
@@ -407,6 +410,7 @@ namespace CarCareTracker.Controllers
                 Priority = result.Priority,
                 Progress = result.Progress,
                 Cost = result.Cost,
+                ActualCost = result.ActualCost,
                 Notes = result.Notes,
                 VehicleId = result.VehicleId,
                 Files = result.Files,

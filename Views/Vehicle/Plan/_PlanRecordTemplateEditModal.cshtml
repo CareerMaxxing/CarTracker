@@ -44,7 +44,9 @@
                     </select>
                     <label for="planRecordProgress">@translator.Translate(userLanguage, "Current Stage")</label>
                     <select class="form-select" id="planRecordProgress">
-                        <!option value = "Backlog" @(Model.Progress == PlanProgress.Backlog || isNew ? "selected" : "")>@translator.Translate(userLanguage, "Planned")</!option>
+                        <!option value = "Idea" @(Model.Progress == PlanProgress.Idea || isNew ? "selected" : "")>@translator.Translate(userLanguage, "Idea")</!option>
+                        <!option value = "Costed" @(Model.Progress == PlanProgress.Costed ? "selected" : "")>@translator.Translate(userLanguage, "Costed")</!option>
+                        <!option value = "PartsSourced" @(Model.Progress == PlanProgress.PartsSourced ? "selected" : "")>@translator.Translate(userLanguage, "Parts Sourced")</!option>
                         <!option value="InProgress" @(Model.Progress == PlanProgress.InProgress ? "selected" : "")>@translator.Translate(userLanguage, "Doing")</!option>
                         <!option value = "Testing" @(Model.Progress == PlanProgress.Testing ? "selected" : "")>@translator.Translate(userLanguage, "Testing")</!option>
                     </select>

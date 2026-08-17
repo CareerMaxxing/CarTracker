@@ -315,7 +315,8 @@ namespace CarCareTracker.Logic
                     PastDueReminderCount = results.Count(x => x.Urgency == ReminderUrgency.PastDue),
                     UrgentReminderCount = results.Count(x => x.Urgency == ReminderUrgency.Urgent),
                     NotUrgentReminderCount = results.Count(x => x.Urgency == ReminderUrgency.NotUrgent),
-                    PlanRecordBackLogCount = planRecords.Count(x => x.Progress == PlanProgress.Backlog),
+                    //field name kept for API compatibility; now covers all pre-InProgress stages (Idea/Costed/PartsSourced) so the total stays accurate after the Phase 6 pipeline expansion.
+                    PlanRecordBackLogCount = planRecords.Count(x => x.Progress == PlanProgress.Idea || x.Progress == PlanProgress.Costed || x.Progress == PlanProgress.PartsSourced),
                     PlanRecordInProgressCount = planRecords.Count(x => x.Progress == PlanProgress.InProgress),
                     PlanRecordTestingCount = planRecords.Count(x => x.Progress == PlanProgress.Testing),
                     PlanRecordDoneCount = planRecords.Count(x => x.Progress == PlanProgress.Done)

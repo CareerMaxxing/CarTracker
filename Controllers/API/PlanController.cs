@@ -140,7 +140,7 @@ namespace CarCareTracker.Controllers
             if (!validType || !validPriority || !validProgress)
             {
                 Response.StatusCode = 400;
-                return Json(OperationResponse.Failed("Input object invalid, values for Type(ServiceRecord, RepairRecord, UpgradeRecord), Priority(Critical, Normal, Low), or Progress(Backlog, InProgress, Testing) is invalid."));
+                return Json(OperationResponse.Failed("Input object invalid, values for Type(ServiceRecord, RepairRecord, UpgradeRecord), Priority(Critical, Normal, Low), or Progress(Idea, Costed, PartsSourced, InProgress, Testing) is invalid."));
             }
             if (parsedType != ImportMode.ServiceRecord && parsedType != ImportMode.RepairRecord && parsedType != ImportMode.UpgradeRecord)
             {
@@ -171,6 +171,7 @@ namespace CarCareTracker.Controllers
                     Description = input.Description,
                     Notes = string.IsNullOrWhiteSpace(input.Notes) ? "" : input.Notes,
                     Cost = decimal.Parse(input.Cost),
+                    ActualCost = string.IsNullOrWhiteSpace(input.ActualCost) ? 0 : decimal.Parse(input.ActualCost),
                     ImportMode = parsedType,
                     Priority = parsedPriority,
                     Progress = parsedProgress,
@@ -242,7 +243,7 @@ namespace CarCareTracker.Controllers
             if (!validType || !validPriority || !validProgress)
             {
                 Response.StatusCode = 400;
-                return Json(OperationResponse.Failed("Input object invalid, values for Type(ServiceRecord, RepairRecord, UpgradeRecord), Priority(Critical, Normal, Low), or Progress(Backlog, InProgress, Testing) is invalid."));
+                return Json(OperationResponse.Failed("Input object invalid, values for Type(ServiceRecord, RepairRecord, UpgradeRecord), Priority(Critical, Normal, Low), or Progress(Idea, Costed, PartsSourced, InProgress, Testing) is invalid."));
             }
             if (parsedType != ImportMode.ServiceRecord && parsedType != ImportMode.RepairRecord && parsedType != ImportMode.UpgradeRecord)
             {
@@ -278,6 +279,7 @@ namespace CarCareTracker.Controllers
                     existingRecord.Description = input.Description;
                     existingRecord.Notes = string.IsNullOrWhiteSpace(input.Notes) ? "" : input.Notes;
                     existingRecord.Cost = decimal.Parse(input.Cost);
+                    existingRecord.ActualCost = string.IsNullOrWhiteSpace(input.ActualCost) ? existingRecord.ActualCost : decimal.Parse(input.ActualCost);
                     existingRecord.ImportMode = parsedType;
                     existingRecord.Priority = parsedPriority;
                     existingRecord.Progress = parsedProgress;

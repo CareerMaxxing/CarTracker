@@ -17,6 +17,7 @@
         public PlanPriority Priority { get; set; }
         public PlanProgress Progress { get; set; }
         public decimal Cost { get; set; }
+        public decimal ActualCost { get; set; }
         public List<ExtraField> ExtraFields { get; set; } = new List<ExtraField>();
         public List<SupplyUsageHistory> RequisitionHistory { get; set; } = new List<SupplyUsageHistory>();
         public List<SupplyUsageHistory> DeletedRequisitionHistory { get; set; } = new List<SupplyUsageHistory>();
@@ -33,6 +34,7 @@
             Files = Files,
             ImportMode = ImportMode,
             Cost = Cost,
+            ActualCost = ActualCost,
             Priority = Priority,
             Progress = Progress,
             ExtraFields = ExtraFields,

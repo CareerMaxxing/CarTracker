@@ -112,8 +112,12 @@ namespace CarCareTracker.Helper
         {
             switch (input)
             {
-                case PlanProgress.Backlog:
-                    return "Planned";
+                case PlanProgress.Idea:
+                    return "Idea";
+                case PlanProgress.Costed:
+                    return "Costed";
+                case PlanProgress.PartsSourced:
+                    return "Parts Sourced";
                 case PlanProgress.InProgress:
                     return "Doing";
                 case PlanProgress.Testing:

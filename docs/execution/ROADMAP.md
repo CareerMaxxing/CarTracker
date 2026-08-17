@@ -11,7 +11,7 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
 | 3 | Garage / Dashboard | "What's happening with my cars?" — vehicle overview cards, mileage, MOT status, upcoming work, reminders, active projects, cost summaries. | 🟡 Mostly done — active projects added & verified; MOT status blocked on Phase 8; richer upcoming-work summary deferred (PHASE_03.md) |
 | 4 | Vehicle Experience | Vehicle Overview / Maintenance / History / Parts / Projects / Documents, reusing existing data structures where possible. | ✅ Complete — 5/6 areas already existed, added a browsable Documents tab for the 6th (PHASE_04.md) |
 | 5 | Parts Domain | Parts as first-class entities: part number, manufacturer, description, category, fitment, purchases, suppliers, price history, documents. Price belongs to a purchase, not the part. | ✅ Complete — backend, API, and UI all done and user-verified (PHASE_05.md); consumption wiring/ImportMode integration/catalog browse screen deferred |
-| 6 | Planned Engineering Work | Idea → Costed → Parts Sourced → In Progress → Done pipeline for planned work per vehicle. | Not started |
+| 6 | Planned Engineering Work | Idea → Costed → Parts Sourced → In Progress → Done pipeline for planned work per vehicle. | ✅ Complete — 6-stage pipeline (kept Testing per user choice) + Actual Cost, user-verified including drag-and-drop (PHASE_06.md) |
 | 7 | Planned Work → Service Record | Critical workflow: completing planned work idempotently creates a permanent service record, preserving parts/prices/mileage/notes/attachments. Dedicated acceptance tests required. | Not started |
 | 8 | Government Data | Mocked DVLA/DVSA adapters behind a domain-facing interface; no real credentials in this phase. | Not started |
 | 9 | Mileage / Odometer | One coherent odometer history across manual/service/MOT sources; flag suspicious regressions rather than silently accepting bad data. | Not started |
@@ -25,8 +25,8 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
 
 - After Phase 0: review actual LubeLogger architecture.
 - After Phase 1: approve the reconciled system specification and architecture.
-- After UI foundation (Phase 2): visually inspect the new design direction. ✅ done — token foundation + shell/nav consolidation user-verified live; remaining Phase 2 polish deferred to per-screen rollout in later phases. **← proceeding to Phase 3**
-- After Parts + Planned Work (Phases 5–6): verify the core domain model.
+- After UI foundation (Phase 2): visually inspect the new design direction. ✅ done — token foundation + shell/nav consolidation user-verified live; remaining Phase 2 polish deferred to per-screen rollout in later phases.
+- After Parts + Planned Work (Phases 5–6): verify the core domain model. ✅ done — both phases user-verified live, including Phase 6's drag-and-drop Kanban interactions. **← proceeding to Phase 7**
 - After Planned Work → Service Record (Phase 7): end-to-end acceptance test.
 - Before real DVLA/DVSA adapters: approve credential/API architecture.
 - Before V1: final system review.

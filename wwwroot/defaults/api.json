@@ -366,7 +366,7 @@
                "cost":420.69,
                "type":"ServiceRecord",
                "priority":"Normal",
-               "progress":"Backlog",
+               "progress":"Idea",
                "notes":"test",
                "extraFields":[
                   {

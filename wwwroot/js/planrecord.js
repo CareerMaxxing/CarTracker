@@ -212,6 +212,7 @@ function savePlanRecordTemplate(isEdit) {
 function getAndValidatePlanRecordValues() {
     var planDescription = $("#planRecordDescription").val();
     var planCost = $("#planRecordCost").val();
+    var planActualCost = $("#planRecordActualCost").val();
     var planNotes = $("#planRecordNotes").val();
     var planType = $("#planRecordType").val();
     var planPriority = $("#planRecordPriority").val();
@@ -245,6 +246,7 @@ function getAndValidatePlanRecordValues() {
         dateCreated: planDateCreated,
         description: planDescription,
         cost: planCost,
+        actualCost: planActualCost,
         notes: planNotes,
         files: uploadedFiles,
         supplies: selectedSupplies,
@@ -390,7 +392,17 @@ function configurePlanTableContextMenu(planRecordId, currentSwimLane) {
     });
     $(".context-menu-move.move-planned").on('click', () => {
         draggedId = planRecordId;
-        updatePlanRecordProgress('Backlog');
+        updatePlanRecordProgress('Idea');
+        draggedId = 0;
+    });
+    $(".context-menu-move.move-costed").on('click', () => {
+        draggedId = planRecordId;
+        updatePlanRecordProgress('Costed');
+        draggedId = 0;
+    });
+    $(".context-menu-move.move-partssourced").on('click', () => {
+        draggedId = planRecordId;
+        updatePlanRecordProgress('PartsSourced');
         draggedId = 0;
     });
     $(".context-menu-move.move-doing").on('click', () => {
@@ -409,8 +421,26 @@ function configurePlanTableContextMenu(planRecordId, currentSwimLane) {
     $(".context-menu-move").hide();
     $(".context-menu-delete").show(); //delete is always visible.
     switch (currentSwimLane) {
-        case 'Backlog':
+        case 'Idea':
             $(".context-menu-move.move-header").show();
+            $(".context-menu-move.move-costed").show();
+            $(".context-menu-move.move-partssourced").show();
+            $(".context-menu-move.move-doing").show();
+            $(".context-menu-move.move-testing").show();
+            $(".context-menu-move.move-done").show();
+            break;
+        case 'Costed':
+            $(".context-menu-move.move-header").show();
+            $(".context-menu-move.move-planned").show();
+            $(".context-menu-move.move-partssourced").show();
+            $(".context-menu-move.move-doing").show();
+            $(".context-menu-move.move-testing").show();
+            $(".context-menu-move.move-done").show();
+            break;
+        case 'PartsSourced':
+            $(".context-menu-move.move-header").show();
+            $(".context-menu-move.move-planned").show();
+            $(".context-menu-move.move-costed").show();
             $(".context-menu-move.move-doing").show();
             $(".context-menu-move.move-testing").show();
             $(".context-menu-move.move-done").show();
@@ -418,12 +448,16 @@ function configurePlanTableContextMenu(planRecordId, currentSwimLane) {
         case 'InProgress':
             $(".context-menu-move.move-header").show();
             $(".context-menu-move.move-planned").show();
+            $(".context-menu-move.move-costed").show();
+            $(".context-menu-move.move-partssourced").show();
             $(".context-menu-move.move-testing").show();
             $(".context-menu-move.move-done").show();
             break;
         case 'Testing':
             $(".context-menu-move.move-header").show();
             $(".context-menu-move.move-planned").show();
+            $(".context-menu-move.move-costed").show();
+            $(".context-menu-move.move-partssourced").show();
             $(".context-menu-move.move-doing").show();
             $(".context-menu-move.move-done").show();
             break;
