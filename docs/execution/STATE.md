@@ -84,8 +84,8 @@ Last validation:     dotnet build (0 errors); on two throwaway vehicles (created
                      "PartPurchase" result; the existing single-vehicle SearchRecords endpoint's
                      response was unchanged for the same keyword; rendered vehicle page HTML confirmed
                      the new "Search All Vehicles" toggle renders — 2026-08-17.
-Last commit:         16bacbf — "Record Phase 10 commit hash in STATE.md" (Phase 11's commit not yet
-                     made - pending user confirmation of this phase first).
+Last commit:         5151bc5 — "Phase 11: cross-vehicle global search" — user confirmed and approved
+                     moving to Phase 12, 2026-08-17.
 ```
 
 ## Environment notes for future sessions
