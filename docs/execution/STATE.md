@@ -5,32 +5,42 @@ conversation history.
 
 ```
 PROJECT STATUS
-Current phase:      Phase 1 — Requirements & Architecture Reconciliation
-Current task:       PHASE-01 (see docs/execution/PHASE_01.md)
-Status:             Complete — awaiting human review checkpoint
-Last completed:     Phase 1 reconciliation: traceability matrix (EXISTING/MODIFY/EXTEND/REPLACE/NEW)
-                     across every target capability, SYSTEM_SPEC.md and REQUIREMENTS.md written,
-                     target-state notes appended to ARCHITECTURE.md and DATA_MODEL.md. Key finding:
-                     "Planned Work -> Service Record" already exists in PlanController.cs but is not
-                     idempotent and only covers 3 of 5 record types (see REQUIREMENTS.md FR-PLAN-04/05).
-Next task:           Human review of Phase 1 findings (approve the reconciled system specification
-                     and architecture), then Phase 2 (UI Design System) per docs/execution/ROADMAP.md
-                     — do not start Phase 2 without that review.
-Known blockers:      None blocking further work, but open items carried forward:
-                     1. Global search technical approach undecided (no SQLite FTS5 available —
-                        actual backends are LiteDB/Postgres) — see REQUIREMENTS.md FR-SEARCH-01,
-                        not a stop condition, just not yet decided; resolve at Phase 11.
-                     2. No test project exists yet in the repo. Phase 7 (idempotency fix for
-                        FR-PLAN-04) is a strong candidate for standing up the first real test.
-Open decisions:      None pending from Phase 1 itself. Human review of SYSTEM_SPEC.md/REQUIREMENTS.md
-                     is the gating step before Phase 2 can begin.
-Do not:              Start Phase 2 (or any product feature work) before the human review checkpoint
-                     for Phase 1 has happened. Do not assume SQLite is available anywhere in this
-                     codebase (see ARCHITECTURE.md correction). Do not treat "Planned Work -> Service
-                     Record" as unbuilt — it exists and needs hardening, not a new implementation.
-Last validation:     dotnet build (0 errors, same 209 pre-existing nullable warnings, no product
-                     code changed) — 2026-08-17.
-Last commit:         c58c3f4 — "Phase 1: requirements and architecture reconciliation"
+Current phase:      Phase 2 — UI Design System
+Current task:       PHASE-02-01 (see docs/execution/PHASE_02.md) — design token foundation
+Status:             This increment complete; broader phase paused pending visual verification
+Last completed:     docs/UI_SPEC.md written; design tokens (spacing/radius/shadow/motion) added to
+                     wwwroot/css/site.css and applied to .card/.taskCard/.kiosk-card (values kept
+                     identical - pure consolidation); new opt-in .status-badge/.ct-empty-state
+                     primitives added (not yet used by any view); fixed a real dark-mode bug in
+                     wwwroot/css/loader.css (.sloader/.loader were hardcoded white, invisible-on-white
+                     in dark mode). Zero .cshtml files touched. Build verified 0 errors, app verified
+                     serving the new CSS at runtime.
+Next task:           Broader Phase 2 rollout is blocked on visual verification capability, not on
+                     more analysis. Specifically: consolidating the triplicated tab-bar markup
+                     (Vehicle/Index.cshtml renders its 13-tab nav 3x, wired to vehicle.js by element
+                     ID) needs either a browser/screenshot tool or the user reviewing it locally
+                     before attempting - restructuring that markup blind risks breaking navigation
+                     app-wide. Ask the user how they want to proceed (their own local review loop,
+                     or wait for a visual-verification tool) before continuing Phase 2's nav/shell
+                     and per-screen badge/empty-state rollout.
+Known blockers:      1. No browser/screenshot tool available in this environment - cannot visually
+                        verify UI changes, only structural/HTTP correctness. This is the actual
+                        blocker on further Phase 2 work, not a knowledge gap.
+                     2. Global search technical approach undecided (REQUIREMENTS.md FR-SEARCH-01,
+                        not urgent, resolve at Phase 11).
+                     3. No test project exists yet (candidate: Phase 7 idempotency fix).
+Open decisions:      How to continue Phase 2 without visual verification - human-in-the-loop review
+                     of localhost after each increment, vs. waiting for a visual-verification tool,
+                     vs. continuing with more CSS-only/non-interactive increments only.
+Do not:              Restructure the shell/navigation markup (the triplicated tab-bar rendering)
+                     without either a way to visually/interactively verify the result, or explicit
+                     user sign-off to proceed blind. Do not assume SQLite is available anywhere in
+                     this codebase. Do not treat "Planned Work -> Service Record" as unbuilt - it
+                     exists and needs hardening (Phase 7), not a new implementation.
+Last validation:     dotnet build (0 errors, same 209 pre-existing nullable warnings) + dotnet run,
+                     curl-verified / and both modified CSS files serve 200 with the new rules present
+                     in the served output — 2026-08-17.
+Last commit:         (pending — Phase 2 increment commit, created immediately after this file)
 ```
 
 ## Environment notes for future sessions
