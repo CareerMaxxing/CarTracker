@@ -244,6 +244,39 @@ namespace CarCareTracker.Models
         public List<ExtraField> ExtraFields { get; set; } = new List<ExtraField>();
         public List<UploadedFiles> Files { get; set; } = new List<UploadedFiles>();
     }
+    public class PartExportModel
+    {
+        [JsonConverter(typeof(FromIntOptional))]
+        public string Id { get; set; } = string.Empty;
+        public string PartNumber { get; set; } = string.Empty;
+        public string Manufacturer { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public string Notes { get; set; } = string.Empty;
+        public string Tags { get; set; } = string.Empty;
+        public List<ExtraField> ExtraFields { get; set; } = new List<ExtraField>();
+        public List<UploadedFiles> Files { get; set; } = new List<UploadedFiles>();
+    }
+    public class PartPurchaseExportModel
+    {
+        [JsonConverter(typeof(FromIntOptional))]
+        public string Id { get; set; } = string.Empty;
+        [JsonConverter(typeof(FromIntOptional))]
+        public string PartId { get; set; } = string.Empty;
+        [JsonConverter(typeof(FromIntOptional))]
+        public string VehicleId { get; set; } = string.Empty;
+        [JsonConverter(typeof(FromDateOptional))]
+        public string Date { get; set; } = string.Empty;
+        [JsonConverter(typeof(FromDecimalOptional))]
+        public string Quantity { get; set; } = string.Empty;
+        [JsonConverter(typeof(FromDecimalOptional))]
+        public string Cost { get; set; } = string.Empty;
+        public string Supplier { get; set; } = string.Empty;
+        public string Notes { get; set; } = string.Empty;
+        public string Tags { get; set; } = string.Empty;
+        public List<ExtraField> ExtraFields { get; set; } = new List<ExtraField>();
+        public List<UploadedFiles> Files { get; set; } = new List<UploadedFiles>();
+    }
     public class UserExportModel
     {
         public string Username { get; set; } = string.Empty;

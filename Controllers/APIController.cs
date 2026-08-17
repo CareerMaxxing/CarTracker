@@ -26,6 +26,8 @@ namespace CarCareTracker.Controllers
         private readonly ISupplyRecordDataAccess _supplyRecordDataAccess;
         private readonly IPlanRecordDataAccess _planRecordDataAccess;
         private readonly IEquipmentRecordDataAccess _equipmentRecordDataAccess;
+        private readonly IPartDataAccess _partDataAccess;
+        private readonly IPartPurchaseDataAccess _partPurchaseDataAccess;
         private readonly IUserAccessDataAccess _userAccessDataAccess;
         private readonly IUserRecordDataAccess _userRecordDataAccess;
         private readonly IExtraFieldDataAccess _extraFieldDataAccess;
@@ -57,6 +59,8 @@ namespace CarCareTracker.Controllers
             ISupplyRecordDataAccess supplyRecordDataAccess,
             IPlanRecordDataAccess planRecordDataAccess,
             IEquipmentRecordDataAccess equipmentRecordDataAccess,
+            IPartDataAccess partDataAccess,
+            IPartPurchaseDataAccess partPurchaseDataAccess,
             IUserAccessDataAccess userAccessDataAccess,
             IUserRecordDataAccess userRecordDataAccess,
             IExtraFieldDataAccess extraFieldDataAccess,
@@ -83,6 +87,8 @@ namespace CarCareTracker.Controllers
             _supplyRecordDataAccess = supplyRecordDataAccess;
             _planRecordDataAccess = planRecordDataAccess;
             _equipmentRecordDataAccess = equipmentRecordDataAccess;
+            _partDataAccess = partDataAccess;
+            _partPurchaseDataAccess = partPurchaseDataAccess;
             _userAccessDataAccess = userAccessDataAccess;
             _userRecordDataAccess = userRecordDataAccess;
             _extraFieldDataAccess = extraFieldDataAccess;

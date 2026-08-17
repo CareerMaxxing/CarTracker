@@ -67,6 +67,8 @@ if (!string.IsNullOrWhiteSpace(builder.Configuration["POSTGRES_CONNECTION"])){
     builder.Services.AddSingleton<IEquipmentRecordDataAccess, PGEquipmentRecordDataAccess>();
     builder.Services.AddSingleton<IUserHouseholdDataAccess, PGUserHouseholdDataAccess>();
     builder.Services.AddSingleton<IApiKeyRecordDataAccess, PGApiKeyRecordDataAccess>();
+    builder.Services.AddSingleton<IPartDataAccess, PGPartDataAccess>();
+    builder.Services.AddSingleton<IPartPurchaseDataAccess, PGPartPurchaseDataAccess>();
     builder.Services.AddSingleton<IDBHealthCheck, PGDBHealthCheck>();
 }
 else
@@ -93,6 +95,8 @@ else
     builder.Services.AddSingleton<IEquipmentRecordDataAccess, EquipmentRecordDataAccess>();
     builder.Services.AddSingleton<IUserHouseholdDataAccess, UserHouseholdDataAccess>();
     builder.Services.AddSingleton<IApiKeyRecordDataAccess, ApiKeyRecordDataAccess>();
+    builder.Services.AddSingleton<IPartDataAccess, PartDataAccess>();
+    builder.Services.AddSingleton<IPartPurchaseDataAccess, PartPurchaseDataAccess>();
     builder.Services.AddSingleton<IDBHealthCheck, DBHealthCheck>();
 }
 
