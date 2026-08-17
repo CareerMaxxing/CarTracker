@@ -75,9 +75,8 @@ Last validation:     dotnet build (0 errors, 224 warnings, unchanged - no new wa
                      including the rendered .ct-empty-state panel; full Dashboard/Report partial HTML
                      fetched and diffed for correct panel markup/badge classes/MOT list rendering —
                      2026-08-17. Not yet shown to the user live in browser.
-Last commit:         e15aa79 — "Phase 7: idempotent plan completion + full ImportMode coverage"
-                     (Phase 8's commit not yet made - pending user confirmation of this phase first,
-                     per the renewed check-in instruction).
+Last commit:         8c700a6 — "Phase 8: mocked DVLA/DVSA government data adapters + Dashboard
+                     panel" — user confirmed and approved moving to Phase 9, 2026-08-17.
 ```
 
 ## Environment notes for future sessions
