@@ -64,7 +64,7 @@ Last validation:     dotnet build (0 errors, 224 warnings, unchanged); idempoten
                      1 resulting record each); Tax-type completion verified producing correct fields;
                      Type dropdown HTML confirmed showing all 5 options; user-confirmed no regression
                      live in browser — 2026-08-17.
-Last commit:         (pending — Phase 7 commit, created immediately after this file)
+Last commit:         e15aa79 — "Phase 7: idempotent plan completion + full ImportMode coverage"
 ```
 
 ## Environment notes for future sessions
