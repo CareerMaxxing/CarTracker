@@ -94,8 +94,9 @@ Last validation:     dotnet build (0 errors); with EnableAuth temporarily enable
                      written); a normal .txt upload unaffected; a mixed multi-file batch kept only the
                      legitimate file. Real vehicle data read-only throughout (the one genuine document
                      used for the auth-bypass test was never modified or deleted) — 2026-08-17.
-Last commit:         96d3bfa — "Phase 13: confirm AI/OCR deferred, no implementation" (this
-                     increment's commit not yet made - pending user confirmation first).
+Last commit:         76b43d6 — "Phase 14 (security review): fix static-file auth bypass +
+                     unrestricted upload" — both fixes approved by the user before implementation,
+                     verified live, pushed 2026-08-17.
 ```
 
 ## Environment notes for future sessions
