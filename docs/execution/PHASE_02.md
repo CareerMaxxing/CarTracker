@@ -93,12 +93,38 @@ net-new, unused-so-far primitives that can't regress anything because nothing re
    touched), ran the app, confirmed `/`, `/css/site.css`, `/css/loader.css` all return 200, and
    confirmed the new CSS actually reaches the served output (not just the source file).
 
+## Increment 2: shell/navigation consolidation (2026-08-17, same day)
+
+The user chose "review locally as I go" for continuing Phase 2 (see STATE.md decision log). With
+that workflow in place, the triplicated tab-bar markup flagged as out-of-scope above was revisited:
+
+1. **`Views/Home/Index.cshtml`** (Garage page, 4 tabs: Garage/Supplies/Calendar/Settings) —
+   deduplicated the tab list feeding the desktop bar and its "more" overflow dropdown into a single
+   Razor source list. Verified by diffing rendered HTML before/after: only whitespace and one
+   harmless `aria-selected` addition differed. User confirmed in a live browser: page loads,
+   overflow-to-dropdown behavior works, dark mode works.
+2. **`Views/Vehicle/Index.cshtml`** (vehicle detail page, 13 tabs) — same treatment, at three-way
+   scale (desktop bar / "more" dropdown / mobile off-canvas panel, 39 hand-written items down to
+   one 13-item list). Verified against a throwaway test vehicle (created and deleted via the API;
+   the user's real vehicle was untouched) by diffing whitespace-normalized rendered HTML. The first
+   pass caught a real bug — a Razor whitespace-as-text quirk introduced stray spaces around mobile
+   nav labels — fixed and re-verified clean. User confirmed in a live browser: all 13 tabs switch
+   correctly, overflow dropdown works at this scale, mobile off-canvas menu (including the
+   Reminders bell icon) renders correctly.
+3. **Audited the remaining four `@section Nav`-bearing views** (`Migration/Index.cshtml`,
+   `Admin/Index.cshtml`, `API/Index.cshtml`, `Home/Setup.cshtml`) for the same pattern — none of
+   them have it. Each is a simple single-line title bar with no duplicated tab markup. The
+   triplication Phase 0 flagged only existed in the two views now fixed; there is no more of this
+   specific structural issue elsewhere in the codebase.
+   (`Home/Setup.cshtml` does have a smaller, different duplication — its setup-wizard step nav
+   renders as a desktop button row and a separate mobile `<select>` dropdown, 6 items each. This
+   is a distinct, lower-risk pattern, not the `checkNavBarOverflow()`-driven tab system, and is
+   noted as a candidate for a future pass rather than tackled here.)
+
 ## What Phase 2 deliberately did not touch (carried forward, not forgotten)
 
-- **Shell/navigation markup restructuring** — the triplicated tab-bar rendering. This is real,
-  valuable cleanup (flagged back in Phase 0's `UI_INVENTORY.md`), but needs either a
-  browser/screenshot tool or the user clicking through it locally before attempting, given how much
-  interactive JS depends on its exact structure.
+- **`Home/Setup.cshtml`'s setup-wizard step nav** (desktop buttons vs. mobile `<select>`, noted
+  above) — smaller, different mechanism than the tab-bar triplication, lower priority.
 - **Adopting `.status-badge`/`.ct-empty-state` into any actual screen** — these are defined and
   ready, but rolling them into e.g. reminder urgency or plan priority badges touches `.cshtml`
   files and should happen alongside the relevant feature phase (3, 6) rather than blind here.
@@ -108,6 +134,11 @@ net-new, unused-so-far primitives that can't regress anything because nothing re
 
 ## Result
 
-This increment is complete per its acceptance criteria. Broader Phase 2 rollout (nav consolidation,
-badge/empty-state adoption per-screen, full "Vehicle context/header" consistency pass) is **paused,
-not finished** — see `docs/execution/STATE.md` for what unblocks it.
+Both increments complete and user-verified in a live browser. The specific structural issue Phase 0
+flagged (triplicated shell/navigation markup) is now fully resolved — confirmed by auditing every
+`@section Nav`-bearing view in the codebase, not just the two that were fixed. Remaining Phase 2
+scope (typography, forms/tables/dialogs styling, badge/empty-state adoption per screen) is smaller,
+lower-risk, CSS-only-or-additive work better done incrementally alongside the feature phases that
+touch each screen, per `CLAUDE.md`'s "preserve working functionality... replace incrementally"
+principle — see `docs/execution/STATE.md` for the open question on whether to continue here or
+move to Phase 3.

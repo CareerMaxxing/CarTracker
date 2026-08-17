@@ -6,41 +6,50 @@ conversation history.
 ```
 PROJECT STATUS
 Current phase:      Phase 2 — UI Design System
-Current task:       PHASE-02-01 (see docs/execution/PHASE_02.md) — design token foundation
-Status:             This increment complete; broader phase paused pending visual verification
-Last completed:     docs/UI_SPEC.md written; design tokens (spacing/radius/shadow/motion) added to
-                     wwwroot/css/site.css and applied to .card/.taskCard/.kiosk-card (values kept
-                     identical - pure consolidation); new opt-in .status-badge/.ct-empty-state
-                     primitives added (not yet used by any view); fixed a real dark-mode bug in
-                     wwwroot/css/loader.css (.sloader/.loader were hardcoded white, invisible-on-white
-                     in dark mode). Zero .cshtml files touched. Build verified 0 errors, app verified
-                     serving the new CSS at runtime.
-Next task:           Broader Phase 2 rollout is blocked on visual verification capability, not on
-                     more analysis. Specifically: consolidating the triplicated tab-bar markup
-                     (Vehicle/Index.cshtml renders its 13-tab nav 3x, wired to vehicle.js by element
-                     ID) needs either a browser/screenshot tool or the user reviewing it locally
-                     before attempting - restructuring that markup blind risks breaking navigation
-                     app-wide. Ask the user how they want to proceed (their own local review loop,
-                     or wait for a visual-verification tool) before continuing Phase 2's nav/shell
-                     and per-screen badge/empty-state rollout.
-Known blockers:      1. No browser/screenshot tool available in this environment - cannot visually
-                        verify UI changes, only structural/HTTP correctness. This is the actual
-                        blocker on further Phase 2 work, not a knowledge gap.
+Current task:       PHASE-02 (see docs/execution/PHASE_02.md) — foundation + shell/nav consolidation
+Status:             Foundation and shell/nav consolidation complete and user-verified; remaining
+                     Phase 2 scope is smaller/lower-risk, open question on whether to continue here
+                     or move to Phase 3 (see "Next task" below)
+Last completed:      1. Design tokens (spacing/radius/shadow/motion) in site.css, applied to
+                     .card/.taskCard/.kiosk-card (values kept identical); new opt-in
+                     .status-badge/.ct-empty-state primitives (not yet used by any view); fixed a
+                     real dark-mode bug in loader.css (hardcoded white overlay/spinner).
+                     2. Workflow decision resolved: user chose "review locally as I go" - I
+                     implement + diff-verify an increment, they check it live in a browser before I
+                     commit.
+                     3. Consolidated the triplicated tab-bar markup in Home/Index.cshtml (4 tabs)
+                     and Vehicle/Index.cshtml (13 tabs x3 renderings) into shared tab-definition
+                     lists. Both verified by diffing actual rendered HTML before/after (caught and
+                     fixed one real bug: stray whitespace in mobile nav labels from a Razor quirk)
+                     AND confirmed working live in the user's browser (overflow dropdown, mobile
+                     off-canvas nav, tab switching, dark mode).
+                     4. Audited the remaining 4 @section Nav-bearing views (Migration/Admin/API/
+                     Setup) - none have the triplication pattern, so this specific structural issue
+                     (flagged in Phase 0's UI_INVENTORY.md) is now fully resolved codebase-wide.
+Next task:           Open decision: continue Phase 2 (typography scale, forms/tables/dialogs
+                     styling, adopt .status-badge/.ct-empty-state into a real screen, or the smaller
+                     Setup-wizard desktop/mobile nav duplication) vs. call the Phase 2 foundation
+                     "done enough" (major workflows intact, using the new token foundation, the
+                     flagged structural issue resolved) and move to Phase 3 (Garage/Dashboard) per
+                     ROADMAP.md - ask the user which they'd prefer before proceeding, since starting
+                     Phase 3 early without a nod would violate CLAUDE.md.
+Known blockers:      1. Still no browser/screenshot tool in this environment - the "review locally
+                        as I go" workflow with the user is what unblocks any further interactive-
+                        markup work, and is working well.
                      2. Global search technical approach undecided (REQUIREMENTS.md FR-SEARCH-01,
                         not urgent, resolve at Phase 11).
                      3. No test project exists yet (candidate: Phase 7 idempotency fix).
-Open decisions:      How to continue Phase 2 without visual verification - human-in-the-loop review
-                     of localhost after each increment, vs. waiting for a visual-verification tool,
-                     vs. continuing with more CSS-only/non-interactive increments only.
-Do not:              Restructure the shell/navigation markup (the triplicated tab-bar rendering)
-                     without either a way to visually/interactively verify the result, or explicit
-                     user sign-off to proceed blind. Do not assume SQLite is available anywhere in
+Open decisions:      Continue polishing Phase 2, or move to Phase 3 - pending user input.
+Do not:              Start Phase 3 (or any further phase) without the user's go-ahead, per
+                     CLAUDE.md's phase-boundary rule. Do not assume SQLite is available anywhere in
                      this codebase. Do not treat "Planned Work -> Service Record" as unbuilt - it
-                     exists and needs hardening (Phase 7), not a new implementation.
-Last validation:     dotnet build (0 errors, same 209 pre-existing nullable warnings) + dotnet run,
-                     curl-verified / and both modified CSS files serve 200 with the new rules present
-                     in the served output — 2026-08-17.
-Last commit:         45b3858 — "Phase 2 (partial): UI design token foundation"
+                     exists and needs hardening (Phase 7), not a new implementation. When touching
+                     any further interactive markup, keep using the diff-verify-then-user-confirms
+                     workflow that worked well in this phase.
+Last validation:     dotnet build (0 errors, 209 pre-existing nullable warnings, unchanged) after
+                     every increment; rendered-HTML diffs against captured baselines for both nav
+                     consolidations; user-confirmed live in browser for both — 2026-08-17.
+Last commit:         b3016fa — "Phase 2: deduplicate Vehicle detail page nav markup"
 ```
 
 ## Environment notes for future sessions
