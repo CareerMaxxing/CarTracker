@@ -51,7 +51,7 @@ Last validation:     dotnet build (0 errors, 209 pre-existing nullable warnings,
                      Documents tab verified end-to-end via API (attachment renders, empty state
                      works, export regression-checked) and confirmed live in the user's browser —
                      2026-08-17.
-Last commit:         (pending — Phase 4 commit, created immediately after this file)
+Last commit:         f334dc9 — "Phase 4: browsable Documents tab on the vehicle detail page"
 ```
 
 ## Environment notes for future sessions
