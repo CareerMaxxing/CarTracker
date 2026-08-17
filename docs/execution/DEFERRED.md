@@ -132,6 +132,17 @@ doc that first identified it, with enough context to pick back up cold.
   already-deferred "Dedicated Parts catalog screen" item from Phase 5). Revisit together if that
   screen ever gets built.
 
+## Local Reliability (from Phase 12 — Local Reliability / Offline Hardening)
+
+- **Broader DB-corruption detection/repair** — the health check remains connectivity-only
+  (NFR-REL-02 explicitly says no change required); no deeper data-consistency scan (e.g. orphaned
+  foreign-key-style references beyond PartPurchase, which was fixed) was attempted. Revisit only if
+  a real corruption incident happens.
+- **Postgres backend backup coverage** — `MakeBackup`/`RestoreBackup` are file-based and were never
+  wired up for the Postgres backend (pre-existing, not introduced by Car Tracker). Out of this
+  phase's scope (NFR-REL-01 named Part/Purchase/Government-adapter data specifically), but worth
+  flagging for whoever eventually hardens the Postgres path.
+
 ## Test infrastructure (from Phase 7 — Planned Work → Service Record)
 
 - **Automated test project** — no xUnit/integration-test project exists anywhere in this codebase.

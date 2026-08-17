@@ -704,8 +704,14 @@ namespace CarCareTracker.Controllers
                 vehicleDocuments.AddRange(_vehicleLogic.GetVehicleDocuments(vehicles));
                 //shop supplies
                 vehicleDocuments.AddRange(_vehicleLogic.GetStoreSupplyDocuments());
+                //parts catalog + shop-wide part purchases
+                vehicleDocuments.AddRange(_vehicleLogic.GetPartDocuments());
                 if (vehicleDocuments.Any())
                 {
+                    //diagnostic only (never auto-repairs/removes the referencing record) - records
+                    //pointing at a document that no longer exists on disk.
+                    var brokenLinks = _fileHelper.GetBrokenAttachmentLinks(vehicleDocuments);
+                    jsonResponse.Add("broken_attachment_links_found", brokenLinks.Count.ToString());
                     var documentsDeleted = _fileHelper.ClearUnlinkedDocuments(vehicleDocuments);
                     jsonResponse.Add("unlinked_documents_deleted", documentsDeleted.ToString());
                 }

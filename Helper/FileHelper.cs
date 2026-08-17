@@ -23,6 +23,7 @@ namespace CarCareTracker.Helper
         List<string> GetTempFiles();
         int ClearUnlinkedThumbnails(List<string> linkedImages);
         int ClearUnlinkedDocuments(List<string> linkedDocuments);
+        List<string> GetBrokenAttachmentLinks(List<string> linkedDocuments);
         string GetWidgets();
         bool WidgetsExist();
         bool SaveWidgets(string widgetsData);
@@ -560,6 +561,17 @@ namespace CarCareTracker.Helper
                 }
             }
             return filesDeleted;
+        }
+        public List<string> GetBrokenAttachmentLinks(List<string> linkedDocuments)
+        {
+            //the reverse of ClearUnlinkedDocuments - reports DB records referencing a document
+            //that no longer exists on disk (e.g. lost to manual file deletion/filesystem issues),
+            //rather than deleting anything. Diagnostic only, never auto-repairs/removes the record.
+            var documentPath = GetFullFilePath("documents", false);
+            var existingFileNames = Directory.Exists(documentPath)
+                ? Directory.GetFiles(documentPath).Select(Path.GetFileName).ToHashSet()
+                : new HashSet<string?>();
+            return linkedDocuments.Distinct().Where(x => !string.IsNullOrWhiteSpace(x) && !existingFileNames.Contains(x)).ToList();
         }
         public string GetWidgets()
         {

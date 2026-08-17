@@ -24,6 +24,7 @@ namespace CarCareTracker.Logic
         List<string> GetVehicleThumbnails(List<Vehicle> vehicles);
         List<string> GetVehicleDocuments(List<Vehicle> vehicles);
         List<string> GetStoreSupplyDocuments();
+        List<string> GetPartDocuments();
         bool DeleteVehicleRecords(int vehicleId);
     }
     public class VehicleLogic: IVehicleLogic
@@ -44,6 +45,8 @@ namespace CarCareTracker.Logic
         private readonly IInspectionRecordDataAccess _inspectionRecordDataAccess;
         private readonly IInspectionRecordTemplateDataAccess _inspectionRecordTemplateDataAccess;
         private readonly IEquipmentRecordDataAccess _equipmentRecordDataAccess;
+        private readonly IPartDataAccess _partDataAccess;
+        private readonly IPartPurchaseDataAccess _partPurchaseDataAccess;
         private readonly ILogger<VehicleLogic> _logger;
 
         public VehicleLogic(
@@ -63,6 +66,8 @@ namespace CarCareTracker.Logic
             IInspectionRecordDataAccess inspectionRecordDataAccess,
             IInspectionRecordTemplateDataAccess inspectionRecordTemplateDataAccess,
             IEquipmentRecordDataAccess equipmentRecordDataAccess,
+            IPartDataAccess partDataAccess,
+            IPartPurchaseDataAccess partPurchaseDataAccess,
             ILogger<VehicleLogic> logger
             ) {
             _serviceRecordDataAccess = serviceRecordDataAccess;
@@ -81,6 +86,8 @@ namespace CarCareTracker.Logic
             _inspectionRecordDataAccess = inspectionRecordDataAccess;
             _inspectionRecordTemplateDataAccess = inspectionRecordTemplateDataAccess;
             _equipmentRecordDataAccess = equipmentRecordDataAccess;
+            _partDataAccess = partDataAccess;
+            _partPurchaseDataAccess = partPurchaseDataAccess;
             _logger = logger;
         }
         public VehicleRecords GetVehicleRecords(int vehicleId)
@@ -611,6 +618,7 @@ namespace CarCareTracker.Logic
                 vehicleDocuments.AddRange(_inspectionRecordDataAccess.GetInspectionRecordsByVehicleId(vehicle.Id).SelectMany(x => x.Files).Select(y => Path.GetFileName(y.Location)));
                 vehicleDocuments.AddRange(_inspectionRecordTemplateDataAccess.GetInspectionRecordTemplatesByVehicleId(vehicle.Id).SelectMany(x => x.Files).Select(y => Path.GetFileName(y.Location)));
                 vehicleDocuments.AddRange(_equipmentRecordDataAccess.GetEquipmentRecordsByVehicleId(vehicle.Id).SelectMany(x => x.Files).Select(y => Path.GetFileName(y.Location)));
+                vehicleDocuments.AddRange(_partPurchaseDataAccess.GetPartPurchasesByVehicleId(vehicle.Id).SelectMany(x => x.Files).Select(y => Path.GetFileName(y.Location)));
             }
             return vehicleDocuments;
         }
@@ -619,6 +627,15 @@ namespace CarCareTracker.Logic
             List<string> vehicleDocuments = new List<string>();
             vehicleDocuments.AddRange(_supplyRecordDataAccess.GetSupplyRecordsByVehicleId(0).SelectMany(x => x.Files).Select(y => Path.GetFileName(y.Location)));
             return vehicleDocuments;
+        }
+        public List<string> GetPartDocuments()
+        {
+            //Part is a global catalog entity (not vehicle-scoped); PartPurchase with VehicleId=0 is
+            //shop-wide, mirroring SupplyRecord's convention - see docs/DATA_MODEL.md Phase 5 notes.
+            List<string> partDocuments = new List<string>();
+            partDocuments.AddRange(_partDataAccess.GetParts().SelectMany(x => x.Files).Select(y => Path.GetFileName(y.Location)));
+            partDocuments.AddRange(_partPurchaseDataAccess.GetPartPurchasesByVehicleId(0).SelectMany(x => x.Files).Select(y => Path.GetFileName(y.Location)));
+            return partDocuments;
         }
         public bool DeleteVehicleRecords(int vehicleId)
         {
@@ -636,6 +653,7 @@ namespace CarCareTracker.Logic
                 _equipmentRecordDataAccess.DeleteAllEquipmentRecordsByVehicleId(vehicleId) &&
                 _supplyRecordDataAccess.DeleteAllSupplyRecordsByVehicleId(vehicleId) &&
                 _odometerRecordDataAccess.DeleteAllOdometerRecordsByVehicleId(vehicleId) &&
+                _partPurchaseDataAccess.DeleteAllPartPurchasesByVehicleId(vehicleId) &&
                 _dataAccess.DeleteVehicle(vehicleId);
             return result;
         }
