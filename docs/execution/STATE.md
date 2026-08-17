@@ -90,8 +90,8 @@ Last validation:     dotnet build (0 errors); on throwaway vehicles/parts (creat
                      (confirmed via direct query, not just absence from the UI); a full backup - delete
                      vehicle - restore backup round trip brought the vehicle back exactly as it was —
                      2026-08-17.
-Last commit:         2d087f2 — "Record Phase 11 commit hash in STATE.md" (Phase 12's commit not yet
-                     made - pending user confirmation of this phase first).
+Last commit:         bf28f80 — "Phase 12: fix Part/PartPurchase reliability gaps + attachment
+                     diagnostic" — user confirmed and approved moving to Phase 13, 2026-08-17.
 ```
 
 ## Environment notes for future sessions
