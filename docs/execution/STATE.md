@@ -40,7 +40,7 @@ Do not:              Restructure the shell/navigation markup (the triplicated ta
 Last validation:     dotnet build (0 errors, same 209 pre-existing nullable warnings) + dotnet run,
                      curl-verified / and both modified CSS files serve 200 with the new rules present
                      in the served output — 2026-08-17.
-Last commit:         (pending — Phase 2 increment commit, created immediately after this file)
+Last commit:         45b3858 — "Phase 2 (partial): UI design token foundation"
 ```
 
 ## Environment notes for future sessions
