@@ -70,7 +70,7 @@ Last validation:     dotnet build (0 errors, 224 warnings, unchanged from Phase 
                      confirmed correct dropdown options and cost fields; Phase 3's Active Projects
                      count reverified correct across the expanded pipeline; user-confirmed live in
                      browser including drag-and-drop and the context menu — 2026-08-17.
-Last commit:         (pending — Phase 6 commit, created immediately after this file)
+Last commit:         d957545 — "Phase 6: expand Planner to 6-stage pipeline, add Actual Cost"
 ```
 
 ## Environment notes for future sessions
