@@ -27,7 +27,7 @@ Do not:              Start Phase 1 (or any product feature work) before the huma
                      codebase (see ARCHITECTURE.md correction).
 Last validation:     dotnet build (0 errors, 209 pre-existing nullable warnings) + dotnet run
                      smoke test (/, /health, /css/theme.css all 200) — 2026-08-17.
-Last commit:         (pending — Phase 0 documentation commit, created immediately after this file)
+Last commit:         652199a — "Phase 0: baseline reconnaissance docs and operating rules"
 ```
 
 ## Environment notes for future sessions
