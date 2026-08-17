@@ -66,7 +66,7 @@ Last validation:     dotnet build (0 errors, 224 warnings - 209 pre-existing + 1
                      part-then-purchase flow) and then confirmed live in the user's browser; server
                      start + /health verified green throughout; user's real vehicle confirmed
                      untouched — 2026-08-17.
-Last commit:         (pending — Phase 5 UI commit, created immediately after this file)
+Last commit:         9749bc9 — "Phase 5: Parts UI - new tab, purchase modal, inline part quick-add"
 ```
 
 ## Environment notes for future sessions
