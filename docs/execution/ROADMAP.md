@@ -14,7 +14,7 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
 | 6 | Planned Engineering Work | Idea → Costed → Parts Sourced → In Progress → Done pipeline for planned work per vehicle. | ✅ Complete — 6-stage pipeline (kept Testing per user choice) + Actual Cost, user-verified including drag-and-drop (PHASE_06.md) |
 | 7 | Planned Work → Service Record | Critical workflow: completing planned work idempotently creates a permanent service record, preserving parts/prices/mileage/notes/attachments. Dedicated acceptance tests required. | ✅ Complete — idempotency fixed + Gas/Tax coverage added, curl-verified (PHASE_07.md); automated test project explicitly deferred to DEFERRED.md |
 | 8 | Government Data | Mocked DVLA/DVSA adapters behind a domain-facing interface; no real credentials in this phase. | ✅ Complete — deterministic mock adapters + API endpoint + Dashboard panel, curl-verified (PHASE_08.md); MOT-status Garage badge left for a later increment |
-| 9 | Mileage / Odometer | One coherent odometer history across manual/service/MOT sources; flag suspicious regressions rather than silently accepting bad data. | Not started |
+| 9 | Mileage / Odometer | One coherent odometer history across manual/service/MOT sources; flag suspicious regressions rather than silently accepting bad data. | ✅ Complete — Source provenance on every reading + non-blocking regression warning on manual entry, curl-verified (PHASE_09.md); regression-check on the other auto-insert forms and CSV Source column left as candidates |
 | 10 | Documents | First-class attachments (invoice, MOT, V5C, insurance, photo, datasheet, other) associated with vehicles, parts, planned work, and service records. | Not started |
 | 11 | Global Search | Command-palette style search across parts, service records, projects, documents, vehicles. Confirm the right indexing approach given the actual data layer (see ARCHITECTURE.md — LiteDB/Postgres, not SQLite). | Not started |
 | 12 | Local Reliability / Offline Hardening | Reliable startup, DB integrity, attachment integrity, backup, restore, export/import, recovery from interrupted operations. | Not started |
@@ -28,7 +28,8 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
 - After UI foundation (Phase 2): visually inspect the new design direction. ✅ done — token foundation + shell/nav consolidation user-verified live; remaining Phase 2 polish deferred to per-screen rollout in later phases.
 - After Parts + Planned Work (Phases 5–6): verify the core domain model. ✅ done — both phases user-verified live, including Phase 6's drag-and-drop Kanban interactions. **← proceeding to Phase 7**
 - After Planned Work → Service Record (Phase 7): end-to-end acceptance test. ✅ done — idempotency and full ImportMode coverage curl-verified, user confirmed no UI regression.
-- After Government Data (Phase 8): mocked adapters + Dashboard panel curl-verified. ✅ done. **← user asked to resume phase-by-phase check-ins from here; awaiting go-ahead before Phase 9**
+- After Government Data (Phase 8): mocked adapters + Dashboard panel curl-verified. ✅ done, user approved moving to Phase 9.
+- After Mileage/Odometer (Phase 9): Source provenance + regression warning curl-verified. ✅ done. **← awaiting go-ahead before Phase 10**
 - Before real DVLA/DVSA adapters: approve credential/API architecture.
 - Before V1: final system review.
 

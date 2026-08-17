@@ -146,6 +146,7 @@ namespace CarCareTracker.Controllers
                         Date = DateTime.Parse(input.Date),
                         Notes = string.IsNullOrWhiteSpace(input.Notes) ? "" : input.Notes,
                         Mileage = int.Parse(input.Odometer),
+                        Source = OdometerRecordSource.RepairRecord,
                         Files = StaticHelper.CreateAttachmentFromRecord(ImportMode.RepairRecord, repairRecord.Id, repairRecord.Description)
                     };
                     _odometerLogic.AutoInsertOdometerRecord(odometerRecord);

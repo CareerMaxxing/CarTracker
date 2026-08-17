@@ -91,6 +91,8 @@ namespace CarCareTracker.Models
         public List<ExtraField> ExtraFields { get; set; } = new List<ExtraField>();
         public List<UploadedFiles> Files { get; set; } = new List<UploadedFiles>();
         public string EquipmentRecordId { get; set; } = string.Empty;
+        /// <summary>Read-only/output-only - system-determined provenance (FR-ODO-01), not settable via Add/Update.</summary>
+        public string Source { get; set; } = string.Empty;
     }
     public class TaxRecordExportModel
     {

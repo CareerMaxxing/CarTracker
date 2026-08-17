@@ -139,7 +139,13 @@
                         <td data-label="@translator.Translate(userLanguage, "Odometer")" class="col-3 flex-grow-1 flex-shrink-1 text-truncate" data-column="odometer" data-record-type="cost">@odometerRecord.Mileage</td>
                         <td data-label="@translator.Translate(userLanguage, "Distance")" class="col-2 flex-grow-1 flex-shrink-1 text-truncate" data-column="distance" data-record-type="distance">@(odometerRecord.DistanceTraveled == default ? "---" : odometerRecord.DistanceTraveled)</td>
                         <td data-label="@translator.Translate(userLanguage, "Attachments")" class="col-1 flex-grow-1 flex-shrink-1 text-truncate" style='display:none;' data-column="attachments">@await Html.PartialAsync("_AttachmentColumn", odometerRecord.Files)</td>
-                        <td data-label="@translator.Translate(userLanguage, "Notes")" class="col-2 col-xl-3 flex-grow-1 flex-shrink-1 text-truncate" data-column="notes">@StaticHelper.TruncateStrings(odometerRecord.Notes)</td>
+                        <td data-label="@translator.Translate(userLanguage, "Notes")" class="col-2 col-xl-3 flex-grow-1 flex-shrink-1 text-truncate" data-column="notes">
+                            @if (odometerRecord.Source != OdometerRecordSource.Manual)
+                            {
+                                <i class="bi bi-arrow-repeat me-1 text-body-secondary" title="@($"{translator.Translate(userLanguage, "Auto-inserted from")}: {odometerRecord.Source}")"></i>
+                            }
+                            @StaticHelper.TruncateStrings(odometerRecord.Notes)
+                        </td>
                         @foreach (string extraFieldColumn in extraFields)
                         {
                             <td data-label="@extraFieldColumn" class="col-2 flex-grow-1 flex-shrink-1 text-truncate" style='display:none;' data-column="@extraFieldColumn">

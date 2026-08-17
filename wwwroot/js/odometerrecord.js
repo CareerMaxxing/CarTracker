@@ -72,7 +72,11 @@ function saveOdometerRecordToVehicle(isEdit) {
     //save to db.
     $.post('/Vehicle/SaveOdometerRecordToVehicleId', { odometerRecord: formValues }, function (data) {
         if (data.success) {
-            successToast(isEdit ? "Odometer Record Updated" : "Odometer Record Added.");
+            if (data.additionalData && data.additionalData.isSuspiciousRegression) {
+                warnToast("Saved, but this mileage is lower than the last reported reading - please double-check it.");
+            } else {
+                successToast(isEdit ? "Odometer Record Updated" : "Odometer Record Added.");
+            }
             hideAddOdometerRecordModal();
             saveScrollPosition();
             getVehicleOdometerRecords(formValues.vehicleId);

@@ -8,17 +8,38 @@ namespace CarCareTracker.Logic
         int GetLastOdometerRecordMileage(int vehicleId, List<OdometerRecord> odometerRecords);
         bool AutoInsertOdometerRecord(OdometerRecord odometer);
         List<OdometerRecord> AutoConvertOdometerRecord(List<OdometerRecord> odometerRecords);
+        bool IsSuspiciousMileageRegression(int vehicleId, int newMileage, int excludeRecordId = 0);
     }
     public class OdometerLogic: IOdometerLogic
     {
         private readonly IOdometerRecordDataAccess _odometerRecordDataAccess;
         private readonly IEquipmentRecordDataAccess _equipmentRecordDataAccess;
+        private readonly IVehicleDataAccess _vehicleDataAccess;
         private readonly ILogger<IOdometerLogic> _logger;
-        public OdometerLogic(IOdometerRecordDataAccess odometerRecordDataAccess, IEquipmentRecordDataAccess equipmentRecordDataAccess, ILogger<IOdometerLogic> logger)
+        public OdometerLogic(IOdometerRecordDataAccess odometerRecordDataAccess, IEquipmentRecordDataAccess equipmentRecordDataAccess, IVehicleDataAccess vehicleDataAccess, ILogger<IOdometerLogic> logger)
         {
             _odometerRecordDataAccess = odometerRecordDataAccess;
             _equipmentRecordDataAccess = equipmentRecordDataAccess;
+            _vehicleDataAccess = vehicleDataAccess;
             _logger = logger;
+        }
+        public bool IsSuspiciousMileageRegression(int vehicleId, int newMileage, int excludeRecordId = 0)
+        {
+            //FR-ODO-02: HasOdometerAdjustment means the vehicle's odometer was intentionally
+            //replaced/rolled back (e.g. new instrument cluster) - regressions are expected there,
+            //not suspicious.
+            var vehicle = _vehicleDataAccess.GetVehicleById(vehicleId);
+            if (vehicle == null || vehicle.Id == default || vehicle.HasOdometerAdjustment)
+            {
+                return false;
+            }
+            var existingRecords = _odometerRecordDataAccess.GetOdometerRecordsByVehicleId(vehicleId);
+            if (excludeRecordId != default)
+            {
+                existingRecords.RemoveAll(x => x.Id == excludeRecordId);
+            }
+            var lastReportedMileage = GetLastOdometerRecordMileage(vehicleId, existingRecords);
+            return lastReportedMileage != default && newMileage < lastReportedMileage;
         }
         public int GetLastOdometerRecordMileage(int vehicleId, List<OdometerRecord> odometerRecords)
         {

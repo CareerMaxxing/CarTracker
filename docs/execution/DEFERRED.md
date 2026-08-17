@@ -86,6 +86,26 @@ doc that first identified it, with enough context to pick back up cold.
   credentials and is a mandatory stop condition per `CLAUDE.md` ("Use real DVLA/DVSA credentials" /
   "A new external service... is required").
 
+## Mileage / Odometer (from Phase 9 — Mileage / Odometer)
+
+- **Regression flagging on the other auto-insert forms** — `IsSuspiciousMileageRegression` is only
+  wired into the dedicated Odometer tab's manual entry form. Adding a mileage value that regresses
+  through the Gas/Service/Repair/Upgrade/Inspection/Plan-completion forms doesn't warn today. Real
+  additional scope (each of those ~8 controllers/JS files would need its own warning surface, not
+  just a shared logic call), deferred rather than bundled into Phase 9. See `PHASE_09.md`.
+- **Source CSV column** — `OdometerRecordExportModel.Source` is exposed read-only via the API's
+  JSON GET/list endpoints, but not wired into the CSV import/export column mapping in
+  `Controllers/Vehicle/ImportController.cs` (same category of gap as Phase 6's `ActualCost` CSV
+  column, deferred there for the same reason - narrower than the phase's core acceptance criteria).
+- **Source column in the Odometer tab's visible-columns system** — Phase 9 added a small provenance
+  icon+tooltip inline in the Notes cell instead of a full sortable/toggleable table column (which
+  would need drag-reorder support, `UserColumnPreferences` persistence, and CSV export wiring - real
+  additional scope for a single field). See `PHASE_09.md`.
+- **MOT-sourced odometer readings** — `OdometerRecordSource.MOT` exists in the enum (per FR-ODO-01's
+  named example) but nothing sets it yet; Phase 8's `IDVSAAdapter.GetMotHistory(...)` returns
+  `OdometerValue` per MOT test, which could be auto-inserted as odometer history in a future
+  increment, mirroring the existing auto-insert pattern.
+
 ## Test infrastructure (from Phase 7 — Planned Work → Service Record)
 
 - **Automated test project** — no xUnit/integration-test project exists anywhere in this codebase.

@@ -51,10 +51,24 @@ namespace CarCareTracker.Controllers
             //move files from temp.
             odometerRecord.Files = odometerRecord.Files.Select(x => { return new UploadedFiles { Name = x.Name, Location = _fileHelper.MoveFileFromTemp(x.Location, "documents/") }; }).ToList();
             var convertedRecord = odometerRecord.ToOdometerRecord();
+            if (odometerRecord.Id != default)
+            {
+                //preserve the existing record's Source on edit - this form always defaults to
+                //Manual, which would otherwise silently overwrite an auto-inserted record's
+                //provenance on every edit (Upsert replaces the whole row).
+                var existingRecord = _odometerRecordDataAccess.GetOdometerRecordById(odometerRecord.Id);
+                convertedRecord.Source = existingRecord.Source;
+            }
+            //FR-ODO-02: flag, don't block - the user may be intentionally backfilling an older record.
+            bool isSuspiciousRegression = _odometerLogic.IsSuspiciousMileageRegression(odometerRecord.VehicleId, odometerRecord.Mileage, odometerRecord.Id);
             var result = _odometerRecordDataAccess.SaveOdometerRecordToVehicle(convertedRecord);
             if (result)
             {
                 _eventLogic.PublishEvent(GetUserID(), WebHookPayload.FromOdometerRecord(convertedRecord, odometerRecord.Id == default ? "odometerrecord.add" : "odometerrecord.update", User.Identity?.Name ?? string.Empty));
+            }
+            if (result && isSuspiciousRegression)
+            {
+                return Json(OperationResponse.Succeed(string.Empty, new { isSuspiciousRegression = true }));
             }
             return Json(OperationResponse.Conditional(result, string.Empty, StaticHelper.GenericErrorMessage));
         }
@@ -240,6 +254,7 @@ namespace CarCareTracker.Controllers
                     Date = lastDate,
                     InitialMileage = currentOdometer,
                     Mileage = newOdometer,
+                    Source = OdometerRecordSource.Other,
                     Notes = _translator.Translate(_config.GetUserConfig(User).UserLanguage, "Auto Insert From Distance Export")
                 });
                 if (shiftOdometer)

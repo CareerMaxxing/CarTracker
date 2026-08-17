@@ -1119,6 +1119,26 @@ namespace CarCareTracker.Helper
             }
             return outputVerbiage;
         }
+        public static OdometerRecordSource ToOdometerRecordSource(ImportMode importMode)
+        {
+            switch (importMode)
+            {
+                case ImportMode.ServiceRecord:
+                    return OdometerRecordSource.ServiceRecord;
+                case ImportMode.RepairRecord:
+                    return OdometerRecordSource.RepairRecord;
+                case ImportMode.GasRecord:
+                    return OdometerRecordSource.GasRecord;
+                case ImportMode.UpgradeRecord:
+                    return OdometerRecordSource.UpgradeRecord;
+                case ImportMode.TaxRecord:
+                    return OdometerRecordSource.TaxRecord;
+                case ImportMode.InspectionRecord:
+                    return OdometerRecordSource.InspectionRecord;
+                default:
+                    return OdometerRecordSource.Other;
+            }
+        }
         public static bool GetPathAllowAPIKeyAuth(PathString path)
         {
             return path.StartsWithSegments("/api") || path.StartsWithSegments("/kiosk") || path.StartsWithSegments("/images") || path.StartsWithSegments("/documents");

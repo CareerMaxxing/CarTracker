@@ -66,6 +66,7 @@ namespace CarCareTracker.Controllers
                     Date = DateTime.Parse(gasRecord.Date),
                     VehicleId = gasRecord.VehicleId,
                     Mileage = gasRecord.Mileage,
+                    Source = OdometerRecordSource.GasRecord,
                     Notes = $"{_translator.Translate(_config.GetUserConfig(User).UserLanguage, StaticHelper.GetAutoInsertVerbiage(ImportMode.GasRecord, false))}: {gasRecord.Notes}",
                     Files = StaticHelper.CreateAttachmentFromRecord(ImportMode.GasRecord, convertedRecord.Id, $"Gas Record - {gasRecord.Mileage.ToString()}")
                 });

@@ -818,6 +818,7 @@ namespace CarCareTracker.Controllers
                                                 Date = convertedRecord.Date,
                                                 VehicleId = convertedRecord.VehicleId,
                                                 Mileage = convertedRecord.Mileage,
+                                                Source = OdometerRecordSource.GasRecord,
                                                 Notes = $"{_translator.Translate(_config.GetUserConfig(User).UserLanguage, StaticHelper.GetAutoInsertVerbiage(ImportMode.GasRecord, true))}: {convertedRecord.Notes}",
                                                 Files = StaticHelper.CreateAttachmentFromRecord(ImportMode.GasRecord, convertedRecord.Id, $"Gas Record - {convertedRecord.Mileage.ToString()}")
                                             });
@@ -867,6 +868,7 @@ namespace CarCareTracker.Controllers
                                             Date = convertedRecord.Date,
                                             VehicleId = convertedRecord.VehicleId,
                                             Mileage = convertedRecord.Mileage,
+                                            Source = OdometerRecordSource.ServiceRecord,
                                             Notes = $"{_translator.Translate(_config.GetUserConfig(User).UserLanguage, StaticHelper.GetAutoInsertVerbiage(ImportMode.ServiceRecord, true))}: {convertedRecord.Notes}",
                                             Files = StaticHelper.CreateAttachmentFromRecord(ImportMode.ServiceRecord, convertedRecord.Id, convertedRecord.Description)
                                         });
@@ -914,6 +916,7 @@ namespace CarCareTracker.Controllers
                                             Date = convertedRecord.Date,
                                             VehicleId = convertedRecord.VehicleId,
                                             Mileage = convertedRecord.Mileage,
+                                            Source = OdometerRecordSource.RepairRecord,
                                             Notes = $"{_translator.Translate(_config.GetUserConfig(User).UserLanguage, StaticHelper.GetAutoInsertVerbiage(ImportMode.RepairRecord, true))}: {convertedRecord.Notes}",
                                             Files = StaticHelper.CreateAttachmentFromRecord(ImportMode.RepairRecord, convertedRecord.Id, convertedRecord.Description)
                                         });
@@ -961,6 +964,7 @@ namespace CarCareTracker.Controllers
                                             Date = convertedRecord.Date,
                                             VehicleId = convertedRecord.VehicleId,
                                             Mileage = convertedRecord.Mileage,
+                                            Source = OdometerRecordSource.UpgradeRecord,
                                             Notes = $"{_translator.Translate(_config.GetUserConfig(User).UserLanguage, StaticHelper.GetAutoInsertVerbiage(ImportMode.UpgradeRecord, true))}: {convertedRecord.Notes}",
                                             Files = StaticHelper.CreateAttachmentFromRecord(ImportMode.UpgradeRecord, convertedRecord.Id, convertedRecord.Description)
                                         });

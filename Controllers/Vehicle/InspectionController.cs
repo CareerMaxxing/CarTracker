@@ -222,6 +222,7 @@ namespace CarCareTracker.Controllers
                         Date = DateTime.Parse(inspectionRecord.Date),
                         VehicleId = inspectionRecord.VehicleId,
                         Mileage = inspectionRecord.Mileage,
+                        Source = OdometerRecordSource.InspectionRecord,
                         Notes = $"{_translator.Translate(_config.GetUserConfig(User).UserLanguage, StaticHelper.GetAutoInsertVerbiage(ImportMode.InspectionRecord, false))}: {inspectionRecord.Description}",
                         Files = StaticHelper.CreateAttachmentFromRecord(ImportMode.InspectionRecord, convertedRecord.Id, convertedRecord.Description)
                     });

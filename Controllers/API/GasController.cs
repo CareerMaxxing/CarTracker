@@ -190,6 +190,7 @@ namespace CarCareTracker.Controllers
                         Date = DateTime.Parse(input.Date),
                         Notes = string.IsNullOrWhiteSpace(input.Notes) ? "" : input.Notes,
                         Mileage = int.Parse(input.Odometer),
+                        Source = OdometerRecordSource.GasRecord,
                         Files = StaticHelper.CreateAttachmentFromRecord(ImportMode.GasRecord, gasRecord.Id, $"Gas Record - {gasRecord.Mileage.ToString()}")
                     };
                     _odometerLogic.AutoInsertOdometerRecord(odometerRecord);

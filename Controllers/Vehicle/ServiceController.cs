@@ -66,6 +66,7 @@ namespace CarCareTracker.Controllers
                     Date = DateTime.Parse(serviceRecord.Date),
                     VehicleId = serviceRecord.VehicleId,
                     Mileage = serviceRecord.Mileage,
+                    Source = OdometerRecordSource.ServiceRecord,
                     Notes = $"{_translator.Translate(_config.GetUserConfig(User).UserLanguage, StaticHelper.GetAutoInsertVerbiage(ImportMode.ServiceRecord, false))}: {serviceRecord.Description}",
                     Files = StaticHelper.CreateAttachmentFromRecord(ImportMode.ServiceRecord, convertedRecord.Id, convertedRecord.Description)
                 });
