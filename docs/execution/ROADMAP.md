@@ -8,7 +8,7 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
 | 0 | Baseline Reconnaissance | Establish the clean LubeLogger baseline: confirm it builds/runs, map architecture/data model/API/UI, no product changes. | ✅ Complete |
 | 1 | Requirements & Architecture Reconciliation | Compare discovered LubeLogger capabilities against target Car Tracker requirements; produce EXISTING/MODIFY/EXTEND/REPLACE/NEW matrix; write SYSTEM_SPEC.md, REQUIREMENTS.md, update ARCHITECTURE.md/DATA_MODEL.md. | ✅ Complete |
 | 2 | UI Design System | App shell, nav, typography/spacing, cards/buttons/forms/tables/dialogs, status badges, loading/empty/error states, responsive layout, theming — without touching the domain model. | 🟡 In progress — token foundation + shell/nav consolidation done and user-verified (PHASE_02.md); typography/forms/tables/badges rollout still open |
-| 3 | Garage / Dashboard | "What's happening with my cars?" — vehicle overview cards, mileage, MOT status, upcoming work, reminders, active projects, cost summaries. | Not started |
+| 3 | Garage / Dashboard | "What's happening with my cars?" — vehicle overview cards, mileage, MOT status, upcoming work, reminders, active projects, cost summaries. | 🟡 In progress |
 | 4 | Vehicle Experience | Vehicle Overview / Maintenance / History / Parts / Projects / Documents, reusing existing data structures where possible. | Not started |
 | 5 | Parts Domain | Parts as first-class entities: part number, manufacturer, description, category, fitment, purchases, suppliers, price history, documents. Price belongs to a purchase, not the part. | Not started |
 | 6 | Planned Engineering Work | Idea → Costed → Parts Sourced → In Progress → Done pipeline for planned work per vehicle. | Not started |
@@ -25,7 +25,7 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
 
 - After Phase 0: review actual LubeLogger architecture.
 - After Phase 1: approve the reconciled system specification and architecture.
-- After UI foundation (Phase 2): visually inspect the new design direction. **← we are here — token foundation landed, needs your eyes (or a visual-verification tool) before nav restructuring/rollout continues**
+- After UI foundation (Phase 2): visually inspect the new design direction. ✅ done — token foundation + shell/nav consolidation user-verified live; remaining Phase 2 polish deferred to per-screen rollout in later phases. **← proceeding to Phase 3**
 - After Parts + Planned Work (Phases 5–6): verify the core domain model.
 - After Planned Work → Service Record (Phase 7): end-to-end acceptance test.
 - Before real DVLA/DVSA adapters: approve credential/API architecture.

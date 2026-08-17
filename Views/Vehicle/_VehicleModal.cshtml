@@ -122,6 +122,10 @@
                                     <input class="form-check-input" type="checkbox" role="switch" id="inputMetricTotalCost" value="@DashboardMetric.TotalCost" checked="@Model.DashboardMetrics.Contains(DashboardMetric.TotalCost)">
                                     <label class="form-check-label" for="inputMetricTotalCost">@translator.Translate(userLanguage, "Total Cost")</label>
                                 </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="inputMetricActiveProjects" value="@DashboardMetric.ActiveProjects" checked="@Model.DashboardMetrics.Contains(DashboardMetric.ActiveProjects)">
+                                    <label class="form-check-label" for="inputMetricActiveProjects">@translator.Translate(userLanguage, "Active Projects")</label>
+                                </div>
                             </div>
                         </div>
                     </div>

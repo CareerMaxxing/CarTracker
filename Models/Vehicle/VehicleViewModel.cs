@@ -23,5 +23,6 @@
         public decimal CostPerMile { get; set; }
         public decimal TotalCost { get; set; }
         public string DistanceUnit { get; set; } = string.Empty;
+        public int ActiveProjectCount { get; set; }
     }
 }

@@ -24,6 +24,7 @@ namespace CarCareTracker.Controllers
         private readonly IConfigHelper _config;
         private readonly IExtraFieldDataAccess _extraFieldDataAccess;
         private readonly IReminderRecordDataAccess _reminderRecordDataAccess;
+        private readonly IPlanRecordDataAccess _planRecordDataAccess;
         private readonly IReminderHelper _reminderHelper;
         private readonly ITranslationHelper _translationHelper;
         private readonly IMailHelper _mailHelper;
@@ -38,6 +39,7 @@ namespace CarCareTracker.Controllers
             IFileHelper fileHelper,
             IExtraFieldDataAccess extraFieldDataAccess,
             IReminderRecordDataAccess reminderRecordDataAccess,
+            IPlanRecordDataAccess planRecordDataAccess,
             IReminderHelper reminderHelper,
             ITranslationHelper translationHelper,
             IMailHelper mailHelper,
@@ -51,6 +53,7 @@ namespace CarCareTracker.Controllers
             _fileHelper = fileHelper;
             _extraFieldDataAccess = extraFieldDataAccess;
             _reminderRecordDataAccess = reminderRecordDataAccess;
+            _planRecordDataAccess = planRecordDataAccess;
             _reminderHelper = reminderHelper;
             _loginLogic = loginLogic;
             _vehicleLogic = vehicleLogic;
@@ -116,6 +119,10 @@ namespace CarCareTracker.Controllers
                     if (vehicleVM.DashboardMetrics.Contains(DashboardMetric.TotalCost))
                     {
                         vehicleVM.TotalCost = _vehicleLogic.GetVehicleTotalCost(vehicleRecords);
+                    }
+                    if (vehicleVM.DashboardMetrics.Contains(DashboardMetric.ActiveProjects))
+                    {
+                        vehicleVM.ActiveProjectCount = _planRecordDataAccess.GetPlanRecordsByVehicleId(x.Id).Count(p => p.Progress != PlanProgress.Done);
                     }
                 }
                 return vehicleVM;
