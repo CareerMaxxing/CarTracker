@@ -43,6 +43,9 @@
             case "equipment-tab":
                 getVehicleEquipmentRecords(vehicleId);
                 break;
+            case "documents-tab":
+                getVehicleDocuments(vehicleId);
+                break;
         }
         $(`.lubelogger-tab #${e.target.id}`).addClass('active');
         $(`.lubelogger-mobile-nav #${e.target.id}`).addClass('active');
@@ -86,6 +89,9 @@
                     break;
                 case "equipment-tab":
                     $("#equipment-tab-pane").html("");
+                    break;
+                case "documents-tab":
+                    $("#documents-tab-pane").html("");
                     break;
             }
             $(`.lubelogger-tab #${e.relatedTarget.id}`).removeClass('active');
@@ -213,6 +219,13 @@ function getVehicleReport(vehicleId) {
         if (data) {
             $("#report-tab-pane").html(data);
             getVehicleHaveImportantReminders(vehicleId);
+        }
+    })
+}
+function getVehicleDocuments(vehicleId) {
+    $.get(`/Vehicle/GetDocumentsByVehicleId?vehicleId=${vehicleId}`, function (data) {
+        if (data) {
+            $("#documents-tab-pane").html(data);
         }
     })
 }

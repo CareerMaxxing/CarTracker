@@ -349,9 +349,7 @@ namespace CarCareTracker.Controllers
             };
             return PartialView("Report/_ReminderMakeUpReport", viewModel);
         }
-        [TypeFilter(typeof(CollaboratorFilter))]
-        [HttpPost]
-        public IActionResult GetVehicleAttachments(int vehicleId, List<ImportMode> exportTabs)
+        private List<GenericReportModel> GetAttachmentDataForVehicle(int vehicleId, List<ImportMode> exportTabs)
         {
             List<GenericReportModel> attachmentData = new List<GenericReportModel>();
             if (exportTabs.Contains(ImportMode.ServiceRecord))
@@ -475,9 +473,15 @@ namespace CarCareTracker.Controllers
                     Files = x.Files
                 }));
             }
+            return attachmentData.OrderBy(x => x.Date).ThenBy(x => x.Odometer).ToList();
+        }
+        [TypeFilter(typeof(CollaboratorFilter))]
+        [HttpPost]
+        public IActionResult GetVehicleAttachments(int vehicleId, List<ImportMode> exportTabs)
+        {
+            var attachmentData = GetAttachmentDataForVehicle(vehicleId, exportTabs);
             if (attachmentData.Any())
             {
-                attachmentData = attachmentData.OrderBy(x => x.Date).ThenBy(x => x.Odometer).ToList();
                 var result = _fileHelper.MakeAttachmentsExport(attachmentData);
                 if (string.IsNullOrWhiteSpace(result))
                 {
@@ -489,6 +493,14 @@ namespace CarCareTracker.Controllers
             {
                 return Json(OperationResponse.Failed("No Attachments Found"));
             }
+        }
+        [TypeFilter(typeof(CollaboratorFilter))]
+        [HttpGet]
+        public IActionResult GetDocumentsByVehicleId(int vehicleId)
+        {
+            var allTabs = Enum.GetValues(typeof(ImportMode)).Cast<ImportMode>().ToList();
+            var attachmentData = GetAttachmentDataForVehicle(vehicleId, allTabs);
+            return PartialView("Documents/_Documents", attachmentData);
         }
         public IActionResult GetReportParameters()
         {

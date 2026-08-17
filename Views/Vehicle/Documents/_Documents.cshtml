@@ -1,0 +1,59 @@
+@using CarCareTracker.Helper
+@inject IConfigHelper config
+@inject ITranslationHelper translator
+@{
+    var userConfig = config.GetUserConfig(User);
+    var userLanguage = userConfig.UserLanguage;
+}
+@model List<GenericReportModel>
+<div class="d-flex flex-column vehicleTabPane">
+    <div class="row">
+        <div class="d-flex justify-content-between">
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                <span class="badge bg-success">@($"{translator.Translate(userLanguage, "# of Documents")}: {Model.Sum(x => x.Files.Count)}")</span>
+            </div>
+        </div>
+    </div>
+    @if (Model.Any(x => x.Files.Any()))
+    {
+        <div class="row mt-2">
+            <div class="col-12">
+                <table class="table table-hover">
+                    <thead>
+                        <tr class="d-flex">
+                            <th scope="col" class="col-3 text-truncate flex-grow-1 flex-shrink-1">@translator.Translate(userLanguage, "Type")</th>
+                            <th scope="col" class="col-2 text-truncate flex-grow-1 flex-shrink-1">@translator.Translate(userLanguage, "Date")</th>
+                            <th scope="col" class="col-7 text-truncate flex-grow-1 flex-shrink-1">@translator.Translate(userLanguage, "File")</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (GenericReportModel reportData in Model)
+                        {
+                            @foreach (UploadedFiles file in reportData.Files)
+                            {
+                                <tr class="d-flex">
+                                    <td class="col-3 text-truncate flex-grow-1 flex-shrink-1" data-label="@translator.Translate(userLanguage, "Type")">
+                                        <i class="bi @StaticHelper.GetImportModeIcon(reportData.DataType) me-2"></i>@translator.Translate(userLanguage, StaticHelper.GetImportModeName(reportData.DataType, false))
+                                    </td>
+                                    <td class="col-2 text-truncate flex-grow-1 flex-shrink-1" data-label="@translator.Translate(userLanguage, "Date")">@reportData.Date.ToShortDateString()</td>
+                                    <td class="col-7 text-truncate flex-grow-1 flex-shrink-1" data-label="@translator.Translate(userLanguage, "File")">
+                                        <a style="cursor:pointer;" class="uploadedFileName d-flex align-items-center text-truncate" title="@file.Name" onclick="openAttachmentPreview('@file.Name', '@file.Location')">
+                                            <span class="me-2"><i class="bi @StaticHelper.GetIconByFileExtension(file.Location)"></i></span><span class="text-link">@file.Name</span>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="ct-empty-state">
+            <i class="bi bi-file-earmark-text"></i>
+            <span>@translator.Translate(userLanguage, "No Documents Found")</span>
+        </div>
+    }
+</div>

@@ -81,6 +81,9 @@
                             </button>
                         </li>
                     }
+                    <li class="nav-item" role="presentation" style="order: @(userConfig.TabOrder.Count)">
+                        <button class="nav-link resizable-nav-link" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents-tab-pane" type="button" role="tab" aria-selected="false"><i class="bi bi-folder2-open"></i><span class="ms-2">@translator.Translate(userLanguage, "Documents")</span></button>
+                    </li>
                     <li class="nav-item" role="presentation" style="order: @(userConfig.TabOrder.Count + 1)">
                         <button class="nav-link resizable-nav-link" type="button" role="tab" aria-selected="false" id="search-tab" onclick="showGlobalSearch()"><i class="bi bi-search"></i><span class="ms-2">@translator.Translate(userLanguage, "Search")</span></button>
                     </li>
@@ -103,6 +106,9 @@
                                     </button>
                                 </li>
                             }
+                            <li class="nav-item text-truncate" role="presentation" style="order: @(userConfig.TabOrder.Count)">
+                                <button class="nav-link resizable-nav-link" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents-tab-pane" type="button" role="tab" aria-selected="false"><i class="bi bi-folder2-open"></i><span class="ms-2">@translator.Translate(userLanguage, "Documents")</span></button>
+                            </li>
                             <li class="nav-item text-truncate" role="presentation" style="order: @(userConfig.TabOrder.Count + 1)">
                                 <button class="nav-link resizable-nav-link" type="button" role="tab" aria-selected="false" id="search-tab" onclick="showGlobalSearch()"><i class="bi bi-search"></i><span class="ms-2">@translator.Translate(userLanguage, "Search")</span></button>
                             </li>
@@ -139,6 +145,9 @@
                         {<i class="bi @tab.Icon me-2"></i>}@translator.Translate(userLanguage, tab.Label)</span></button>
             </li>
         }
+        <li class="nav-item d-flex" role="presentation" style="order: @(userConfig.TabOrder.Count)">
+            <button class="nav-link flex-grow-1 text-start" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents-tab-pane" type="button" role="tab" aria-selected="false"><span class="display-3 ms-2"><i class="bi bi-folder2-open me-2"></i>@translator.Translate(userLanguage, "Documents")</span></button>
+        </li>
     </ul>
 </div>
 <div class="container">
@@ -156,6 +165,7 @@
         <div class="tab-pane fade" id="odometer-tab-pane" role="tabpanel" tabindex="0"></div>
         <div class="tab-pane fade" id="inspection-tab-pane" role="tabpanel" tabindex="0"></div>
         <div class="tab-pane fade" id="equipment-tab-pane" role="tabpanel" tabindex="0"></div>
+        <div class="tab-pane fade" id="documents-tab-pane" role="tabpanel" tabindex="0"></div>
     </div>
 </div>
 <div class="modal fade" data-bs-focus="false" id="editVehicleModal" tabindex="-1" role="dialog" aria-hidden="true">
