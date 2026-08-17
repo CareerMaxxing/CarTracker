@@ -16,6 +16,27 @@
     <script src="~/lib/qrcode/qrcode.js"></script>
     <script src="~/lib/signalr/signalr.min.js"></script>
 }
+@{
+    // Tab definitions shared by the primary bar and its "more" overflow dropdown, in the same
+    // order the dropdown lists them (checkNavBarOverflow() in shared.js hides a primary item and
+    // reveals its dropdown twin by matching this same id - see docs/execution/PHASE_02.md).
+    // Settings is rendered separately in the primary bar (see below) because its ms-auto class
+    // depends on its exact DOM position among flex siblings - it must stay positioned after the
+    // "more" dropdown <li>, not folded into the same loop as the collapsible items before it.
+    var homeNavTabs = new List<(string Id, string Target, string Icon, string Label)>
+    {
+        ("garage-tab", "garage-tab-pane", "bi-car-front", "Garage"),
+    };
+    if (config.GetServerEnableShopSupplies())
+    {
+        homeNavTabs.Add(("supply-tab", "supply-tab-pane", "bi-shop", "Supplies"));
+    }
+    if (userConfig.ShowCalendar)
+    {
+        homeNavTabs.Add(("calendar-tab", "calendar-tab-pane", "bi-calendar-week", "Calendar"));
+    }
+    (string Id, string Target, string Icon, string Label) homeSettingsTab = ("settings-tab", "settings-tab-pane", "bi-gear", "Settings");
+}
 @section Nav {
     <div class="container-fluid lubelogger-navbar-container frosted hideOnPrint">
         <div class="row mt-2">
@@ -25,46 +46,25 @@
                     <img src="@config.GetLogoUrl()" class="lubelogger-logo lubelogger-mobile-nav-show" />
                 </div>
                 <ul class="nav nav-tabs lubelogger-tab flex-grow-1" id="homeTab" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link resizable-nav-link" id="garage-tab" data-bs-toggle="tab" data-bs-target="#garage-tab-pane" type="button" role="tab"><i class="bi bi-car-front"></i><span class="ms-2">@translator.Translate(userLanguage, "Garage")</span></button>
-                    </li>
-                    @if (config.GetServerEnableShopSupplies())
+                    @foreach (var tab in homeNavTabs)
                     {
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link resizable-nav-link" id="supply-tab" data-bs-toggle="tab" data-bs-target="#supply-tab-pane" type="button" role="tab" aria-selected="false"><i class="bi bi-shop"></i><span class="ms-2">@translator.Translate(userLanguage, "Supplies")</span></button>
-                        </li>
-                    }
-                    @if (userConfig.ShowCalendar)
-                    {
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link resizable-nav-link" id="calendar-tab" data-bs-toggle="tab" data-bs-target="#calendar-tab-pane" type="button" role="tab" aria-selected="false"><i class="bi bi-calendar-week"></i><span class="ms-2">@translator.Translate(userLanguage, "Calendar")</span></button>
+                            <button class="nav-link resizable-nav-link" id="@tab.Id" data-bs-toggle="tab" data-bs-target="#@tab.Target" type="button" role="tab" aria-selected="false"><i class="bi @tab.Icon"></i><span class="ms-2">@translator.Translate(userLanguage, tab.Label)</span></button>
                         </li>
                     }
                     <li class="nav-item dropdown nav-item-persist nav-item-more me-5" role="presentation" style="display:none;">
                         <a class="nav-link resizable-nav-link" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false"><i class="bi bi-three-dots"></i></a>
                         <ul class="dropdown-menu">
-                            <li class="nav-item text-truncate" role="presentation">
-                                <button class="nav-link resizable-nav-link" id="garage-tab" data-bs-toggle="tab" data-bs-target="#garage-tab-pane" type="button" role="tab"><i class="bi bi-car-front"></i><span class="ms-2">@translator.Translate(userLanguage, "Garage")</span></button>
-                            </li>
-                            @if (config.GetServerEnableShopSupplies())
+                            @foreach (var tab in homeNavTabs.Append(homeSettingsTab))
                             {
                                 <li class="nav-item text-truncate" role="presentation">
-                                    <button class="nav-link resizable-nav-link" id="supply-tab" data-bs-toggle="tab" data-bs-target="#supply-tab-pane" type="button" role="tab" aria-selected="false"><i class="bi bi-shop"></i><span class="ms-2">@translator.Translate(userLanguage, "Supplies")</span></button>
+                                    <button class="nav-link resizable-nav-link" id="@tab.Id" data-bs-toggle="tab" data-bs-target="#@tab.Target" type="button" role="tab" aria-selected="false"><i class="bi @tab.Icon"></i><span class="ms-2">@translator.Translate(userLanguage, tab.Label)</span></button>
                                 </li>
                             }
-                            @if (userConfig.ShowCalendar)
-                            {
-                                <li class="nav-item text-truncate" role="presentation">
-                                    <button class="nav-link resizable-nav-link" id="calendar-tab" data-bs-toggle="tab" data-bs-target="#calendar-tab-pane" type="button" role="tab" aria-selected="false"><i class="bi bi-calendar-week"></i><span class="ms-2">@translator.Translate(userLanguage, "Calendar")</span></button>
-                                </li>
-                            }
-                            <li class="nav-item text-truncate" role="presentation">
-                                <button class="nav-link resizable-nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings-tab-pane" type="button" role="tab"><i class="bi bi-gear"></i><span class="ms-2">@translator.Translate(userLanguage, "Settings")</span></button>
-                            </li>
                         </ul>
                     </li>
                     <li class="nav-item ms-auto" role="presentation">
-                        <button class="nav-link resizable-nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings-tab-pane" type="button" role="tab"><i class="bi bi-gear"></i><span class="ms-2">@translator.Translate(userLanguage, "Settings")</span></button>
+                        <button class="nav-link resizable-nav-link" id="@homeSettingsTab.Id" data-bs-toggle="tab" data-bs-target="#@homeSettingsTab.Target" type="button" role="tab"><i class="bi @homeSettingsTab.Icon"></i><span class="ms-2">@translator.Translate(userLanguage, homeSettingsTab.Label)</span></button>
                     </li>
                     @if (User.IsInRole("CookieAuth") || User.IsInRole("APIAuth"))
                     {
