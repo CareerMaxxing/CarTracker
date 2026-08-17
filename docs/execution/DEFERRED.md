@@ -72,6 +72,20 @@ doc that first identified it, with enough context to pick back up cold.
   extended for it. Round-tripping a plan record through CSV export/import currently loses its
   `ActualCost` value. See `PHASE_06.md`.
 
+## Government Data (from Phase 8 — Government Data)
+
+- **MOT-status Garage dashboard badge** — Phase 3's `DashboardMetric` opt-in badge system
+  (`ActiveProjects` etc.) is a natural extension point for an MOT-status badge now that Phase 8
+  provides `IDVLAAdapter.GetVehicleData(...).MotStatus`, exactly as flagged as blocked-on-Phase-8 in
+  `PHASE_03.md`. Not built yet — touches a different, already-shipped feature (`HomeController`/
+  `_GarageDisplay.cshtml`/`_VehicleModal.cshtml`), kept as a separate increment rather than
+  bundling into Phase 8's own scope. See `PHASE_08.md`.
+- **Real DVLA/DVSA adapter swap** — `IDVLAAdapter`/`IDVSAAdapter` were deliberately shaped so a real
+  HTTP-backed implementation is a drop-in replacement for `MockDVLAAdapter`/`MockDVSAAdapter` (same
+  registration-number-only input, same DTO shapes). Explicitly not started — needs real API
+  credentials and is a mandatory stop condition per `CLAUDE.md` ("Use real DVLA/DVSA credentials" /
+  "A new external service... is required").
+
 ## Test infrastructure (from Phase 7 — Planned Work → Service Record)
 
 - **Automated test project** — no xUnit/integration-test project exists anywhere in this codebase.

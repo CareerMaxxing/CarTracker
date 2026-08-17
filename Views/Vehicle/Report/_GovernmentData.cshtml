@@ -1,0 +1,63 @@
+@using CarCareTracker.Helper
+@inject IConfigHelper config
+@inject ITranslationHelper translator
+@{
+    var userConfig = config.GetUserConfig(User);
+    var userLanguage = userConfig.UserLanguage;
+}
+@model VehicleGovernmentDataViewModel
+<div class="d-flex justify-content-between align-items-center">
+    <span class="lead text-truncate">@translator.Translate(userLanguage, "Government Data")</span>
+    @if (Model.DVLAData.Found)
+    {
+        <span class="status-badge status-badge-neutral" title="@translator.Translate(userLanguage, "Mocked data - not a real DVLA/DVSA lookup")">@translator.Translate(userLanguage, "Mock")</span>
+    }
+</div>
+<hr />
+@if (!Model.DVLAData.Found)
+{
+    <div class="ct-empty-state">
+        <i class="bi bi-signpost-2"></i>
+        <span>@translator.Translate(userLanguage, "Add a license plate to this vehicle to view government data")</span>
+    </div>
+}
+else
+{
+    <div class="d-flex flex-column gap-1">
+        <div class="d-flex justify-content-between align-items-center">
+            <span>@translator.Translate(userLanguage, "Tax")</span>
+            <span class="status-badge @(Model.DVLAData.TaxStatus == "Taxed" ? "status-badge-success" : (Model.DVLAData.TaxStatus == "SORN" ? "status-badge-neutral" : "status-badge-danger"))">@Model.DVLAData.TaxStatus</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+            <span>@translator.Translate(userLanguage, "MOT")</span>
+            <span class="status-badge @(Model.DVLAData.MotStatus == "Valid" ? "status-badge-success" : "status-badge-danger")">@Model.DVLAData.MotStatus</span>
+        </div>
+        <div class="text-body-secondary small">
+            @translator.Translate(userLanguage, "MOT Expiry"): @Model.DVLAData.MotExpiryDate<br />
+            @translator.Translate(userLanguage, "Tax Due"): @Model.DVLAData.TaxDueDate
+        </div>
+        @{
+            var latestTest = Model.MotHistory.MotTests.OrderByDescending(x => x.CompletedDate).FirstOrDefault();
+        }
+        @if (latestTest != null)
+        {
+            <hr class="my-1" />
+            <div class="small">
+                <div class="d-flex align-items-center gap-1 flex-wrap">
+                    <span class="fw-semibold">@translator.Translate(userLanguage, "Last MOT Test"):</span>
+                    <span class="status-badge @(latestTest.TestResult == "PASSED" ? "status-badge-success" : "status-badge-danger")">@latestTest.TestResult</span>
+                    <span class="text-body-secondary">(@latestTest.CompletedDate, @latestTest.OdometerValue @latestTest.OdometerUnit)</span>
+                </div>
+                @if (latestTest.RfrAndComments.Any())
+                {
+                    <ul class="mb-0 ps-3">
+                        @foreach (var comment in latestTest.RfrAndComments)
+                        {
+                            <li>@comment.Text</li>
+                        }
+                    </ul>
+                }
+            </div>
+        }
+    </div>
+}

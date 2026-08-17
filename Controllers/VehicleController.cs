@@ -45,6 +45,8 @@ namespace CarCareTracker.Controllers
         private readonly IVehicleLogic _vehicleLogic;
         private readonly IEventLogic _eventLogic;
         private readonly IExtraFieldDataAccess _extraFieldDataAccess;
+        private readonly IDVLAAdapter _dvlaAdapter;
+        private readonly IDVSAAdapter _dvsaAdapter;
 
         public VehicleController(ILogger<VehicleController> logger,
             IFileHelper fileHelper,
@@ -76,7 +78,9 @@ namespace CarCareTracker.Controllers
             IInspectionRecordTemplateDataAccess inspectionRecordTemplateDataAccess,
             IEquipmentRecordDataAccess equipmentRecordDataAccess,
             IPartDataAccess partDataAccess,
-            IPartPurchaseDataAccess partPurchaseDataAccess)
+            IPartPurchaseDataAccess partPurchaseDataAccess,
+            IDVLAAdapter dvlaAdapter,
+            IDVSAAdapter dvsaAdapter)
         {
             _logger = logger;
             _dataAccess = dataAccess;
@@ -108,7 +112,9 @@ namespace CarCareTracker.Controllers
             _vehicleLogic = vehicleLogic;
             _eventLogic = eventLogic;
             _webEnv = webEnv;
-            _config = config; 
+            _config = config;
+            _dvlaAdapter = dvlaAdapter;
+            _dvsaAdapter = dvsaAdapter;
         }
         private int GetUserID()
         {

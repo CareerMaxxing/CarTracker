@@ -44,6 +44,8 @@ namespace CarCareTracker.Controllers
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IEventLogic _eventLogic;
         private readonly IDBHealthCheck _dbHealthCheck;
+        private readonly IDVLAAdapter _dvlaAdapter;
+        private readonly IDVSAAdapter _dvsaAdapter;
         public APIController(IVehicleDataAccess dataAccess,
             IGasHelper gasHelper,
             IEquipmentHelper equipmentHelper,
@@ -73,7 +75,9 @@ namespace CarCareTracker.Controllers
             IEventLogic eventLogic,
             IWebHostEnvironment webEnv,
             IHttpClientFactory httpClientFactory,
-            IDBHealthCheck dbHealthCheck)
+            IDBHealthCheck dbHealthCheck,
+            IDVLAAdapter dvlaAdapter,
+            IDVSAAdapter dvsaAdapter)
         {
             _dataAccess = dataAccess;
             _noteDataAccess = noteDataAccess;
@@ -105,6 +109,8 @@ namespace CarCareTracker.Controllers
             _webEnv = webEnv;
             _httpClientFactory = httpClientFactory;
             _dbHealthCheck = dbHealthCheck;
+            _dvlaAdapter = dvlaAdapter;
+            _dvsaAdapter = dvsaAdapter;
         }
         public IActionResult Index()
         {

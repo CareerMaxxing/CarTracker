@@ -66,6 +66,7 @@ Unauthenticated → redirect to `/Login` (or 401 for `api` controller). Forbidde
 | `GetTempFiles` | `/api/tempfiles` | GET | Root only | List temp folder |
 | `CleanUp` | `/api/cleanup` | GET | Root only | Clear temp (+ unlinked files if `deepClean`) |
 | `RestoreDemo` | `/api/demo/restore` | GET | Root only | Restore demo dataset |
+| `GetGovernmentDataForVehicle` | `/api/vehicle/governmentdata` | GET | Authorize + CollaboratorFilter | Mocked DVLA tax/MOT status + DVSA MOT test history, looked up by `Vehicle.LicensePlate` (see `IDVLAAdapter`/`IDVSAAdapter`, Phase 8) |
 
 Per-record-type CRUD (identical shape × 11 record types, all under `Controllers/API/*.cs`):
 

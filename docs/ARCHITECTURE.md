@@ -194,9 +194,11 @@ No automated test suite exists yet to run — see `CLAUDE.md` "Test infrastructu
 
 ## Notable extension points for Car Tracker
 
-- **Government data adapters** (Phase 8): none exist today. Will be new `External/Interfaces` +
-  `External/Implementations` following the exact same interface-segregation pattern already used
-  for storage backends (LiteDB vs Postgres) — that pattern is proven and idiomatic here.
+- **Government data adapters** (Phase 8): ✅ done — `External/Interfaces/IDVLAAdapter.cs`/
+  `IDVSAAdapter.cs` + `External/Implementations/Mock/MockDVLAAdapter.cs`/`MockDVSAAdapter.cs`,
+  following the same interface-segregation pattern used for storage backends. Deterministic
+  (seeded by registration number), not persisted, exposed via `/api/vehicle/governmentdata` and a
+  Dashboard-tab panel. See `PHASE_08.md`.
 - **Parts / Planned Work** (Phases 5–7): strong existing bases to extend, not build fresh — see
   `DATA_MODEL.md` (`SupplyRecord`, `PlanRecord`).
 - **Documents** (Phase 10): `UploadedFiles` + `IFileHelper` already work as a shared, multi-entity

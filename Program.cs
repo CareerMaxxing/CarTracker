@@ -1,4 +1,5 @@
 using CarCareTracker.External.Implementations;
+using CarCareTracker.External.Implementations.Mock;
 using CarCareTracker.External.Interfaces;
 using CarCareTracker.Helper;
 using CarCareTracker.Logic;
@@ -99,6 +100,10 @@ else
     builder.Services.AddSingleton<IPartPurchaseDataAccess, PartPurchaseDataAccess>();
     builder.Services.AddSingleton<IDBHealthCheck, DBHealthCheck>();
 }
+
+//configure government data adapters (mocked only - see CLAUDE.md's locked decision)
+builder.Services.AddSingleton<IDVLAAdapter, MockDVLAAdapter>();
+builder.Services.AddSingleton<IDVSAAdapter, MockDVSAAdapter>();
 
 //configure helpers
 builder.Services.AddSingleton<IFileHelper, FileHelper>();

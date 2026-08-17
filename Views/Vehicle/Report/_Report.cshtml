@@ -146,6 +146,9 @@
             <div class="col-md-2 flex-grow-1 col-12 chartContainer border rounded" id="collaboratorContent">
                 @await Html.PartialAsync("Report/_Collaborators", Model.Collaborators)
             </div>
+            <div class="col-md-4 flex-grow-1 col-12 chartContainer border rounded" id="governmentDataContent">
+                @await Html.PartialAsync("Report/_GovernmentData", Model.GovernmentDataForVehicle)
+            </div>
     </div>
 </div>
 <div class="row lubelogger-record-nav pt-1 hideOnPrint">
