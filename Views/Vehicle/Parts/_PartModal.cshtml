@@ -1,0 +1,38 @@
+@using CarCareTracker.Helper
+@inject IConfigHelper config
+@inject ITranslationHelper translator
+@model Part
+@{
+    var isNew = Model.Id == 0;
+    var userConfig = config.GetUserConfig(User);
+    var userLanguage = userConfig.UserLanguage;
+}
+<div class="modal-header">
+    <h5 class="modal-title">@(isNew ? translator.Translate(userLanguage, "Add New Part") : translator.Translate(userLanguage, "Edit Part"))</h5>
+    <button type="button" class="btn-close" onclick="hideAddPartModal()" aria-label="Close"></button>
+</div>
+<div class="modal-body" onkeydown="handleEnter(this)">
+    <form>
+        <div class="form-group">
+            <label for="partPartNumber">@translator.Translate(userLanguage, "Part Number")</label>
+            <input type="text" id="partPartNumber" class="form-control" placeholder="@translator.Translate(userLanguage, "Part #/Model #/SKU #")" value="@Model.PartNumber">
+            <label for="partManufacturer">@translator.Translate(userLanguage, "Manufacturer")</label>
+            <input type="text" id="partManufacturer" class="form-control" placeholder="@translator.Translate(userLanguage, "Manufacturer")" value="@Model.Manufacturer">
+            <label for="partDescription">@translator.Translate(userLanguage, "Description")</label>
+            <input type="text" id="partDescription" class="form-control" placeholder="@translator.Translate(userLanguage, "Description of the part")" value="@Model.Description">
+            <label for="partCategory">@translator.Translate(userLanguage, "Category")</label>
+            <input type="text" id="partCategory" class="form-control" placeholder="@translator.Translate(userLanguage, "e.g. Brakes, Engine, Electrical")" value="@Model.Category">
+            <label for="partNotes">@translator.Translate(userLanguage, "Notes(optional)")</label>
+            <textarea id="partNotes" class="form-control" rows="3">@Model.Notes</textarea>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" onclick="hideAddPartModal()">@translator.Translate(userLanguage, "Cancel")</button>
+    <button type="button" class="btn btn-primary" onclick="savePart()">@translator.Translate(userLanguage, "Add Part")</button>
+</div>
+<script>
+    function getPartModelData() {
+        return { id: @Model.Id }
+    }
+</script>

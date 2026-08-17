@@ -1,0 +1,71 @@
+@using CarCareTracker.Helper
+@inject IConfigHelper config
+@inject ITranslationHelper translator
+@{
+    var userConfig = config.GetUserConfig(User);
+    var userLanguage = userConfig.UserLanguage;
+    var hideZero = userConfig.HideZero;
+}
+@model List<PartPurchaseListItem>
+<div class="d-flex flex-column vehicleTabPane">
+    <div class="row">
+        <div class="d-flex justify-content-between">
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                <span class="badge bg-success">@($"{translator.Translate(userLanguage, "# of Part Purchases")}: {Model.Count()}")</span>
+                <span class="badge bg-primary">@($"{translator.Translate(userLanguage, "Total")}: {Model.Sum(x => x.Purchase.Cost).ToString("C")}")</span>
+            </div>
+            <div class="lubelogger-record-add">
+                <button onclick="showAddPartPurchaseModal()" class="btn btn-primary btn-md mt-1 mb-1"><i class="bi bi-pencil-square me-2"></i>@translator.Translate(userLanguage, "Add Part Purchase")</button>
+            </div>
+        </div>
+    </div>
+    @if (Model.Any())
+    {
+        <div class="row vehicleDetailTabContainer flex-grow-1">
+            <div class="col-12">
+                <table class="table table-hover ll-responsive-table">
+                    <thead class="sticky-top">
+                        <tr class="d-flex">
+                            <th scope="col" class="col-2 flex-grow-1 flex-shrink-1 text-truncate">@translator.Translate(userLanguage, "Date")</th>
+                            <th scope="col" class="col-2 flex-grow-1 flex-shrink-1 text-truncate">@translator.Translate(userLanguage, "Part #")</th>
+                            <th scope="col" class="col-3 flex-grow-1 flex-shrink-1 text-truncate">@translator.Translate(userLanguage, "Description")</th>
+                            <th scope="col" class="col-2 flex-grow-1 flex-shrink-1 text-truncate">@translator.Translate(userLanguage, "Supplier")</th>
+                            <th scope="col" class="col-1 flex-grow-1 flex-shrink-1 text-truncate">@translator.Translate(userLanguage, "Quantity")</th>
+                            <th scope="col" class="col-1 flex-grow-1 flex-shrink-1 text-truncate">@translator.Translate(userLanguage, "Cost")</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (PartPurchaseListItem item in Model)
+                        {
+                            <tr class="d-flex user-select-none" style="cursor:pointer;" onclick="showEditPartPurchaseModal(@item.Purchase.Id)">
+                                <td data-label="@translator.Translate(userLanguage, "Date")" class="col-2 flex-grow-1 flex-shrink-1 text-truncate">@item.Purchase.Date.ToShortDateString()</td>
+                                <td data-label="@translator.Translate(userLanguage, "Part #")" class="col-2 flex-grow-1 flex-shrink-1 text-truncate">@item.Part.PartNumber</td>
+                                <td data-label="@translator.Translate(userLanguage, "Description")" class="col-3 flex-grow-1 flex-shrink-1 text-truncate">@item.Part.Description</td>
+                                <td data-label="@translator.Translate(userLanguage, "Supplier")" class="col-2 flex-grow-1 flex-shrink-1 text-truncate">@item.Purchase.Supplier</td>
+                                <td data-label="@translator.Translate(userLanguage, "Quantity")" class="col-1 flex-grow-1 flex-shrink-1 text-truncate">@item.Purchase.Quantity</td>
+                                <td data-label="@translator.Translate(userLanguage, "Cost")" class="col-1 flex-grow-1 flex-shrink-1 text-truncate">@(StaticHelper.HideZeroCost(item.Purchase.Cost, hideZero))</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="ct-empty-state">
+            <i class="bi bi-box-seam"></i>
+            <span>@translator.Translate(userLanguage, "No Part Purchases Found")</span>
+        </div>
+    }
+</div>
+<div class="modal fade" data-bs-focus="false" id="partPurchaseModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content" id="partPurchaseModalContent"></div>
+    </div>
+</div>
+<div class="modal fade" data-bs-focus="false" id="partModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content" id="partModalContent"></div>
+    </div>
+</div>

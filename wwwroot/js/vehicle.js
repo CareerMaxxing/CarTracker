@@ -46,6 +46,9 @@
             case "documents-tab":
                 getVehicleDocuments(vehicleId);
                 break;
+            case "parts-tab":
+                getVehiclePartPurchases(vehicleId);
+                break;
         }
         $(`.lubelogger-tab #${e.target.id}`).addClass('active');
         $(`.lubelogger-mobile-nav #${e.target.id}`).addClass('active');
@@ -92,6 +95,9 @@
                     break;
                 case "documents-tab":
                     $("#documents-tab-pane").html("");
+                    break;
+                case "parts-tab":
+                    $("#parts-tab-pane").html("");
                     break;
             }
             $(`.lubelogger-tab #${e.relatedTarget.id}`).removeClass('active');

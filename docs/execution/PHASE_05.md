@@ -130,7 +130,51 @@ STOP CONDITION: Acceptance criteria met, verified end-to-end via API, changes co
   independent of any one vehicle) isn't modeled yet; the current shop-wide convention is a
   reasonable interim per the original `SupplyRecord` precedent.
 
+## Increment 2: UI (2026-08-17, same day)
+
+User chose to continue with the UI as the next increment. Design decisions made while building it:
+
+- **New "Parts" tab** (15th tab) on the vehicle detail page, added the same way Documents was in
+  Phase 4 - always visible, not gated by `VisibleTabs` (Part/PartPurchase don't have an `ImportMode`
+  value, so they can't plug into that mechanism yet).
+- **Part picker, not free-text fields**: the purchase modal's Part field is a `<select>` populated
+  from the full catalog, not a text input - this is what actually enforces "the same part is one
+  catalog entry with many purchases" at the UI level, rather than just in the data model.
+- **Inline "quick add part"**: a "+" button next to the picker opens a small nested modal
+  (`Parts/_PartModal.cshtml`) to create a new catalog entry without leaving the purchase form -
+  matches the natural workflow (you're recording what you bought, and the part isn't catalogued
+  yet). On save, JS appends the new option to the picker and selects it.
+- **`QuantityRemaining` preservation bug caught before shipping**: the first draft of
+  `PartPurchaseInput.ToPartPurchase()` unconditionally set `QuantityRemaining = Quantity`, which
+  would have silently reset tracked consumption back to full on every edit once consumption gets
+  wired in a future increment (currently harmless since nothing decrements it yet, but a latent
+  correctness bug). Fixed by moving that assignment into the controller, conditioned on new-vs-edit:
+  new purchases get `QuantityRemaining = Quantity`; edits preserve the existing record's value.
+- **Deliberately simplified list view**: no CSV import/export, column customization, bulk
+  select/delete, or tag-filter toolbar like the older tabs (`_SupplyRecords.cshtml`) have - all of
+  that depends on the `ImportMode`/`ExtraFields` infrastructure explicitly deferred in increment 1.
+  Just a table + add/edit/delete, using the `.ll-responsive-table` and `.ct-empty-state` primitives
+  already established.
+
+New files: `Models/Part/PartPurchaseInput.cs`, `PartPurchaseListItem.cs`,
+`PartPurchaseModalViewModel.cs`; `Controllers/Vehicle/PartController.cs`;
+`Views/Vehicle/Parts/{_PartPurchases,_PartPurchaseModal,_PartModal}.cshtml`;
+`wwwroot/js/partpurchase.js`. Modified: `Controllers/VehicleController.cs` (DI wiring, mirroring
+the `APIController.cs` pattern from increment 1), `Views/Vehicle/Index.cshtml` (nav tab, all three
+renderings, matching the exact pattern established for Documents in Phase 4), `wwwroot/js/vehicle.js`
+(tab activation/cleanup wiring).
+
+Verified end-to-end via curl before user involvement: created a part inline, confirmed it appeared
+in the picker, recorded a purchase, confirmed the list correctly joins Part+Purchase data (part
+number, description, supplier, cost all correct), edited the purchase, deleted it, confirmed the
+nav tab renders exactly 3 times (desktop/dropdown/mobile) and its pane once. User-confirmed working
+live in browser afterward, following the full workflow (add part inline, record purchase, see it
+in the list).
+
 ## Result
 
-Backend and API complete, verified end-to-end via curl, not yet reviewed live by the user (no UI
-exists yet to review). Next natural increment is the UI, pending user direction.
+Backend, API, and UI all complete and user-verified live in browser. Phase 5's core "split
+SupplyRecord into Part + Purchase" scope is done. Deferred items (consumption/restoration wiring,
+ImportMode/ExtraFields integration, fitment beyond shop-wide, a dedicated Part catalog browse/edit
+screen) remain open for a future increment if the user wants them - not required for the phase's
+stated acceptance criteria.

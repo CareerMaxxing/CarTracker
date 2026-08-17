@@ -30,6 +30,8 @@ namespace CarCareTracker.Controllers
         private readonly IInspectionRecordDataAccess _inspectionRecordDataAccess;
         private readonly IInspectionRecordTemplateDataAccess _inspectionRecordTemplateDataAccess;
         private readonly IEquipmentRecordDataAccess _equipmentRecordDataAccess;
+        private readonly IPartDataAccess _partDataAccess;
+        private readonly IPartPurchaseDataAccess _partPurchaseDataAccess;
         private readonly IWebHostEnvironment _webEnv;
         private readonly IConfigHelper _config;
         private readonly IFileHelper _fileHelper;
@@ -72,7 +74,9 @@ namespace CarCareTracker.Controllers
             IConfigHelper config,
             IInspectionRecordDataAccess inspectionRecordDataAccess,
             IInspectionRecordTemplateDataAccess inspectionRecordTemplateDataAccess,
-            IEquipmentRecordDataAccess equipmentRecordDataAccess)
+            IEquipmentRecordDataAccess equipmentRecordDataAccess,
+            IPartDataAccess partDataAccess,
+            IPartPurchaseDataAccess partPurchaseDataAccess)
         {
             _logger = logger;
             _dataAccess = dataAccess;
@@ -95,6 +99,8 @@ namespace CarCareTracker.Controllers
             _inspectionRecordDataAccess = inspectionRecordDataAccess;
             _inspectionRecordTemplateDataAccess = inspectionRecordTemplateDataAccess;
             _equipmentRecordDataAccess = equipmentRecordDataAccess;
+            _partDataAccess = partDataAccess;
+            _partPurchaseDataAccess = partPurchaseDataAccess;
             _odometerRecordDataAccess = odometerRecordDataAccess;
             _extraFieldDataAccess = extraFieldDataAccess;
             _userLogic = userLogic;

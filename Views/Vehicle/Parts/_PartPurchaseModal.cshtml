@@ -1,0 +1,81 @@
+@using CarCareTracker.Helper
+@inject IConfigHelper config
+@inject ITranslationHelper translator
+@model PartPurchaseModalViewModel
+@{
+    var isNew = Model.Input.Id == 0;
+    var userConfig = config.GetUserConfig(User);
+    var userLanguage = userConfig.UserLanguage;
+}
+<div class="modal-header">
+    <h5 class="modal-title">@(isNew ? translator.Translate(userLanguage, "Add Part Purchase") : translator.Translate(userLanguage, "Edit Part Purchase"))</h5>
+    <button type="button" class="btn-close" onclick="hideAddPartPurchaseModal()" aria-label="Close"></button>
+</div>
+<div class="modal-body" onkeydown="handleEnter(this)">
+    <form>
+        <div class="form-group">
+            <div class="row">
+                <div class="col-md-6 col-12">
+                    <input type="text" id="workAroundInput" style="height:0px; width:0px; display:none;">
+                    <label for="partPurchasePartId">@translator.Translate(userLanguage, "Part")</label>
+                    <div class="input-group">
+                        <select id="partPurchasePartId" class="form-select">
+                            <!option value="">@translator.Translate(userLanguage, "Select a part")</!option>
+                            @foreach (Part part in Model.AvailableParts)
+                            {
+                                <!option value="@part.Id" selected="@(part.Id == Model.Input.PartId ? "selected" : null)">@($"{part.PartNumber} - {part.Description}")</!option>
+                            }
+                        </select>
+                        <button type="button" class="btn btn-outline-secondary" onclick="showAddPartModal()" title="@translator.Translate(userLanguage, "Add a new part to the catalog")"><i class="bi bi-plus-lg"></i></button>
+                    </div>
+                    <label for="partPurchaseDate">@translator.Translate(userLanguage, "Date")</label>
+                    <div class="input-group">
+                        <input type="text" id="partPurchaseDate" class="form-control" placeholder="@translator.Translate(userLanguage, "Date purchased")" value="@Model.Input.Date">
+                        <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+                    </div>
+                    <label for="partPurchaseSupplier">@translator.Translate(userLanguage, "Supplier/Vendor")</label>
+                    <input type="text" id="partPurchaseSupplier" class="form-control" placeholder="@translator.Translate(userLanguage, "Where it was purchased from")" value="@Model.Input.Supplier">
+                    <div class="row">
+                        <div class="col-md-6 col-12">
+                            <label for="partPurchaseQuantity">@translator.Translate(userLanguage, "Quantity")</label>
+                            <input type="text" inputmode="decimal" onkeydown="interceptDecimalKeys(event)" onkeyup="fixDecimalInput(this, 2)" id="partPurchaseQuantity" class="form-control" placeholder="@translator.Translate(userLanguage, "Quantity")" value="@(isNew ? "" : StaticHelper.TrimDecimal(Model.Input.Quantity, 2))">
+                        </div>
+                        <div class="col-md-6 col-12">
+                            <label for="partPurchaseCost">@translator.Translate(userLanguage, "Cost")</label>
+                            <input type="text" inputmode="decimal" onkeydown="interceptDecimalKeys(event)" onkeyup="fixDecimalInput(this, 2)" id="partPurchaseCost" class="form-control" placeholder="@translator.Translate(userLanguage, "Cost")" value="@(isNew ? "" : StaticHelper.TrimDecimal(Model.Input.Cost))">
+                        </div>
+                    </div>
+                    <label for="partPurchaseTag">@translator.Translate(userLanguage, "Tags(optional)")</label>
+                    <select multiple class="form-select" id="partPurchaseTag">
+                        @foreach (string tag in Model.Input.Tags)
+                        {
+                            <!option value="@tag">@tag</!option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6 col-12">
+                    <label for="partPurchaseNotes">@translator.Translate(userLanguage, "Notes(optional)")</label>
+                    <textarea id="partPurchaseNotes" class="form-control" rows="5">@Model.Input.Notes</textarea>
+                    <div>
+                        @await Html.PartialAsync("_UploadedFiles", Model.Input.Files)
+                        @await Html.PartialAsync("_FileUploader", Model.Input.Files.Any())
+                    </div>
+                    <div id="filesPendingUpload"></div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    @if (!isNew)
+    {
+        <button type="button" class="btn btn-danger" onclick="deletePartPurchase(@Model.Input.Id)" style="margin-right:auto;">@translator.Translate(userLanguage, "Delete")</button>
+    }
+    <button type="button" class="btn btn-secondary" onclick="hideAddPartPurchaseModal()">@translator.Translate(userLanguage, "Cancel")</button>
+    <button type="button" class="btn btn-primary" onclick="savePartPurchaseToVehicle(@isNew.ToString().ToLower())">@(isNew ? translator.Translate(userLanguage, "Add Part Purchase") : translator.Translate(userLanguage, "Edit Part Purchase"))</button>
+</div>
+<script>
+    function getPartPurchaseModelData() {
+        return { id: @Model.Input.Id, vehicleId: @Model.Input.VehicleId }
+    }
+</script>
