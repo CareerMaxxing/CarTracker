@@ -74,6 +74,10 @@ namespace CarCareTracker.Controllers
             foreach (IFormFile fileToUpload in file)
             {
                 var fileName = UploadFile(fileToUpload);
+                if (string.IsNullOrWhiteSpace(fileName))
+                {
+                    continue; //blocked extension - see UploadFile.
+                }
                 uploadedFiles.Add(new UploadedFiles { Name = fileToUpload.FileName, Location = fileName, IsPending = true});
             }
             return Json(uploadedFiles);
@@ -99,13 +103,28 @@ namespace CarCareTracker.Controllers
             var result = _fileHelper.RestoreBackup(fileName);
             return Json(result);
         }
+        //documents/images are served back same-origin with a content-type inferred purely from
+        //extension (see Program.cs's /documents and /images static file roots) - anything that a
+        //browser would execute or render as active content must never be accepted here, or an
+        //uploaded "attachment" becomes stored XSS against whoever opens it.
+        private static readonly HashSet<string> BlockedUploadExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".html", ".htm", ".xhtml", ".svg", ".js", ".mjs", ".exe", ".dll", ".bat", ".cmd", ".com",
+            ".msi", ".ps1", ".psm1", ".sh", ".jar", ".php", ".php3", ".php4", ".php5", ".phtml",
+            ".asp", ".aspx", ".jsp", ".hta", ".vbs", ".wsf", ".scr", ".cpl", ".jse", ".vbe"
+        };
         private string UploadFile(IFormFile fileToUpload)
         {
+            var extension = Path.GetExtension(fileToUpload.FileName);
+            if (BlockedUploadExtensions.Contains(extension))
+            {
+                return string.Empty;
+            }
             string uploadDirectory = "temp/";
             string uploadPath = Path.Combine(_webEnv.ContentRootPath, "data", uploadDirectory);
             if (!Directory.Exists(uploadPath))
                 Directory.CreateDirectory(uploadPath);
-            string fileName = Guid.NewGuid() + Path.GetExtension(fileToUpload.FileName);
+            string fileName = Guid.NewGuid() + extension;
             string filePath = Path.Combine(uploadPath, fileName);
             using (var stream = System.IO.File.Create(filePath))
             {

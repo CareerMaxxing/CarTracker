@@ -5,60 +5,69 @@ conversation history.
 
 ```
 PROJECT STATUS
-Current phase:      Phase 13 — AI/OCR (confirmed deferred, no implementation)
-Current task:       None - PHASE_13.md records the explicit decision not to build anything here,
-                     per CLAUDE.md's locked "AI/OCR: deferred" rule and REQUIREMENTS.md
-                     NFR-NONGOAL-01. Verified via grep that no AI/OCR code exists anywhere.
-Status:             Complete by design (nothing implemented, matching the locked decision). Phase 12
-                     (Local Reliability) is also complete and committed - see below.
-Last completed:      Phase 11 finished (cross-vehicle global search, see PHASE_11.md), user confirmed
-                     and approved moving to Phase 12. Phase 12: audited MakeBackup/RestoreBackup
-                     (confirmed whole-DB-file-copy already covers Part/PartPurchase, no code change
-                     needed there) then traced where that data actually gets *used* elsewhere and
-                     found two real gaps in code that predates Phase 5's Part/PartPurchase addition:
-                     VehicleLogic.GetVehicleDocuments (feeds /api/cleanup's unlinked-file deletion)
-                     never included PartPurchase.Files, and DeleteVehicleRecords never called the
-                     already-existing (but never-wired-up) DeleteAllPartPurchasesByVehicleId. Fixed
-                     both, added GetPartDocuments (mirroring the existing GetStoreSupplyDocuments
-                     pattern), and added a new GetBrokenAttachmentLinks diagnostic (the reverse of
-                     the existing ClearUnlinkedDocuments - reports, never auto-deletes, DB records
-                     pointing at missing files) surfaced in the same /api/cleanup response.
-Next task:           Phase 14 (V1 Hardening) is next and is explicitly open-ended per its roadmap
-                     description (tests, accessibility, responsive/mobile validation, performance,
-                     security review, error handling). Ask the user for scope/priorities before
-                     starting rather than guessing at an unbounded phase.
-Known blockers:      1. No browser/screenshot tool in this environment - Phase 12 is entirely a
-                        backend/data-integrity phase, fully curl-verifiable, no UI surface to review
-                        live beyond the JSON response shape shown to root users on the Admin cleanup
-                        action (not a high-value live-browser check this time).
+Current phase:      Phase 14 — V1 Hardening (Increment 1: Security Review)
+Current task:       PHASE-14-01 (see docs/execution/PHASE_14.md) — security review of Phases 1-12
+Status:             Complete. Found and fixed two real, empirically-confirmed vulnerabilities (not
+                     just theoretical): a static-file auth bypass on /documents,/images,/temp, and
+                     unrestricted file-type upload enabling stored XSS. Both explicitly approved by
+                     the user before implementing (security-sensitive architectural decisions per
+                     CLAUDE.md's mandatory stop conditions), both curl-verified fixed with no
+                     regression to the default EnableAuth=off mode or to public static assets. Real
+                     vehicle data was read-only throughout testing.
+Last completed:      Phase 13 confirmed deferred (AI/OCR, no implementation, per CLAUDE.md's locked
+                     decision). User then chose "security review" as Phase 14's first priority (of
+                     four offered: security/tests/error-handling/accessibility). Findings:
+                     (1) StaticFileOptions.OnPrepareResponse's Response.Redirect() cannot stop
+                     StaticFileMiddleware from writing a file's body - it fires after the middleware
+                     has already committed to serving 200 + content. Verified live: an unauthenticated
+                     request for a real document, with EnableAuth on, returned the full PDF despite a
+                     302 status. Compounded by app.UseAuthentication() never being called anywhere,
+                     so HttpContext.User was never populated for the static-file pipeline at all -
+                     the IsAuthenticated check was evaluating a permanently-default identity.
+                     (2) FilesController.UploadFile accepted any file type; since /documents and
+                     /images serve files back same-origin with content-type inferred from extension,
+                     an uploaded .html/.svg with embedded script becomes stored XSS reachable by any
+                     collaborator who opens it. Verified live: uploaded an alert()-payload .html file,
+                     confirmed it was accepted. Fixed both after user sign-off: added
+                     app.UseAuthentication() + a short-circuiting gate middleware before
+                     UseStaticFiles for the three protected roots; added a fixed extension blocklist
+                     in UploadFile (script/executable/active-content types), rejecting silently
+                     (empty response) to match the existing convention already relied on by
+                     uploadFileAsync's caller in shared.js.
+Next task:           Phase 14 takes increments, not one pass - remaining areas (automated tests,
+                     accessibility, mobile/responsive validation, performance) are open. Ask the user
+                     which to prioritize next, or whether this is a good stopping point for now.
+Known blockers:      1. No browser/screenshot tool in this environment - this increment was entirely
+                        backend/pipeline-level and fully curl-verifiable; a live browser check isn't
+                        especially valuable for it (no new UI surface).
                      2. No test project exists yet - investigated in Phase 7, concrete technical path
-                        documented in DEFERRED.md, deferred again by explicit user choice.
+                        documented in DEFERRED.md, deferred again by explicit user choice at the time;
+                        now also a candidate for a future Phase 14 increment if the user wants it.
                      3. See docs/execution/DEFERRED.md for the full consolidated list of
-                        intentionally-punted items. Phase 12 added: broader DB-corruption detection
-                        (health check stays connectivity-only per NFR-REL-02), and Postgres backend
-                        backup coverage (pre-existing gap, not introduced by Car Tracker, out of this
-                        phase's explicitly-named scope).
-Open decisions:      None blocking. Standing instruction: verify and approve each phase before the
-                     next one starts. Phase 13 (AI/OCR) is explicitly a non-implementation phase per
-                     CLAUDE.md's locked decision - "complete" it by confirming nothing was built, not
-                     by building anything.
-Do not:              Start Phase 13 or beyond without the user's go-ahead. Do not implement any
-                     AI/OCR feature work in Phase 13 - CLAUDE.md locks this as deferred; the phase is
-                     "complete" once confirmed as untouched, this is not something to build around or
-                     stub out speculatively either. Do not re-litigate or re-surface items already
-                     tracked in DEFERRED.md as if they were forgotten. Do not assume SQLite is
-                     available anywhere in this codebase. Do not assume a fresh vehicle/user has any
-                     tabs visible beyond Dashboard - VisibleTabs defaults to [Dashboard] only. Do not
-                     add a "MOT"/"Part"/etc. (any non-record-type) value to the ImportMode enum - use
-                     a dedicated enum or a plain string instead. When any controller does a "move
-                     files from temp"/reconstruct-UploadedFiles step, it MUST explicitly copy every
-                     field it wants to keep. When adding a new entity type with its own Files/
-                     attachments (like Part/PartPurchase was in Phase 5), grep for
-                     GetVehicleDocuments/DeleteVehicleRecords/ClearUnlinkedDocuments in
-                     Logic/VehicleLogic.cs and wire the new type into all three - this exact class of
-                     "new entity type silently missing from the cleanup/cascade-delete/backup-usage
-                     mechanisms written before it existed" bug has now happened once for real; the
-                     pattern is worth checking proactively for any future new persisted entity type.
+                        intentionally-punted items. This increment added: CSRF token infrastructure
+                        (not deeply investigated, plausible-by-design given the API-first
+                        Basic-Auth/API-key threat model, but unverified), Content-Security-Policy (no
+                        header set anywhere, would need an inline-script/style audit first).
+Open decisions:      What to prioritize next within Phase 14 (or elsewhere) - ask the user rather
+                     than assume. Standing instruction: verify and approve each increment/phase
+                     before the next one starts.
+Do not:              Assume Phase 14 is "done" - it's an open-ended phase taken in increments; only
+                     the security-review increment is complete. Do not implement CSRF tokens or a CSP
+                     header without discussing first - both are real scope (the latter needs an
+                     inline-script/style audit to avoid breaking the UI) and neither was requested
+                     yet. Do not re-add the old OnPrepareResponse-based auth checks on the static
+                     file routes - they're structurally incapable of blocking content (this was the
+                     actual bug); any future change to those routes' auth must go through the gate
+                     middleware in Program.cs, not StaticFileOptions callbacks. Do not assume
+                     SQLite is available anywhere in this codebase. Do not assume a fresh vehicle/
+                     user has any tabs visible beyond Dashboard - VisibleTabs defaults to
+                     [Dashboard] only. Do not add a "MOT"/"Part"/etc. (any non-record-type) value to
+                     the ImportMode enum - use a dedicated enum or a plain string instead. When any
+                     controller does a "move files from temp"/reconstruct-UploadedFiles step, it MUST
+                     explicitly copy every field it wants to keep. When adding a new entity type with
+                     its own Files/attachments, wire it into GetVehicleDocuments/
+                     DeleteVehicleRecords/ClearUnlinkedDocuments in Logic/VehicleLogic.cs (this
+                     exact bug already happened once for real, for Part/PartPurchase - Phase 12).
                      Any enum embedded directly in a type used as a JSON request-body wire format
                      needs its own JsonStringEnumConverter. When calling record-add API endpoints for
                      testing, field names/casing are inconsistent across export models and dates must
@@ -74,20 +83,19 @@ Do not:              Start Phase 13 or beyond without the user's go-ahead. Do no
                      root/dev user's config (EnableAuth=false) reads directly from
                      data/config/userConfig.json but is cached in-memory for up to 1 hour - restart
                      the app after editing it. curl's `-d "key=/path/with/slashes"` can silently fail
-                     to bind a form field in ways `--data-urlencode` or a query-string param won't -
-                     if a POST action mysteriously returns a false/empty early-return result for a
-                     path-like parameter, try the query-string form before assuming an app bug.
-Last validation:     dotnet build (0 errors); on throwaway vehicles/parts (created and deleted via
-                     API, real vehicle id 1 confirmed untouched throughout): deep-clean preserved a
-                     PartPurchase's real attachment file after the fix (0 deleted; before the fix this
-                     would have deleted it); manually removing that same file from disk was correctly
-                     flagged by broken_attachment_links_found=1 without touching the DB record;
-                     deleting a vehicle with a PartPurchase now correctly removes the PartPurchase too
-                     (confirmed via direct query, not just absence from the UI); a full backup - delete
-                     vehicle - restore backup round trip brought the vehicle back exactly as it was —
-                     2026-08-17.
-Last commit:         f6b49d2 — "Record Phase 12 commit hash in STATE.md". Phase 13's PHASE_13.md/
-                     ROADMAP.md updates not yet committed - pending with this STATE.md update.
+                     to bind a form field in ways `--data-urlencode` or a query-string param won't.
+Last validation:     dotnet build (0 errors); with EnableAuth temporarily enabled (userConfig.json
+                     backed up first, restored byte-identical after, app restarted before and after
+                     each toggle): unauthenticated request to a real document returned
+                     Content-Length: 0 after the fix (previously the full file despite a 302);
+                     EnableAuth=off mode confirmed unaffected (same document still loads normally);
+                     /css/site.css confirmed still anonymous in both modes. Upload blocklist: .html
+                     and .svg payloads with embedded script both rejected (empty response, no file
+                     written); a normal .txt upload unaffected; a mixed multi-file batch kept only the
+                     legitimate file. Real vehicle data read-only throughout (the one genuine document
+                     used for the auth-bypass test was never modified or deleted) — 2026-08-17.
+Last commit:         96d3bfa — "Phase 13: confirm AI/OCR deferred, no implementation" (this
+                     increment's commit not yet made - pending user confirmation first).
 ```
 
 ## Environment notes for future sessions

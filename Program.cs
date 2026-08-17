@@ -158,6 +158,30 @@ var app = builder.Build();
 //configure the HTTP request pipeline.
 app.UseExceptionHandler("/Home/Error");
 
+//populate HttpContext.User before anything below checks it - previously only UseAuthorization()
+//(much later in this pipeline, and never reached by static file requests at all) resolved identity,
+//so every unauthenticated-check below was evaluating against an always-unpopulated User.
+app.UseAuthentication();
+
+//gate access to protected static file roots BEFORE UseStaticFiles ever runs, since
+//StaticFileOptions.OnPrepareResponse cannot stop a file's body from being written - it fires after
+//the middleware has already committed to serving 200 + the file content, so a Response.Redirect()
+//there only adds a Location header while the actual bytes still go out. See docs/execution/
+//PHASE_14.md for how this was found and verified (a real document was retrievable in full despite
+//the 302 response when EnableAuth was on).
+app.Use(async (context, next) =>
+{
+    var isProtectedStaticRoot = context.Request.Path.StartsWithSegments("/documents")
+        || context.Request.Path.StartsWithSegments("/images")
+        || context.Request.Path.StartsWithSegments("/temp");
+    if (isProtectedStaticRoot && !(context.User.Identity?.IsAuthenticated ?? false))
+    {
+        context.Response.Redirect("/Login");
+        return;
+    }
+    await next();
+});
+
 //static file security
 app.UseStaticFiles();
 app.UseStaticFiles(new StaticFileOptions
@@ -170,11 +194,6 @@ app.UseStaticFiles(new StaticFileOptions
         if (ctx.Context.Request.Path.StartsWithSegments("/images"))
         {
             ctx.Context.Response.Headers.Append("Cache-Control", "no-store");
-            var userIsAuthenticated = ctx.Context.User.Identity?.IsAuthenticated ?? false;
-            if (!userIsAuthenticated)
-            {
-                ctx.Context.Response.Redirect("/Login");
-            }
         }
     }
 });
@@ -188,11 +207,6 @@ app.UseStaticFiles(new StaticFileOptions
         if (ctx.Context.Request.Path.StartsWithSegments("/documents"))
         {
             ctx.Context.Response.Headers.Append("Cache-Control", "no-store");
-            var userIsAuthenticated = ctx.Context.User.Identity?.IsAuthenticated ?? false;
-            if (!userIsAuthenticated)
-            {
-                ctx.Context.Response.Redirect("/Login");
-            }
         }
     }
 });
@@ -212,11 +226,6 @@ app.UseStaticFiles(new StaticFileOptions
         if (ctx.Context.Request.Path.StartsWithSegments("/temp"))
         {
             ctx.Context.Response.Headers.Append("Cache-Control", "no-store");
-            var userIsAuthenticated = ctx.Context.User.Identity?.IsAuthenticated ?? false;
-            if (!userIsAuthenticated)
-            {
-                ctx.Context.Response.Redirect("/Login");
-            }
         }
     }
 });

@@ -143,6 +143,21 @@ doc that first identified it, with enough context to pick back up cold.
   phase's scope (NFR-REL-01 named Part/Purchase/Government-adapter data specifically), but worth
   flagging for whoever eventually hardens the Postgres path.
 
+## V1 Hardening (from Phase 14 — Security Review increment)
+
+- **CSRF token infrastructure** — no anti-forgery tokens found on MVC cookie-session endpoints.
+  Plausible-by-design (this app is built API-first with Basic-Auth/API-key support on nearly every
+  write action - a different threat model than a typical browser-only app) but not deeply verified
+  either way. Worth a dedicated look if this app is ever exposed beyond a trusted local network.
+- **Content-Security-Policy header** — none set anywhere. Would be useful defense-in-depth (the
+  stored-XSS angle this phase closed via upload-extension blocking wouldn't have needed the fix to
+  begin with, and any future similar gap would be mitigated). Not implemented since it requires
+  auditing every inline script/style the app already uses to avoid breaking the UI - real additional
+  scope, not a quick add.
+- **Remaining Phase 14 areas** — automated tests, accessibility, mobile/responsive validation, and
+  performance review are all still open (see `PHASE_14.md`'s framing note - Phase 14 takes
+  increments rather than one pass). Not deferred/declined, just not yet started.
+
 ## Test infrastructure (from Phase 7 — Planned Work → Service Record)
 
 - **Automated test project** — no xUnit/integration-test project exists anywhere in this codebase.
