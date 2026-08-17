@@ -203,3 +203,31 @@ No automated test suite exists yet to run — see `CLAUDE.md` "Test infrastructu
   attachment mechanism — reuse directly.
 - **Search** (Phase 11): no FTS5; needs a fresh decision informed by the LiteDB/Postgres split
   above.
+
+## Target-state notes (Phase 1 reconciliation, 2026-08-17)
+
+Full requirement-level detail and evidence lives in `REQUIREMENTS.md`; this section records the
+architectural implications specifically.
+
+- **Government data adapters** (FR-GOV-01): confirmed as the pattern to follow —
+  `External/Interfaces/IDVLAAdapter.cs` + `IDVSAAdapter.cs`, `External/Implementations/Mock/
+  MockDVLAAdapter.cs` + `MockDVSAAdapter.cs`, registered as singletons in `Program.cs` the same way
+  the LiteDB/Postgres branch already works. No changes to the existing DI branching logic are
+  needed — this is strictly additive.
+- **Planned Work → Service Record is an existing code path needing hardening, not new
+  architecture** (FR-PLAN-04/05): `Controllers/Vehicle/PlanController.cs:277-378`
+  (`UpdatePlanRecordProgress`) already performs the conversion. Phase 7's job is (a) add an
+  idempotency guard — check `existingRecord.Progress` before re-running the conversion block, or
+  equivalent — and (b) add the missing `GasRecord`/`TaxRecord` branches. No new controller action,
+  route, or data-access interface is needed for the core mechanism.
+- **Global search** (FR-SEARCH-01): no architectural decision made yet. `SearchRecords`/
+  `SearchRecordsByTags` in `VehicleController` are the existing single-vehicle implementation to
+  extend or wrap for cross-vehicle search at Phase 11 — see `REQUIREMENTS.md` for the candidate
+  approaches to evaluate at that time.
+- **Parts split** (FR-PART-01/02/03): architecturally, this means a new `Part` entity + a new
+  `PartPurchase`/`PartTransaction` entity replacing the dual role `SupplyRecord` currently plays,
+  following the same `I*DataAccess` + LiteDB/Postgres implementation pattern as every other entity.
+  Exact field-level shape is deferred to Phase 5 (implementation), not decided here.
+- **No changes needed** to the auth model, collaborator/household permission model, file storage
+  mechanics, or build/deployment setup to support any Phase 1-reconciled requirement — all new
+  entities plug into the existing patterns as-is.

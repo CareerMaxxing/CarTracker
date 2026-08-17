@@ -233,3 +233,31 @@ compute the "still referenced" set).
 - **Extra Fields**: adding new `ImportMode` values for new entity types (e.g. a Part or Planned
   Work record type, if kept distinct from `PlanRecord`) plugs them into the existing custom-field,
   CSV import, and report-export machinery for free.
+
+## Target-state notes (Phase 1 reconciliation, 2026-08-17)
+
+Full requirement-level detail and evidence lives in `REQUIREMENTS.md`. Entity-level implications:
+
+- **`SupplyRecord` splits into two entities at Phase 5**: a `Part` catalog entity (part number,
+  manufacturer, description, category — reusable, no cost/quantity) and a `PartPurchase`/
+  `PartTransaction` entity (owns cost, quantity, date, supplier, references a `Part`). The existing
+  `SupplyUsage`/`SupplyUsageHistory` ledger-line pattern for consumption tracking is preserved
+  as-is — it already does the right thing (immutable quantity+cost snapshot at time of use), it
+  just currently points at a conflated entity.
+- **`PlanRecord.Progress` (`PlanProgress` enum) needs new stages at Phase 6**: today
+  `Backlog/InProgress/Testing/Done`; target needs explicit `Idea/Costed/PartsSourced/InProgress/Done`.
+  Also needs an `ActualCost` field distinct from the existing `Cost` (estimated) field — actual
+  cost should be populated at completion time, likely from the sum of consumed
+  `SupplyUsageHistory`/`PartPurchase` costs once Phase 5 lands.
+- **`OdometerRecord` needs a `Source` field at Phase 9** (`Manual`/`Service`/`MOT`) — currently
+  absent even though multiple code paths (manual entry, `OdometerLogic.AutoInsertOdometerRecord`)
+  already implicitly know their own source; this is a matter of capturing what's already known at
+  each call site, not inferring anything new.
+- **`UploadedFiles` needs a document-type field at Phase 10** (Invoice/MOT/V5C/Insurance/
+  Photograph/Datasheet/Other) — currently just `{Name, Location, IsPending}`. Existing attachments
+  without a type should default to "Other", not require a data migration/backfill.
+- **New at Phase 8, no existing analog**: government-data adapter response models (DVLA vehicle
+  record, DVSA MOT history entry) — these are read-only, externally-sourced shapes, not stored the
+  same way as the mutable domain entities above; keep them out of the LiteDB/Postgres
+  `I*DataAccess` pattern used for user-owned data, per `CLAUDE.md`'s "keep authoritative external
+  data read-only in the domain model" principle.

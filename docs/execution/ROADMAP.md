@@ -6,7 +6,7 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
 | # | Phase | Objective | Status |
 |---|-------|-----------|--------|
 | 0 | Baseline Reconnaissance | Establish the clean LubeLogger baseline: confirm it builds/runs, map architecture/data model/API/UI, no product changes. | ✅ Complete |
-| 1 | Requirements & Architecture Reconciliation | Compare discovered LubeLogger capabilities against target Car Tracker requirements; produce EXISTING/MODIFY/EXTEND/REPLACE/NEW matrix; write SYSTEM_SPEC.md, REQUIREMENTS.md, update ARCHITECTURE.md/DATA_MODEL.md. | Not started |
+| 1 | Requirements & Architecture Reconciliation | Compare discovered LubeLogger capabilities against target Car Tracker requirements; produce EXISTING/MODIFY/EXTEND/REPLACE/NEW matrix; write SYSTEM_SPEC.md, REQUIREMENTS.md, update ARCHITECTURE.md/DATA_MODEL.md. | ✅ Complete |
 | 2 | UI Design System | App shell, nav, typography/spacing, cards/buttons/forms/tables/dialogs, status badges, loading/empty/error states, responsive layout, theming — without touching the domain model. | Not started |
 | 3 | Garage / Dashboard | "What's happening with my cars?" — vehicle overview cards, mileage, MOT status, upcoming work, reminders, active projects, cost summaries. | Not started |
 | 4 | Vehicle Experience | Vehicle Overview / Maintenance / History / Parts / Projects / Documents, reusing existing data structures where possible. | Not started |
@@ -23,8 +23,8 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
 
 ## Human review checkpoints
 
-- After Phase 0: review actual LubeLogger architecture. **← we are here, pending human review**
-- After Phase 1: approve the reconciled system specification and architecture.
+- After Phase 0: review actual LubeLogger architecture.
+- After Phase 1: approve the reconciled system specification and architecture. **← we are here, pending human review**
 - After UI foundation (Phase 2): visually inspect the new design direction.
 - After Parts + Planned Work (Phases 5–6): verify the core domain model.
 - After Planned Work → Service Record (Phase 7): end-to-end acceptance test.
