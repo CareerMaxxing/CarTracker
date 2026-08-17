@@ -90,8 +90,9 @@ Last validation:     dotnet build (0 errors); dotnet test (10/10 passing); rende
                      modal-title ids anywhere in the Views tree (the 2 apparent duplicates that remain
                      are both benign - different pages that never coexist, or mutually-exclusive
                      @if/else branches within one partial) — 2026-08-17.
-Last commit:         e45bcbf — "Record Phase 14 test-infrastructure commit hash in STATE.md" (this
-                     increment's commit not yet made - pending user confirmation first).
+Last commit:         fc8d7f4 — "Phase 14 (accessibility): wire aria-labelledby on all Bootstrap
+                     modals" — pushed 2026-08-17, awaiting user confirmation before the next
+                     increment.
 ```
 
 ## Environment notes for future sessions
