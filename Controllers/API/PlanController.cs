@@ -140,12 +140,12 @@ namespace CarCareTracker.Controllers
             if (!validType || !validPriority || !validProgress)
             {
                 Response.StatusCode = 400;
-                return Json(OperationResponse.Failed("Input object invalid, values for Type(ServiceRecord, RepairRecord, UpgradeRecord), Priority(Critical, Normal, Low), or Progress(Idea, Costed, PartsSourced, InProgress, Testing) is invalid."));
+                return Json(OperationResponse.Failed("Input object invalid, values for Type(ServiceRecord, RepairRecord, UpgradeRecord, GasRecord, TaxRecord), Priority(Critical, Normal, Low), or Progress(Idea, Costed, PartsSourced, InProgress, Testing) is invalid."));
             }
-            if (parsedType != ImportMode.ServiceRecord && parsedType != ImportMode.RepairRecord && parsedType != ImportMode.UpgradeRecord)
+            if (parsedType != ImportMode.ServiceRecord && parsedType != ImportMode.RepairRecord && parsedType != ImportMode.UpgradeRecord && parsedType != ImportMode.GasRecord && parsedType != ImportMode.TaxRecord)
             {
                 Response.StatusCode = 400;
-                return Json(OperationResponse.Failed("Input object invalid, Type can only ServiceRecord, RepairRecord, or UpgradeRecord"));
+                return Json(OperationResponse.Failed("Input object invalid, Type can only ServiceRecord, RepairRecord, UpgradeRecord, GasRecord, or TaxRecord"));
             }
             if (parsedProgress == PlanProgress.Done)
             {
@@ -243,12 +243,12 @@ namespace CarCareTracker.Controllers
             if (!validType || !validPriority || !validProgress)
             {
                 Response.StatusCode = 400;
-                return Json(OperationResponse.Failed("Input object invalid, values for Type(ServiceRecord, RepairRecord, UpgradeRecord), Priority(Critical, Normal, Low), or Progress(Idea, Costed, PartsSourced, InProgress, Testing) is invalid."));
+                return Json(OperationResponse.Failed("Input object invalid, values for Type(ServiceRecord, RepairRecord, UpgradeRecord, GasRecord, TaxRecord), Priority(Critical, Normal, Low), or Progress(Idea, Costed, PartsSourced, InProgress, Testing) is invalid."));
             }
-            if (parsedType != ImportMode.ServiceRecord && parsedType != ImportMode.RepairRecord && parsedType != ImportMode.UpgradeRecord)
+            if (parsedType != ImportMode.ServiceRecord && parsedType != ImportMode.RepairRecord && parsedType != ImportMode.UpgradeRecord && parsedType != ImportMode.GasRecord && parsedType != ImportMode.TaxRecord)
             {
                 Response.StatusCode = 400;
-                return Json(OperationResponse.Failed("Input object invalid, Type can only ServiceRecord, RepairRecord, or UpgradeRecord"));
+                return Json(OperationResponse.Failed("Input object invalid, Type can only ServiceRecord, RepairRecord, UpgradeRecord, GasRecord, or TaxRecord"));
             }
             if (parsedProgress == PlanProgress.Done)
             {

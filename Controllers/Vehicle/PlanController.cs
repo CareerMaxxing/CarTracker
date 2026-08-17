@@ -287,10 +287,14 @@ namespace CarCareTracker.Controllers
             {
                 return Json(OperationResponse.Failed("Access Denied"));
             }
+            //idempotency guard: capture the prior progress before overwriting it. Without this,
+            //a resubmitted/replayed/double-clicked completion request would re-run the conversion
+            //block below and create a second duplicate record every time (Phase 1/7 finding).
+            bool wasAlreadyDone = existingRecord.Progress == PlanProgress.Done;
             existingRecord.Progress = planProgress;
             existingRecord.DateModified = DateTime.Now;
             var result = _planRecordDataAccess.SavePlanRecordToVehicle(existingRecord);
-            if (planProgress == PlanProgress.Done)
+            if (planProgress == PlanProgress.Done && !wasAlreadyDone)
             {
                 int newRecordId = 0;
                 //convert plan record to service/upgrade/repair record.
@@ -346,6 +350,41 @@ namespace CarCareTracker.Controllers
                         ExtraFields = existingRecord.ExtraFields
                     };
                     _upgradeRecordDataAccess.SaveUpgradeRecordToVehicle(newRecord);
+                    newRecordId = newRecord.Id;
+                }
+                else if (existingRecord.ImportMode == ImportMode.GasRecord)
+                {
+                    var newRecord = new GasRecord()
+                    {
+                        VehicleId = existingRecord.VehicleId,
+                        Date = DateTime.Now.Date,
+                        Mileage = odometer,
+                        //no equivalent field on PlanRecord - user can edit the resulting record afterward.
+                        Gallons = 0,
+                        //prefer actual cost if the user recorded one, fall back to the estimate.
+                        Cost = existingRecord.ActualCost != default ? existingRecord.ActualCost : existingRecord.Cost,
+                        Notes = existingRecord.Notes,
+                        Files = existingRecord.Files,
+                        RequisitionHistory = existingRecord.RequisitionHistory,
+                        ExtraFields = existingRecord.ExtraFields
+                    };
+                    _gasRecordDataAccess.SaveGasRecordToVehicle(newRecord);
+                    newRecordId = newRecord.Id;
+                }
+                else if (existingRecord.ImportMode == ImportMode.TaxRecord)
+                {
+                    var newRecord = new TaxRecord()
+                    {
+                        VehicleId = existingRecord.VehicleId,
+                        Date = DateTime.Now.Date,
+                        Description = existingRecord.Description,
+                        //prefer actual cost if the user recorded one, fall back to the estimate.
+                        Cost = existingRecord.ActualCost != default ? existingRecord.ActualCost : existingRecord.Cost,
+                        Notes = existingRecord.Notes,
+                        Files = existingRecord.Files,
+                        ExtraFields = existingRecord.ExtraFields
+                    };
+                    _taxRecordDataAccess.SaveTaxRecordToVehicle(newRecord);
                     newRecordId = newRecord.Id;
                 }
                 if (newRecordId != default && _config.GetUserConfig(User).EnableAutoOdometerInsert)

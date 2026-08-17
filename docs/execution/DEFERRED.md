@@ -72,6 +72,32 @@ doc that first identified it, with enough context to pick back up cold.
   extended for it. Round-tripping a plan record through CSV export/import currently loses its
   `ActualCost` value. See `PHASE_06.md`.
 
+## Test infrastructure (from Phase 7 — Planned Work → Service Record)
+
+- **Automated test project** — no xUnit/integration-test project exists anywhere in this codebase.
+  Phase 7's idempotency fix was specifically flagged (in `CLAUDE.md` and multiple prior phase docs)
+  as the natural first candidate for one, and was investigated in detail before being deferred
+  again by explicit user decision. Concrete findings preserved so a future increment can start
+  without re-deriving them (full detail in `PHASE_07.md`):
+  - `Helper/StaticHelper.cs`'s `DbName = "data/cartracker.db"` is a relative path resolved against
+    the process's working directory (via `LiteDBHelper`) — test isolation is achievable by
+    controlling the test process's working directory before first DB access, **no production code
+    changes needed** for this part.
+  - Needs `public partial class Program { }` appended to `Program.cs` so a separate test assembly
+    can reference it as `WebApplicationFactory<Program>`'s type parameter (top-level statement
+    programs generate this class `internal` by default).
+  - Needs a new test project (xUnit + `Microsoft.AspNetCore.Mvc.Testing`), added to
+    `CarCareTracker.sln`.
+  - Needs a parallel-test-safety strategy (xUnit parallelizes test classes by default; multiple
+    classes sharing one working-directory-relative DB path would interfere with each other) —
+    shared fixture, `[Collection]`-based serialization, or per-test temp directories.
+  - Given this codebase's fat controllers (20+ constructor dependencies each), `WebApplicationFactory`-
+    based HTTP-level integration testing is the practical approach here, not per-action unit tests
+    with mocked dependencies.
+- **Gas/Tax CSV import/export awareness for planned work** — `Controllers/Vehicle/ImportController.cs`'s
+  CSV column mapping for `PlanRecord` wasn't checked/extended for the two new target types added in
+  Phase 7. Narrower gap than the ActualCost one already listed above; same general category.
+
 ## Explicitly declined, not deferred (do not resurrect without a fresh ask)
 
 - **Regrouping vehicle nav into the six "Vehicle Experience" categories** (Overview/Maintenance/

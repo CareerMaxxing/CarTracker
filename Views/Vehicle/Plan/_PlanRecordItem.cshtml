@@ -30,6 +30,14 @@
                 {
                     <span class="badge text-bg-warning planner-indicator"><i class="bi bi-exclamation-octagon text-white"></i></span>
                 }
+                else if (Model.ImportMode == ImportMode.GasRecord)
+                {
+                    <span class="badge text-bg-info planner-indicator"><i class="bi bi-fuel-pump text-white"></i></span>
+                }
+                else if (Model.ImportMode == ImportMode.TaxRecord)
+                {
+                    <span class="badge text-bg-secondary planner-indicator"><i class="bi bi-currency-dollar text-white"></i></span>
+                }
                 @if (Model.ReminderRecordId != default || Model.ReminderRecordIds.Any())
                 {
                     <span class="badge text-bg-light planner-indicator"><i class="bi bi-bell-fill text-warning"></i></span>
