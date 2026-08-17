@@ -476,6 +476,22 @@ namespace CarCareTracker.Helper
                     return "bi-file-bar-graph";
             }
         }
+        public static string GetSearchResultIcon(string recordType)
+        {
+            if (Enum.TryParse<ImportMode>(recordType, out var importMode))
+            {
+                return GetImportModeIcon(importMode);
+            }
+            switch (recordType)
+            {
+                case "Vehicle":
+                    return "bi-car-front";
+                case "PartPurchase":
+                    return "bi-box-seam";
+                default:
+                    return "bi-file-bar-graph";
+            }
+        }
         public static string GetDocumentTypeIcon(DocumentType documentType)
         {
             switch (documentType)

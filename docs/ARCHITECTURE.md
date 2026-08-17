@@ -203,8 +203,15 @@ No automated test suite exists yet to run — see `CLAUDE.md` "Test infrastructu
   `DATA_MODEL.md` (`SupplyRecord`, `PlanRecord`).
 - **Documents** (Phase 10): `UploadedFiles` + `IFileHelper` already work as a shared, multi-entity
   attachment mechanism — reuse directly.
-- **Search** (Phase 11): no FTS5; needs a fresh decision informed by the LiteDB/Postgres split
-  above.
+- **Search** (Phase 11): ✅ decided and built — option (a) from `REQUIREMENTS.md` FR-SEARCH-01's
+  candidate list: extended the existing in-application `SearchRecords` filtering logic to run across
+  every vehicle visible to the user, rather than LiteDB indexing (no FTS-equivalent there) or a
+  Postgres `tsvector`/GIN approach (backend-specific - would work on Postgres only, violating the
+  dual-backend requirement). Justification: this is a personal, local-first, single-user app with a
+  handful of vehicles and a few hundred records at most, not an enterprise search problem - simple
+  in-memory substring filtering across all visible vehicles' records is fast enough at this scale and
+  needs zero new infrastructure. Revisit only if real usage shows this doesn't scale. See
+  `PHASE_11.md`.
 
 ## Target-state notes (Phase 1 reconciliation, 2026-08-17)
 

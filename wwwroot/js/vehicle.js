@@ -719,7 +719,8 @@ function hideGlobalSearch() {
 function saveGlobalSearchSettings() {
     let globalSearchSettings = {
         incrementalSearch: $('#globalSearchAutoSearchCheck').is(':checked'),
-        caseSensitive: $('#globalSearchCaseSensitiveCheck').is(':checked')
+        caseSensitive: $('#globalSearchCaseSensitiveCheck').is(':checked'),
+        allVehicles: $('#globalSearchAllVehiclesCheck').is(':checked')
     };
     localStorage.setItem('globalSearchSettings', JSON.stringify(globalSearchSettings));
 }
@@ -729,6 +730,7 @@ function restoreGlobalSearchSettings() {
         let parsedGlobalSearchSettings = JSON.parse(globalSearchSettings);
         $('#globalSearchAutoSearchCheck').attr('checked', parsedGlobalSearchSettings.incrementalSearch);
         $('#globalSearchCaseSensitiveCheck').attr('checked', parsedGlobalSearchSettings.caseSensitive);
+        $('#globalSearchAllVehiclesCheck').attr('checked', parsedGlobalSearchSettings.allVehicles);
     }
 }
 function performGlobalSearch() {
@@ -739,10 +741,17 @@ function performGlobalSearch() {
         $('#globalSearchInput').removeClass('is-invalid');
     }
     let caseSensitiveSearch = $("#globalSearchCaseSensitiveCheck").is(':checked');
+    let searchAllVehicles = $("#globalSearchAllVehiclesCheck").is(':checked');
     saveGlobalSearchSettings();
-    $.post('/Vehicle/SearchRecords', { vehicleId: GetVehicleId().vehicleId, searchQuery: searchQuery, caseSensitive: caseSensitiveSearch }, function (data) {
-        $('#globalSearchModalResults').html(data);
-    });
+    if (searchAllVehicles) {
+        $.post('/Vehicle/SearchRecordsAcrossVehicles', { searchQuery: searchQuery, caseSensitive: caseSensitiveSearch }, function (data) {
+            $('#globalSearchModalResults').html(data);
+        });
+    } else {
+        $.post('/Vehicle/SearchRecords', { vehicleId: GetVehicleId().vehicleId, searchQuery: searchQuery, caseSensitive: caseSensitiveSearch }, function (data) {
+            $('#globalSearchModalResults').html(data);
+        });
+    }
 }
 function handleGlobalSearchKeyPress(event) {
     if ($('#globalSearchAutoSearchCheck').is(':checked')) {
@@ -752,6 +761,33 @@ function handleGlobalSearchKeyPress(event) {
     }
 }
 
+var searchResultTabMap = {
+    ServiceRecord: 'servicerecord', RepairRecord: 'accident', UpgradeRecord: 'upgrade',
+    TaxRecord: 'tax', SupplyRecord: 'supply', NoteRecord: 'notes', OdometerRecord: 'odometer',
+    ReminderRecord: 'reminder', GasRecord: 'gas', PlanRecord: 'plan', InspectionRecord: 'inspection',
+    EquipmentRecord: 'equipment', PartPurchase: 'parts', Vehicle: 'report'
+};
+function loadSearchResult(vehicleId, recordId, recordType) {
+    let tabName = searchResultTabMap[recordType] || 'report';
+    let onSameVehicle = vehicleId == GetVehicleId().vehicleId;
+    //Vehicle/PartPurchase results have no per-record edit-modal deep link (no equivalent to
+    //CheckRecordExist for them yet) - just switch to the relevant tab.
+    if (recordType == 'Vehicle' || recordType == 'PartPurchase') {
+        hideGlobalSearch();
+        if (onSameVehicle) {
+            $(`#${tabName}-tab`).tab('show');
+        } else {
+            window.location.href = `/Vehicle/Index?vehicleId=${vehicleId}&tab=${tabName}`;
+        }
+        return;
+    }
+    if (onSameVehicle) {
+        loadGlobalSearchResult(recordId, recordType);
+    } else {
+        hideGlobalSearch();
+        window.location.href = `/Vehicle/Index?vehicleId=${vehicleId}&tab=${tabName}`;
+    }
+}
 function loadGlobalSearchResult(recordId, recordType) {
     hideGlobalSearch();
     $.post(`/Vehicle/CheckRecordExist?vehicleId=${GetVehicleId().vehicleId}&importMode=${recordType}&recordId=${recordId}`, function (data) {

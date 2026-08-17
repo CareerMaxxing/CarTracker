@@ -13,7 +13,7 @@
         {
             <div class="row border p-2 m-1" onclick="loadMapSearchResult(@result.Id, '@result.RecordType')" style="cursor:pointer;">
                 <div class="col-1">
-                    <i class="bi @StaticHelper.GetImportModeIcon(result.RecordType)"></i>
+                    <i class="bi @StaticHelper.GetSearchResultIcon(result.RecordType)"></i>
                 </div>
                 <div class="col-11">
                     @result.Description

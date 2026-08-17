@@ -117,6 +117,21 @@ doc that first identified it, with enough context to pick back up cold.
   the Documents tab itself. A "manage documents" screen with its own upload flow is a bigger UI
   change than this phase's categorization scope.
 
+## Global Search (from Phase 11 — Global Search)
+
+- **Deep-linking to a specific record across a cross-vehicle navigation** — clicking a same-vehicle
+  search result opens that record's edit modal directly (via the existing `CheckRecordExist` +
+  tab-switch + modal-open flow); clicking a cross-vehicle result only navigates to the right vehicle
+  and tab, not the specific record within it. Replicating the auto-open behavior after a full page
+  navigation would need query-param-driven modal-opening logic that doesn't exist today - real
+  additional scope, not required for the core "find it across vehicles" acceptance criteria. See
+  `PHASE_11.md`.
+- **Global Part-catalog-only matches** — search covers `PartPurchase` (vehicle-scoped, has a real
+  navigation target) but not standalone `Part` catalog entries with no purchase on any vehicle yet
+  (no vehicle context to navigate to, and no catalog browse screen exists to land on either - see the
+  already-deferred "Dedicated Parts catalog screen" item from Phase 5). Revisit together if that
+  screen ever gets built.
+
 ## Test infrastructure (from Phase 7 — Planned Work → Service Record)
 
 - **Automated test project** — no xUnit/integration-test project exists anywhere in this codebase.

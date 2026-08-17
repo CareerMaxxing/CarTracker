@@ -288,11 +288,50 @@ namespace CarCareTracker.Controllers
         [TypeFilter(typeof(CollaboratorFilter))]
         public IActionResult SearchRecords(int vehicleId, string searchQuery, bool caseSensitive)
         {
+            if (string.IsNullOrWhiteSpace(searchQuery))
+            {
+                return Json(new List<SearchResult>());
+            }
+            var vehicleData = _dataAccess.GetVehicleById(vehicleId);
+            var vehicleName = $"{vehicleData.Year} {vehicleData.Make} {vehicleData.Model}";
+            var searchResults = GetSearchResultsForVehicle(vehicleId, vehicleName, searchQuery, caseSensitive);
+            return PartialView("_GlobalSearchResult", searchResults);
+        }
+        [HttpPost]
+        public IActionResult SearchRecordsAcrossVehicles(string searchQuery, bool caseSensitive)
+        {
             List<SearchResult> searchResults = new List<SearchResult>();
             if (string.IsNullOrWhiteSpace(searchQuery))
             {
-                return Json(searchResults);
+                return PartialView("_GlobalSearchResult", searchResults);
             }
+            var visibleVehicles = _dataAccess.GetVehicles();
+            if (!User.IsInRole(nameof(UserData.IsRootUser)))
+            {
+                visibleVehicles = _userLogic.FilterUserVehicles(visibleVehicles, GetUserID());
+            }
+            var normalizedQuery = caseSensitive ? searchQuery : searchQuery.ToLower();
+            var serializerOption = StaticHelper.GetNoEncodingOption();
+            foreach (Vehicle vehicle in visibleVehicles)
+            {
+                var vehicleName = $"{vehicle.Year} {vehicle.Make} {vehicle.Model}";
+                //vehicle-level match (make/model/year/license plate/tags) - not tied to any record type.
+                var vehicleBlob = JsonSerializer.Serialize(vehicle, serializerOption);
+                if (!caseSensitive)
+                {
+                    vehicleBlob = vehicleBlob.ToLower();
+                }
+                if (vehicleBlob.Contains(normalizedQuery))
+                {
+                    searchResults.Add(new SearchResult { Id = vehicle.Id, RecordType = "Vehicle", VehicleId = vehicle.Id, VehicleName = vehicleName, Description = $"{vehicleName} ({StaticHelper.GetVehicleIdentifier(vehicle)})" });
+                }
+                searchResults.AddRange(GetSearchResultsForVehicle(vehicle.Id, vehicleName, searchQuery, caseSensitive));
+            }
+            return PartialView("_GlobalSearchResult", searchResults);
+        }
+        private List<SearchResult> GetSearchResultsForVehicle(int vehicleId, string vehicleName, string searchQuery, bool caseSensitive)
+        {
+            List<SearchResult> searchResults = new List<SearchResult>();
             if (!caseSensitive)
             {
                 searchQuery = searchQuery.ToLower();
@@ -307,11 +346,11 @@ namespace CarCareTracker.Controllers
                             var results = _serviceRecordDataAccess.GetServiceRecordsByVehicleId(vehicleId);
                             if (caseSensitive)
                             {
-                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.ServiceRecord, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
+                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.ServiceRecord.ToString(), VehicleId = vehicleId, VehicleName = vehicleName, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
                             }
                             else
                             {
-                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).ToLower().Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.ServiceRecord, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
+                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).ToLower().Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.ServiceRecord.ToString(), VehicleId = vehicleId, VehicleName = vehicleName, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
                             }
                         }
                         break;
@@ -320,11 +359,11 @@ namespace CarCareTracker.Controllers
                             var results = _collisionRecordDataAccess.GetCollisionRecordsByVehicleId(vehicleId);
                             if (caseSensitive)
                             {
-                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.RepairRecord, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
+                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.RepairRecord.ToString(), VehicleId = vehicleId, VehicleName = vehicleName, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
                             }
                             else
                             {
-                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).ToLower().Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.RepairRecord, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
+                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).ToLower().Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.RepairRecord.ToString(), VehicleId = vehicleId, VehicleName = vehicleName, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
                             }
                         }
                         break;
@@ -333,11 +372,11 @@ namespace CarCareTracker.Controllers
                             var results = _upgradeRecordDataAccess.GetUpgradeRecordsByVehicleId(vehicleId);
                             if (caseSensitive)
                             {
-                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.UpgradeRecord, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
+                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.UpgradeRecord.ToString(), VehicleId = vehicleId, VehicleName = vehicleName, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
                             }
                             else
                             {
-                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).ToLower().Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.UpgradeRecord, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
+                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).ToLower().Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.UpgradeRecord.ToString(), VehicleId = vehicleId, VehicleName = vehicleName, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
                             }
                         }
                         break;
@@ -346,11 +385,11 @@ namespace CarCareTracker.Controllers
                             var results = _taxRecordDataAccess.GetTaxRecordsByVehicleId(vehicleId);
                             if (caseSensitive)
                             {
-                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.TaxRecord, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
+                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.TaxRecord.ToString(), VehicleId = vehicleId, VehicleName = vehicleName, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
                             }
                             else
                             {
-                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).ToLower().Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.TaxRecord, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
+                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).ToLower().Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.TaxRecord.ToString(), VehicleId = vehicleId, VehicleName = vehicleName, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
                             }
                         }
                         break;
@@ -359,11 +398,11 @@ namespace CarCareTracker.Controllers
                             var results = _supplyRecordDataAccess.GetSupplyRecordsByVehicleId(vehicleId);
                             if (caseSensitive)
                             {
-                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.SupplyRecord, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
+                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.SupplyRecord.ToString(), VehicleId = vehicleId, VehicleName = vehicleName, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
                             }
                             else
                             {
-                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).ToLower().Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.SupplyRecord, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
+                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).ToLower().Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.SupplyRecord.ToString(), VehicleId = vehicleId, VehicleName = vehicleName, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
                             }
                         }
                         break;
@@ -372,11 +411,11 @@ namespace CarCareTracker.Controllers
                             var results = _planRecordDataAccess.GetPlanRecordsByVehicleId(vehicleId);
                             if (caseSensitive)
                             {
-                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.PlanRecord, Description = $"{x.DateCreated.ToShortDateString()} - {x.Description}" }));
+                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.PlanRecord.ToString(), VehicleId = vehicleId, VehicleName = vehicleName, Description = $"{x.DateCreated.ToShortDateString()} - {x.Description}" }));
                             }
                             else
                             {
-                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).ToLower().Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.PlanRecord, Description = $"{x.DateCreated.ToShortDateString()} - {x.Description}" }));
+                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).ToLower().Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.PlanRecord.ToString(), VehicleId = vehicleId, VehicleName = vehicleName, Description = $"{x.DateCreated.ToShortDateString()} - {x.Description}" }));
                             }
                         }
                         break;
@@ -385,11 +424,11 @@ namespace CarCareTracker.Controllers
                             var results = _odometerRecordDataAccess.GetOdometerRecordsByVehicleId(vehicleId);
                             if (caseSensitive)
                             {
-                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.OdometerRecord, Description = $"{x.Date.ToShortDateString()} - {x.Mileage}" }));
+                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.OdometerRecord.ToString(), VehicleId = vehicleId, VehicleName = vehicleName, Description = $"{x.Date.ToShortDateString()} - {x.Mileage}" }));
                             }
                             else
                             {
-                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).ToLower().Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.OdometerRecord, Description = $"{x.Date.ToShortDateString()} - {x.Mileage}" }));
+                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).ToLower().Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.OdometerRecord.ToString(), VehicleId = vehicleId, VehicleName = vehicleName, Description = $"{x.Date.ToShortDateString()} - {x.Mileage}" }));
                             }
                         }
                         break;
@@ -398,11 +437,11 @@ namespace CarCareTracker.Controllers
                             var results = _gasRecordDataAccess.GetGasRecordsByVehicleId(vehicleId);
                             if (caseSensitive)
                             {
-                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.GasRecord, Description = $"{x.Date.ToShortDateString()} - {x.Mileage}" }));
+                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.GasRecord.ToString(), VehicleId = vehicleId, VehicleName = vehicleName, Description = $"{x.Date.ToShortDateString()} - {x.Mileage}" }));
                             }
                             else
                             {
-                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).ToLower().Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.GasRecord, Description = $"{x.Date.ToShortDateString()} - {x.Mileage}" }));
+                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).ToLower().Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.GasRecord.ToString(), VehicleId = vehicleId, VehicleName = vehicleName, Description = $"{x.Date.ToShortDateString()} - {x.Mileage}" }));
                             }
                         }
                         break;
@@ -411,11 +450,11 @@ namespace CarCareTracker.Controllers
                             var results = _noteDataAccess.GetNotesByVehicleId(vehicleId);
                             if (caseSensitive)
                             {
-                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.NoteRecord, Description = $"{x.Description}" }));
+                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.NoteRecord.ToString(), VehicleId = vehicleId, VehicleName = vehicleName, Description = $"{x.Description}" }));
                             }
                             else
                             {
-                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).ToLower().Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.NoteRecord, Description = $"{x.Description}" }));
+                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).ToLower().Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.NoteRecord.ToString(), VehicleId = vehicleId, VehicleName = vehicleName, Description = $"{x.Description}" }));
                             }
                         }
                         break;
@@ -424,11 +463,11 @@ namespace CarCareTracker.Controllers
                             var results = _reminderRecordDataAccess.GetReminderRecordsByVehicleId(vehicleId);
                             if (caseSensitive)
                             {
-                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.ReminderRecord, Description = $"{x.Description}" }));
+                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.ReminderRecord.ToString(), VehicleId = vehicleId, VehicleName = vehicleName, Description = $"{x.Description}" }));
                             }
                             else
                             {
-                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).ToLower().Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.ReminderRecord, Description = $"{x.Description}" }));
+                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).ToLower().Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.ReminderRecord.ToString(), VehicleId = vehicleId, VehicleName = vehicleName, Description = $"{x.Description}" }));
                             }
                         }
                         break;
@@ -437,11 +476,11 @@ namespace CarCareTracker.Controllers
                             var results = _inspectionRecordDataAccess.GetInspectionRecordsByVehicleId(vehicleId);
                             if (caseSensitive)
                             {
-                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.InspectionRecord, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
+                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.InspectionRecord.ToString(), VehicleId = vehicleId, VehicleName = vehicleName, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
                             }
                             else
                             {
-                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).ToLower().Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.InspectionRecord, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
+                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).ToLower().Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.InspectionRecord.ToString(), VehicleId = vehicleId, VehicleName = vehicleName, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
                             }
                         }
                         break;
@@ -450,17 +489,36 @@ namespace CarCareTracker.Controllers
                             var results = _equipmentRecordDataAccess.GetEquipmentRecordsByVehicleId(vehicleId);
                             if (caseSensitive)
                             {
-                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.EquipmentRecord, Description = $"{x.Description}" }));
+                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.EquipmentRecord.ToString(), VehicleId = vehicleId, VehicleName = vehicleName, Description = $"{x.Description}" }));
                             }
                             else
                             {
-                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).ToLower().Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.EquipmentRecord, Description = $"{x.Description}" }));
+                                searchResults.AddRange(results.Where(x => JsonSerializer.Serialize(x, serializerOption).ToLower().Contains(searchQuery)).Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.EquipmentRecord.ToString(), VehicleId = vehicleId, VehicleName = vehicleName, Description = $"{x.Description}" }));
                             }
                         }
                         break;
                 }
             }
-            return PartialView("_GlobalSearchResult", searchResults);
+            //Parts (not gated by VisibleTabs - the Parts tab is always visible, see Phase 5/DEFERRED.md).
+            var partPurchases = _partPurchaseDataAccess.GetPartPurchasesByVehicleId(vehicleId);
+            if (partPurchases.Any())
+            {
+                foreach (var purchase in partPurchases)
+                {
+                    var part = _partDataAccess.GetPartById(purchase.PartId);
+                    var partLabel = part == null || part.Id == default ? "Part" : $"{part.PartNumber} {part.Description}".Trim();
+                    var blob = JsonSerializer.Serialize(purchase, serializerOption) + " " + partLabel;
+                    if (!caseSensitive)
+                    {
+                        blob = blob.ToLower();
+                    }
+                    if (blob.Contains(searchQuery))
+                    {
+                        searchResults.Add(new SearchResult { Id = purchase.Id, RecordType = "PartPurchase", VehicleId = vehicleId, VehicleName = vehicleName, Description = $"{purchase.Date.ToShortDateString()} - {partLabel}" });
+                    }
+                }
+            }
+            return searchResults;
         }
         [HttpPost]
         [TypeFilter(typeof(CollaboratorFilter))]
@@ -480,77 +538,77 @@ namespace CarCareTracker.Controllers
                         {
                             var results = _serviceRecordDataAccess.GetServiceRecordsByVehicleId(vehicleId);
                             results.RemoveAll(x => !x.Tags.Any(y => tagsFilter.Contains(y)));
-                            searchResults.AddRange(results.Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.ServiceRecord, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
+                            searchResults.AddRange(results.Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.ServiceRecord.ToString(), Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
                         }
                         break;
                     case ImportMode.RepairRecord:
                         {
                             var results = _collisionRecordDataAccess.GetCollisionRecordsByVehicleId(vehicleId);
                             results.RemoveAll(x => !x.Tags.Any(y => tagsFilter.Contains(y)));
-                            searchResults.AddRange(results.Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.RepairRecord, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
+                            searchResults.AddRange(results.Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.RepairRecord.ToString(), Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
                         }
                         break;
                     case ImportMode.UpgradeRecord:
                         {
                             var results = _upgradeRecordDataAccess.GetUpgradeRecordsByVehicleId(vehicleId);
                             results.RemoveAll(x => !x.Tags.Any(y => tagsFilter.Contains(y)));
-                            searchResults.AddRange(results.Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.UpgradeRecord, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
+                            searchResults.AddRange(results.Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.UpgradeRecord.ToString(), Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
                         }
                         break;
                     case ImportMode.TaxRecord:
                         {
                             var results = _taxRecordDataAccess.GetTaxRecordsByVehicleId(vehicleId);
                             results.RemoveAll(x => !x.Tags.Any(y => tagsFilter.Contains(y)));
-                            searchResults.AddRange(results.Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.TaxRecord, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
+                            searchResults.AddRange(results.Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.TaxRecord.ToString(), Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
                         }
                         break;
                     case ImportMode.SupplyRecord:
                         {
                             var results = _supplyRecordDataAccess.GetSupplyRecordsByVehicleId(vehicleId);
                             results.RemoveAll(x => !x.Tags.Any(y => tagsFilter.Contains(y)));
-                            searchResults.AddRange(results.Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.SupplyRecord, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
+                            searchResults.AddRange(results.Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.SupplyRecord.ToString(), Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
                         }
                         break;
                     case ImportMode.OdometerRecord:
                         {
                             var results = _odometerRecordDataAccess.GetOdometerRecordsByVehicleId(vehicleId);
                             results.RemoveAll(x => !x.Tags.Any(y => tagsFilter.Contains(y)));
-                            searchResults.AddRange(results.Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.OdometerRecord, Description = $"{x.Date.ToShortDateString()} - {x.Mileage}" }));
+                            searchResults.AddRange(results.Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.OdometerRecord.ToString(), Description = $"{x.Date.ToShortDateString()} - {x.Mileage}" }));
                         }
                         break;
                     case ImportMode.GasRecord:
                         {
                             var results = _gasRecordDataAccess.GetGasRecordsByVehicleId(vehicleId);
                             results.RemoveAll(x => !x.Tags.Any(y => tagsFilter.Contains(y)));
-                            searchResults.AddRange(results.Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.GasRecord, Description = $"{x.Date.ToShortDateString()} - {x.Mileage}" }));
+                            searchResults.AddRange(results.Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.GasRecord.ToString(), Description = $"{x.Date.ToShortDateString()} - {x.Mileage}" }));
                         }
                         break;
                     case ImportMode.NoteRecord:
                         {
                             var results = _noteDataAccess.GetNotesByVehicleId(vehicleId);
                             results.RemoveAll(x => !x.Tags.Any(y => tagsFilter.Contains(y)));
-                            searchResults.AddRange(results.Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.NoteRecord, Description = $"{x.Description}" }));
+                            searchResults.AddRange(results.Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.NoteRecord.ToString(), Description = $"{x.Description}" }));
                         }
                         break;
                     case ImportMode.ReminderRecord:
                         {
                             var results = _reminderRecordDataAccess.GetReminderRecordsByVehicleId(vehicleId);
                             results.RemoveAll(x => !x.Tags.Any(y => tagsFilter.Contains(y)));
-                            searchResults.AddRange(results.Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.ReminderRecord, Description = $"{x.Description}" }));
+                            searchResults.AddRange(results.Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.ReminderRecord.ToString(), Description = $"{x.Description}" }));
                         }
                         break;
                     case ImportMode.InspectionRecord:
                         {
                             var results = _inspectionRecordDataAccess.GetInspectionRecordsByVehicleId(vehicleId);
                             results.RemoveAll(x => !x.Tags.Any(y => tagsFilter.Contains(y)));
-                            searchResults.AddRange(results.Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.InspectionRecord, Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
+                            searchResults.AddRange(results.Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.InspectionRecord.ToString(), Description = $"{x.Date.ToShortDateString()} - {x.Description}" }));
                         }
                         break;
                     case ImportMode.EquipmentRecord:
                         {
                             var results = _equipmentRecordDataAccess.GetEquipmentRecordsByVehicleId(vehicleId);
                             results.RemoveAll(x => !x.Tags.Any(y => tagsFilter.Contains(y)));
-                            searchResults.AddRange(results.Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.EquipmentRecord, Description = $"{x.Description}" }));
+                            searchResults.AddRange(results.Select(x => new SearchResult { Id = x.Id, RecordType = ImportMode.EquipmentRecord.ToString(), Description = $"{x.Description}" }));
                         }
                         break;
                 }
