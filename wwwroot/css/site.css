@@ -322,8 +322,94 @@ html {
             background-color: transparent;
         }
 
+/* Phase 16 (Sidebar App Shell & Dashboard Redesign) — persistent left sidebar, desktop-only for now
+   (Home/Index has been ported; Vehicle/Index and the mobile drawer still use the pre-existing
+   .lubelogger-navbar/.lubelogger-mobile-nav classes above, untouched, so both coexist safely during
+   the transition). Reuses existing tokens only (--ct-space-*, --bs-border-color, --bs-body-bg/-color,
+   --ct-spotlight-solid) - no new color values introduced. */
+.ct-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 240px;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--bs-border-color);
+    background-color: var(--bs-body-bg);
+    padding: var(--ct-space-5) var(--ct-space-4);
+    overflow-y: auto;
+    z-index: 1021;
+}
+
+.ct-sidebar-header {
+    cursor: pointer;
+    margin-bottom: var(--ct-space-6);
+}
+
+.ct-sidebar-nav {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ct-space-1);
+    flex-grow: 1;
+}
+
+.ct-sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: var(--ct-space-3);
+    width: 100%;
+    padding: var(--ct-space-2) var(--ct-space-3);
+    border: none;
+    border-left: 2px solid transparent;
+    background-color: transparent;
+    color: var(--bs-secondary-color);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.75rem;
+    text-align: left;
+    text-decoration: none;
+}
+
+    .ct-sidebar-link:hover {
+        color: var(--bs-body-color);
+    }
+
+    .ct-sidebar-link.active {
+        color: var(--bs-body-color);
+        border-left-color: var(--ct-spotlight-solid, var(--bs-body-color));
+        font-weight: 600;
+    }
+
+.ct-sidebar-footer {
+    margin-top: var(--ct-space-4);
+    border-top: 1px solid var(--bs-border-color);
+    padding-top: var(--ct-space-4);
+}
+
+/* No fixed top bar on sidebar-enabled pages - offset the body container horizontally instead of
+   vertically. Scoped via :has() so pages without a .ct-sidebar (Login, Kiosk, Admin, and
+   Vehicle/Index until it's ported in a later increment) are completely unaffected. */
+@media (min-width: 576px) {
+    body:has(.ct-sidebar) .lubelogger-body-container {
+        padding-top: var(--ct-space-4);
+        padding-left: calc(240px + var(--ct-space-5));
+    }
+
+    .ct-mobile-topbar {
+        display: none;
+    }
+}
+
 /*Media Queries*/
 @media (max-width: 575px) {
+    .ct-sidebar {
+        display: none;
+    }
+
     .lubelogger-tab {
         display: none;
     }

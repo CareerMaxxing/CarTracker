@@ -5,56 +5,51 @@ conversation history.
 
 ```
 PROJECT STATUS
-Current phase:      Phase 16 — Sidebar App Shell & Dashboard Redesign (Increment 1 of 11 complete)
-Current task:       PHASE-16-01 (see docs/execution/PHASE_16.md) — complete: CurrentVehicleId
-                     plumbing, verified via a real curl round-trip, zero visual change yet
-Status:             User shared a dashboard mockup ("DriveLog") and asked to plan making the app's UI
-                     match it, same way as Phase 15's process (EnterPlanMode, Explore agents, a Plan
-                     agent, AskUserQuestion for the decisions only the user could make, a written plan
-                     file, ExitPlanMode). Two Explore agents ran in parallel: one on the existing
-                     "Zara + Magneto" design system (already close in aesthetic spirit - tokenized
-                     Fraunces/Work Sans, flat corners, warm paper/ink palette, docs/UI_SPEC.md), one
-                     on which mockup widgets map to real data vs. need new backend work (Trips, a
-                     fuel-tank/range gauge, month-over-month cost %, and fleet-wide all-time stats all
-                     confirmed as NOT existing anywhere in the data model). Asked 3 questions: (1) IA
-                     scope - user chose the FULL sidebar restructure over a smaller "just restyle the
-                     existing per-vehicle Dashboard" option, intentionally reversing
-                     UI_TRANSITION.md's explicit "keep Home/Vehicle nav separate" decision; (2)
-                     feature scope - user chose "visual pass first, real data only," deferring
-                     Trips/fuel-gauge/month-over-month%/fleet-stats to candidate future phases rather
-                     than building them now; (3) reference source - just the one screenshot, no
-                     Dribbble/Figma link. A Plan agent then worked out the two anchoring mechanisms:
-                     a shared dumb `_SidebarNavList.cshtml` partial (each view keeps building its own
-                     tab list exactly as today, just renders through one shared partial instead of
-                     hand-duplicating markup 3x) rather than forcing Home's and Vehicle's genuinely
-                     different nav-construction logic together, and `UserConfig.CurrentVehicleId`
-                     mirroring the existing `DefaultTab` pattern exactly for "which vehicle the
-                     Dashboard currently shows." 11 increments planned (4 foundation/structural, 7
-                     dashboard widgets, each reusing already-computed data - see PHASE_16.md and the
-                     approved plan for full detail). Increment 1 (CurrentVehicleId plumbing) done:
-                     added the field, the read-side line in ConfigHelper.GetUserConfig, and a new
-                     HomeController.SetCurrentVehicle endpoint - confirmed SaveUserConfig needed NO
-                     changes by reading it first (it already serializes whatever whole UserConfig
-                     object it's given) rather than assuming symmetry with the read side. Verified via
-                     a real HTTP round-trip against the dev instance on port 5300 (5299 is now the
-                     Phase-15 production Windows Service), not just code-reading: POST
-                     /Home/SetCurrentVehicle round-tripped both vehicleId=1 and vehicleId=0 correctly,
-                     and /Home/Garage still loads normally (no regression). Not yet committed - pending
-                     alongside this STATE.md update.
+Current phase:      Phase 16 — Sidebar App Shell & Dashboard Redesign (Increment 2 of 11 structurally
+                     complete, awaiting the user's live visual review)
+Current task:       PHASE-16-02 (see docs/execution/PHASE_16.md) — shared sidebar shell built, ported
+                     to Home/Index only. Structurally verified (build/tests/curl); NOT yet visually
+                     verified - no browser tool exists here, this is a real checkpoint not a formality.
+Status:             Full plan/decision history for how this phase was scoped (mockup shared, IA-scope
+                     and feature-scope questions asked via AskUserQuestion, Plan-agent-derived
+                     mechanisms) is in the git history and PHASE_16.md's intro - not re-summarized here
+                     to keep this entry scannable. Increment 1 (CurrentVehicleId plumbing, committed
+                     b669299): done, verified via curl round-trip. Increment 2 (shared sidebar shell):
+                     built Views/Shared/_SidebarNavList.cshtml (dumb partial, zero change to how
+                     Bootstrap tabs/garage.js find panes - every tab-pane id unchanged) and rebuilt
+                     Home/Index.cshtml's Nav section around a new fixed-left .ct-sidebar (desktop) +
+                     minimal .ct-mobile-topbar (<576px, mobile drawer itself untouched). Used
+                     `body:has(.ct-sidebar) .lubelogger-body-container { padding-left: ... }` instead
+                     of touching _Layout.cshtml, so Login/Kiosk/Admin/not-yet-ported Vehicle/Index are
+                     provably unaffected. Caught a real bug by reading shared.js before assuming old
+                     JS still applied: bindNavBarResize()/checkNavBarOverflow() would have spun in an
+                     infinite 500ms setTimeout retry loop on Home/Index (no .lubelogger-tab children
+                     left to measure meant its exit condition could never be satisfied) - fixed by
+                     removing just Home/Index's call to it, leaving the function and Vehicle/Index's
+                     identical call untouched since Vehicle/Index still needs it until Increment 3.
+                     One design choice made without asking and flagged for review: active-nav
+                     indicator is a left border accent bar, not the mockup's dot bullet, reasoned from
+                     the app's flat/sharp-corner design language rather than guessed silently. Verified
+                     structurally: dotnet build (0 errors), dotnet test (10/10), curl-inspected
+                     rendered HTML (.ct-sidebar present, all tab-pane ids unchanged, zero leftover
+                     .nav-item-more, zero leaked Razor errors) and site.css (balanced braces, new rules
+                     present). Not yet committed - pending alongside this STATE.md update.
 Last completed:      Phase 15 (Remote Access & Persistent Hosting) - all 5 increments resolved (4
                      explicitly declined by the user, not skipped). See docs/execution/PHASE_15.md.
                      Phase 14's remaining areas (icon-button labels, keyboard nav, form labels, alt
                      text, mobile/responsive validation, performance) are still open, not abandoned -
                      both Phase 15 and now Phase 16 were started because the user raised new,
                      higher-priority requests, not because Phase 14 finished.
-Next task:           Phase 16 Increment 2: build the shared sidebar shell
-                     (Views/Shared/_AppSidebar.cshtml + _SidebarNavList.cshtml, new .ct-app-shell/
-                     .ct-sidebar* CSS reusing existing tokens only) and port Home/Index onto it first
-                     (smaller nav list, lower risk than Vehicle/Index). This is the highest structural
-                     risk increment in this phase - needs the user's live browser review since no
-                     screenshot tool exists here, same as the original Zara + Magneto work. Do NOT
-                     attempt to also port Vehicle/Index in the same pass - that's Increment 3,
-                     deliberately sequenced after Home/Index is confirmed working.
+Next task:           STOP before writing more code: the user needs to actually load /Home live
+                     (desktop width and mobile/phone) and confirm the sidebar looks/works correctly -
+                     this agent has only verified markup/CSS presence, never rendered pixels. Ask
+                     specifically about the left-border active-indicator choice (vs the mockup's dot).
+                     Only after that sign-off does Increment 3 start: port Vehicle/Index onto the same
+                     shell (13-item nav list ordered by TabOrder, the reminder-bell branch, and a new
+                     vehicle-switcher in the sidebar header using Increment 1's CurrentVehicleId
+                     endpoint). Do NOT skip ahead to Increment 3 without that visual sign-off - a
+                     structural mistake in the shared partial would then be baked into two views
+                     instead of one.
 Known blockers:      1. No browser/screenshot tool in this environment - Phase 14's remaining
                         accessibility work would still need static-code-audit + curl verification,
                         not live screen-reader/keyboard testing.
@@ -130,15 +125,15 @@ Do not:              Assume Phase 14 is "done" - three increments complete (secu
                      ran. dotnet run from the dev repo still works for development but now operates on
                      a separate, diverging dataset - be explicit with the user about which copy
                      they're looking at if this ever comes up.
-Last validation:     Phase 15's full validation history lives in docs/execution/PHASE_15.md (all 5
-                     increments). Phase 16 Increment 1 (current): dotnet build (0 errors); dotnet test
-                     Tests/CarCareTracker.Tests.csproj (10/10 passing, no regression); dev instance on
-                     port 5300 (5299 is now Phase 15's production service) - POST
-                     /Home/SetCurrentVehicle round-tripped vehicleId=1 and vehicleId=0 correctly into
-                     data/config/userConfig.json; GET /Home/Garage still 200 (no regression) —
-                     2026-08-18.
-Last commit:         f15bd5d — "Phase 15 complete" — 2026-08-18. Phase 16 Increment 1 (this entry) not
-                     yet committed - pending alongside this STATE.md update.
+Last validation:     Phase 15's full validation history lives in docs/execution/PHASE_15.md. Phase 16
+                     Increment 2 (current, structural only - NOT visual): dotnet build (0 errors);
+                     dotnet test (10/10 passing); dev instance on port 5300; curl / Home shows
+                     .ct-sidebar/.ct-sidebar-header present, all four original *-tab-pane ids
+                     unchanged, zero .nav-item-more leftover, zero leaked Razor errors; curl
+                     /css/site.css shows balanced braces (424/424) with the new .ct-sidebar* rules
+                     present — 2026-08-18. Real visual rendering has NOT been checked by this agent.
+Last commit:         b669299 — "Phase 16 Increment 1" — 2026-08-18. Increment 2 (this entry) not yet
+                     committed - pending alongside this STATE.md update.
 ```
 
 ## Completed initiative: Zara + Magneto UI overhaul (separate from the roadmap above)

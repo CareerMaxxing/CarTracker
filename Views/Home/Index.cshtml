@@ -38,82 +38,70 @@
     (string Id, string Target, string Icon, string Label) homeSettingsTab = ("settings-tab", "settings-tab-pane", "bi-gear", "Settings");
 }
 @section Nav {
-    <div class="container-fluid lubelogger-navbar-container frosted hideOnPrint">
-        <div class="row mt-2">
-            <div class="d-flex lubelogger-navbar">
-                <div class="me-2 ct-wordmark-wrap" style="cursor:pointer;" onclick="returnToGarage()">
-                    @if (config.GetSmallLogoUrl() == StaticHelper.DefaultSmallLogoPath)
+    @{ ViewData["UserLanguage"] = userLanguage; }
+    <div class="ct-sidebar hideOnPrint" id="appSidebar">
+        <div class="ct-sidebar-header ct-wordmark-wrap" style="cursor:pointer;" onclick="returnToGarage()">
+            @if (config.GetSmallLogoUrl() == StaticHelper.DefaultSmallLogoPath)
+            {
+                <span class="ct-wordmark">Car Tracker</span>
+            }
+            else
+            {
+                <img src="@config.GetSmallLogoUrl()" class="lubelogger-logo" />
+            }
+        </div>
+        <ul class="nav flex-column ct-sidebar-nav" id="homeTab" role="tablist">
+            @await Html.PartialAsync("_SidebarNavList", homeNavTabs)
+            @await Html.PartialAsync("_SidebarNavList", new List<(string, string, string, string)> { homeSettingsTab })
+        </ul>
+        @if (User.IsInRole("CookieAuth") || User.IsInRole("APIAuth"))
+        {
+            <div class="ct-sidebar-footer dropdown nav-item-persist">
+                <a class="ct-sidebar-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false"><i class="bi bi-person"></i><span>@User.Identity.Name</span></a>
+                <ul class="dropdown-menu">
+                    @if (User.IsInRole(nameof(UserData.IsAdmin)))
                     {
-                        <span class="ct-wordmark lubelogger-tab">Car Tracker</span>
+                        <li>
+                            <a class="dropdown-item" href="/Admin"><i class="bi bi-people me-2"></i>@translator.Translate(userLanguage, "Admin Panel")</a>
+                        </li>
+                    }
+                    @if (User.IsInRole(nameof(UserData.IsRootUser)))
+                    {
+                        <li>
+                            <button class="dropdown-item" onclick="showRootAccountInformationModal()"><i class="bi bi-person-gear me-2"></i>@translator.Translate(userLanguage, "Profile")</button>
+                        </li>
                     }
                     else
                     {
-                        <img src="@config.GetSmallLogoUrl()" class="lubelogger-logo lubelogger-tab" />
+                        <li>
+                            <button class="dropdown-item" onclick="showAccountInformationModal()"><i class="bi bi-person-gear me-2"></i>@translator.Translate(userLanguage, "Profile")</button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" onclick="showHouseholdModal()"><i class="bi bi-house me-2"></i>@translator.Translate(userLanguage, "Household")</button>
+                        </li>
                     }
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <button class="dropdown-item" onclick="performLogOut()"><i class="bi bi-box-arrow-right me-2"></i>@translator.Translate(userLanguage, "Logout")</button>
+                    </li>
+                </ul>
+            </div>
+        }
+    </div>
+    <!-- Mobile-only top bar (<576px): unchanged trigger for the existing full-screen .lubelogger-mobile-nav drawer below. The sidebar above is desktop-only for this increment - mobile keeps today's behavior exactly, ported in a later increment. -->
+    <div class="container-fluid lubelogger-navbar-container frosted hideOnPrint ct-mobile-topbar">
+        <div class="row mt-2">
+            <div class="d-flex lubelogger-navbar justify-content-between">
+                <div class="ct-wordmark-wrap" style="cursor:pointer;" onclick="returnToGarage()">
                     @if (config.GetLogoUrl() == StaticHelper.DefaultLogoPath)
                     {
-                        <span class="ct-wordmark lubelogger-mobile-nav-show">Car Tracker</span>
+                        <span class="ct-wordmark">Car Tracker</span>
                     }
                     else
                     {
-                        <img src="@config.GetLogoUrl()" class="lubelogger-logo lubelogger-mobile-nav-show" />
+                        <img src="@config.GetLogoUrl()" class="lubelogger-logo" />
                     }
                 </div>
-                <ul class="nav nav-tabs lubelogger-tab flex-grow-1" id="homeTab" role="tablist">
-                    @foreach (var tab in homeNavTabs)
-                    {
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link resizable-nav-link" id="@tab.Id" data-bs-toggle="tab" data-bs-target="#@tab.Target" type="button" role="tab" aria-selected="false"><i class="bi @tab.Icon"></i><span class="ms-2">@translator.Translate(userLanguage, tab.Label)</span></button>
-                        </li>
-                    }
-                    <li class="nav-item dropdown nav-item-persist nav-item-more me-5" role="presentation" style="display:none;">
-                        <a class="nav-link resizable-nav-link" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false"><i class="bi bi-three-dots"></i></a>
-                        <ul class="dropdown-menu">
-                            @foreach (var tab in homeNavTabs.Append(homeSettingsTab))
-                            {
-                                <li class="nav-item text-truncate" role="presentation">
-                                    <button class="nav-link resizable-nav-link" id="@tab.Id" data-bs-toggle="tab" data-bs-target="#@tab.Target" type="button" role="tab" aria-selected="false"><i class="bi @tab.Icon"></i><span class="ms-2">@translator.Translate(userLanguage, tab.Label)</span></button>
-                                </li>
-                            }
-                        </ul>
-                    </li>
-                    <li class="nav-item ms-auto" role="presentation">
-                        <button class="nav-link resizable-nav-link" id="@homeSettingsTab.Id" data-bs-toggle="tab" data-bs-target="#@homeSettingsTab.Target" type="button" role="tab"><i class="bi @homeSettingsTab.Icon"></i><span class="ms-2">@translator.Translate(userLanguage, homeSettingsTab.Label)</span></button>
-                    </li>
-                    @if (User.IsInRole("CookieAuth") || User.IsInRole("APIAuth"))
-                    {
-                        <li class="nav-item dropdown nav-item-persist" role="presentation">
-                            <a class="nav-link resizable-nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false"><i class="bi bi-person"></i><span class="ms-2">@User.Identity.Name</span></a>
-                            <ul class="dropdown-menu">
-                                @if (User.IsInRole(nameof(UserData.IsAdmin)))
-                                {
-                                    <li>
-                                        <a class="dropdown-item" href="/Admin"><i class="bi bi-people me-2"></i>@translator.Translate(userLanguage, "Admin Panel")</a>
-                                    </li>
-                                }
-                                @if (User.IsInRole(nameof(UserData.IsRootUser)))
-                                {
-                                    <li>
-                                        <button class="dropdown-item" onclick="showRootAccountInformationModal()"><i class="bi bi-person-gear me-2"></i>@translator.Translate(userLanguage, "Profile")</button>
-                                    </li>
-                                }
-                                else
-                                {
-                                    <li>
-                                        <button class="dropdown-item" onclick="showAccountInformationModal()"><i class="bi bi-person-gear me-2"></i>@translator.Translate(userLanguage, "Profile")</button>
-                                    </li>
-                                    <li>
-                                        <button class="dropdown-item" onclick="showHouseholdModal()"><i class="bi bi-house me-2"></i>@translator.Translate(userLanguage, "Household")</button>
-                                    </li>
-                                }
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <button class="dropdown-item" onclick="performLogOut()"><i class="bi bi-box-arrow-right me-2"></i>@translator.Translate(userLanguage, "Logout")</button>
-                                </li>
-                            </ul>
-                        </li>
-                    }
-                </ul>
                 <div class="lubelogger-navbar-button">
                     <button type="button" class="btn btn-adaptive" onclick="showMobileNav()"><i class="bi bi-list lubelogger-menu-icon"></i></button>
                 </div>
@@ -235,5 +223,4 @@
 </div>
 <script>
     bindWindowResize();
-    bindNavBarResize();
 </script>

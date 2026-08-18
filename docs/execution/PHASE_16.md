@@ -104,3 +104,129 @@ Complete. Pure plumbing, zero visual change, verified via a real HTTP round-trip
 dev instance rather than trusted from code reading alone. Increment 2 (the shared sidebar shell,
 ported to `Home/Index` first) is next - the highest structural risk increment in this phase, and
 needs the user's live browser review since no screenshot tool exists in this environment.
+
+## Increment 2: Shared sidebar shell, ported to Home/Index only
+
+### Task packet
+
+```
+TASK ID: PHASE-16-02
+TITLE: Build the shared sidebar nav-list partial and port Home/Index onto a real sidebar shell
+OBJECTIVE: Replace Home/Index's horizontal top tab-strip with a persistent left sidebar matching the
+  mockup's editorial small-caps style, using only existing design tokens - desktop only for this
+  increment, mobile keeps today's hamburger+drawer behavior completely unchanged.
+INPUTS: Views/Home/Index.cshtml (current nav construction), Views/Shared/_Layout.cshtml (Nav section
+  slot, .lubelogger-body-container), wwwroot/css/site.css (existing tokens, .lubelogger-navbar-
+  container's fixed-top-bar pattern as the positioning precedent to mirror for a fixed-left-sidebar),
+  wwwroot/js/shared.js (bindNavBarResize/checkNavBarOverflow - the old horizontal-overflow-collapse
+  logic that needed to be understood before deciding whether it still applied).
+ALLOWED SCOPE: One new shared partial (Views/Shared/_SidebarNavList.cshtml); Home/Index.cshtml's Nav
+  section rebuilt around it; new .ct-sidebar* CSS classes reusing only existing tokens; removing the
+  now-dead bindNavBarResize() call from Home/Index specifically (not from shared.js itself, which
+  Vehicle/Index still needs unchanged until Increment 3).
+NON-SCOPE: Vehicle/Index (Increment 3); any change to _Layout.cshtml's DOM structure (achieved via a
+  CSS :has() selector instead, scoped so Login/Kiosk/Admin/unported pages are provably unaffected);
+  mobile sidebar/drawer redesign (mobile keeps exactly today's behavior this round).
+IMPLEMENTATION REQUIREMENTS:
+  - _SidebarNavList.cshtml: a dumb partial over List<(string Id, string Target, string Icon, string
+    Label)>, rendering the same data-bs-toggle="tab"/data-bs-target markup pattern already in use -
+    zero change to how Bootstrap's tab JS or garage.js finds/activates panes, since every tab-pane id
+    stays exactly as it was.
+  - .ct-sidebar: position:fixed, left:0, fixed width, full height, reusing --ct-space-*/--bs-border-
+    color/--bs-body-bg tokens - no new color values. Active-state indicator is a left border accent
+    bar (--ct-spotlight-solid) rather than the mockup's dot bullet - chosen to match this app's flat/
+    sharp-corner ethos (docs/UI_SPEC.md's "Zara's single most load-bearing structural trait") rather
+    than introduce a new circular motif with no precedent anywhere else in the design system. Flagged
+    for the user's live review - easy to swap for a literal dot if preferred.
+  - Body-container offset via `body:has(.ct-sidebar) .lubelogger-body-container { padding-left: ... }`
+    scoped inside a `min-width: 576px` media query, rather than touching _Layout.cshtml at all - kept
+    every other page (Login/Kiosk/Admin/not-yet-ported Vehicle/Index) provably unaffected without
+    needing to audit all of them individually.
+  - Mobile (<576px): a new minimal .ct-mobile-topbar (wordmark + hamburger button only, reusing the
+    existing .lubelogger-navbar-container fixed-positioning class) replaces the old full tab-strip top
+    bar; the existing .lubelogger-mobile-nav full-screen drawer and its showMobileNav()/hideMobileNav()
+    JS are completely untouched.
+  - Real bug caught before shipping, not by inspection alone: bindNavBarResize() sets a ResizeObserver
+    on .lubelogger-navbar and, via checkNavBarOverflow(), measures `.lubelogger-navbar > .lubelogger-
+    tab > .nav-item .bi` width/font-size to detect icon-font-not-loaded-yet and retry. With the sidebar
+    in place, Home/Index's .lubelogger-navbar (now mobile-topbar-only) has no .lubelogger-tab children
+    left, so that selector always returns an empty set - iconWidth becomes the literal string
+    "undefinedpx" and iconFontSize becomes undefined, which never satisfy the loop's exit condition,
+    causing checkNavBarOverflow() to re-queue itself via setTimeout every 500ms forever. Fixed by
+    removing the bindNavBarResize() call from Home/Index's own bottom script block (the function
+    itself, and Vehicle/Index's call to it, are untouched - still needed there until Increment 3).
+DELIVERABLES: A working sidebar on Home/Index, verified structurally (not just by code reading).
+ACCEPTANCE CRITERIA:
+  - dotnet build: 0 errors. dotnet test: 10/10 passing.
+  - GET /Home returns the sidebar markup (.ct-sidebar, .ct-sidebar-header, .ct-sidebar-nav links with
+    correct ids) and every original tab-pane id unchanged.
+  - No leftover .nav-item-more (overflow dropdown) markup remains.
+  - No Razor rendering errors leaked into the response body.
+  - /css/site.css serves with balanced braces (sanity check that the new CSS block didn't corrupt the
+    file) and contains the new .ct-sidebar rules.
+VALIDATION COMMANDS:
+  dotnet build
+  dotnet test Tests/CarCareTracker.Tests.csproj
+  dotnet run --urls http://localhost:5300 --no-build (background)
+  curl http://localhost:5300/Home | grep -o 'class="ct-sidebar[^"]*"'
+  curl http://localhost:5300/Home | grep -o 'id="[a-z]*-tab-pane"'   (confirm unchanged)
+  curl http://localhost:5300/Home | grep -c "nav-item-more"          (confirm 0)
+  curl http://localhost:5300/css/site.css                            (brace-balance sanity check)
+STOP CONDITION: All structural checks green. The user must do the actual visual review before
+  Increment 3 (porting Vehicle/Index onto the same shell) starts - no browser tool exists here to
+  verify layout/spacing/readability, only markup/CSS presence.
+```
+
+### What was done
+
+1. Read `Views/Shared/_Layout.cshtml` first to confirm every page in the app shares one layout (no
+   per-area override anywhere - `Views/_ViewStart.cshtml` sets `Layout = "_Layout"` unconditionally),
+   which is why the `:has()`-scoped CSS approach was chosen over restructuring `_Layout.cshtml`
+   itself: a shared-file change would have needed auditing Login/Kiosk/Admin for regressions too,
+   while a selector scoped to "only when `.ct-sidebar` is actually present" provably can't affect
+   pages that don't render one.
+2. Read `wwwroot/css/site.css`'s existing `.lubelogger-navbar-container` (`position:fixed; top:0;
+   left:0`) as the positioning precedent for the new fixed-left `.ct-sidebar`, and confirmed
+   `--ct-space-*`/`--bs-border-color`/`--bs-body-bg`/`--ct-spotlight-solid` were all it needed - no
+   new tokens.
+3. Built `Views/Shared/_SidebarNavList.cshtml` and rebuilt `Home/Index.cshtml`'s `@section Nav`
+   around it: a desktop `.ct-sidebar` (wordmark header, vertical nav list via the shared partial twice
+   - once for the main tabs, once for the Settings tab which was previously positioned separately via
+   `ms-auto` - now just a second call with a one-item list) plus a user/admin dropdown pinned to the
+   sidebar footer, and a separate minimal `.ct-mobile-topbar` for <576px that only triggers the
+   pre-existing, untouched `.lubelogger-mobile-nav` drawer.
+4. Simplified the wordmark/logo swap: the original had a small-logo/large-logo pair swapped via CSS
+   classes tied to the old horizontal-bar's width constraints (`.lubelogger-tab` vs
+   `.lubelogger-mobile-nav-show`). A sidebar has no such width pressure, so both the sidebar header and
+   the mobile topbar now just show one appropriately-sized logo each - a deliberate simplification, not
+   an oversight, since the reason for the original dual-swap no longer applies.
+5. Read `wwwroot/js/shared.js`'s `bindNavBarResize()`/`checkNavBarOverflow()` before deciding whether
+   Home/Index still needed them, and found a real bug that would have shipped otherwise: with no
+   `.lubelogger-tab` children left in Home's `.lubelogger-navbar` (now mobile-topbar-only), the
+   function's icon-width/font-size comparison would always disagree (`"undefinedpx" != undefined`),
+   causing an infinite `setTimeout(...,500)` retry loop on every page load - a real runaway-timer bug,
+   not a hypothetical. Fixed by removing the `bindNavBarResize();` call from Home/Index's own script
+   block (kept `bindWindowResize();`, which is still relevant and unaffected). Left the function itself
+   and Vehicle/Index's identical call to it untouched, since Vehicle/Index still needs the real
+   overflow-collapse behavior until Increment 3 ports it too.
+6. Verified structurally, not just by reading the code: `dotnet build` (0 errors), `dotnet test` (10/10
+   passing), started the dev instance (port 5300 - 5299 is the Phase 15 production service), and
+   curled the actual rendered output: `.ct-sidebar`/`.ct-sidebar-header` present, nav links resolve to
+   the same `garage-tab`/`calendar-tab`/`settings-tab` ids as before (`supply-tab` correctly absent in
+   this dev config, matching the pre-existing `GetServerEnableShopSupplies()` conditional - not a
+   regression), all four original `*-tab-pane` ids unchanged, zero leftover `.nav-item-more` markup,
+   zero leaked Razor errors in the response body, and `/css/site.css` served with balanced braces
+   (424/424) containing the 10 new `.ct-sidebar*` rule occurrences.
+7. One design choice made without the user's input, flagged explicitly for their review rather than
+   guessed at silently: the mockup's active-nav-item indicator is a small dot bullet; this
+   implementation uses a left-border accent bar instead, reasoned from `docs/UI_SPEC.md`'s explicit
+   "flat/sharp corners governs everything" framing rather than introducing a circular motif with no
+   precedent elsewhere in the design system. Easy to change if the user prefers the literal dot after
+   seeing it live.
+
+### Result
+
+Structurally complete and verified as far as this environment allows (build, tests, curl-inspected
+markup/CSS). **Not yet visually verified** - no browser/screenshot tool exists here. The user needs to
+load the app live (desktop and mobile) before Increment 3 (porting `Vehicle/Index` onto the same
+shell) starts.

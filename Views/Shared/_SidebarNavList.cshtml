@@ -1,0 +1,14 @@
+@model List<(string Id, string Target, string Icon, string Label)>
+@using CarCareTracker.Helper
+@inject ITranslationHelper translator
+@{
+    var userLanguage = ViewData["UserLanguage"] as string ?? "en_US";
+}
+@foreach (var tab in Model)
+{
+    <li class="nav-item" role="presentation">
+        <button class="nav-link ct-sidebar-link" id="@tab.Id" data-bs-toggle="tab" data-bs-target="#@tab.Target" type="button" role="tab" aria-selected="false">
+            <i class="bi @tab.Icon"></i><span>@translator.Translate(userLanguage, tab.Label)</span>
+        </button>
+    </li>
+}
