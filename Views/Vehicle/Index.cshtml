@@ -58,13 +58,16 @@
     <div class="container-fluid lubelogger-navbar-container frosted hideOnPrint">
         <div class="row mt-2">
             <div class="d-flex lubelogger-navbar">
-                <div class="me-2" style="cursor:pointer;" onclick="returnToGarage()">
+                <div class="me-2 ct-wordmark-wrap" style="cursor:pointer;" onclick="returnToGarage()">
                     @if(userConfig.ShowVehicleThumbnail) {
                         <img src="@Model.ImageLocation" class="lubelogger-vehicle-logo @(string.IsNullOrWhiteSpace(Model.SoldDate) ? "" : "sold")" />
+                    } else if (config.GetSmallLogoUrl() == StaticHelper.DefaultSmallLogoPath) {
+                        <span class="ct-wordmark">Car Tracker</span>
                     } else {
                         <img src="@config.GetSmallLogoUrl()" class="lubelogger-logo" />
                     }
                 </div>
+                <div class="lubelogger-vehicle-title d-none d-sm-block text-truncate me-3" style="cursor:pointer;" onclick="returnToGarage()">@Model.Year @Model.Make @Model.Model</div>
                 <ul class="nav nav-tabs lubelogger-tab flex-grow-1" id="vehicleTab" role="tablist">
                     @foreach (var tab in vehicleNavTabs)
                     {
@@ -122,7 +125,7 @@
                         </ul>
                     </li>
                 </ul>
-                <span style="cursor:pointer;" onclick="editVehicle(@Model.Id)" class="text-truncate"><span class="lead">@($"{Model.Year} {Model.Make} {Model.Model}")<small class="text-body-secondary">@($"(#{StaticHelper.GetVehicleIdentifier(Model)})")</small></span><span class="ms-2 lubelogger-tab"><i class="bi bi-pencil-square"></i></span></span>
+                <a class="link-body-emphasis lubelogger-tab" style="cursor:pointer; font-size:1.2rem;" onclick="editVehicle(@Model.Id)" title="@translator.Translate(userLanguage, "Edit Vehicle")"><i class="bi bi-pencil-square"></i></a>
                 <div class="lubelogger-navbar-button">
                     <button type="button" class="btn btn-adaptive" onclick="showMobileNav()"><i class="bi bi-list lubelogger-menu-icon"></i></button>
                 </div>

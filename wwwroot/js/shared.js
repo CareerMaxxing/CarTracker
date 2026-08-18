@@ -184,8 +184,8 @@ function saveVehicle(isEdit) {
         $("#inputSoldPrice").removeClass("is-invalid");
     }
     if (vehiclePurchaseDate.trim() != '' && vehicleSoldDate.trim() != '') {
-        let purchaseTicks = $("#inputPurchaseDate").datepicker('getDate')?.getTime();
-        let soldTicks = $("#inputSoldDate").datepicker('getDate')?.getTime();
+        let purchaseTicks = getPickerDate($("#inputPurchaseDate"))?.getTime();
+        let soldTicks = getPickerDate($("#inputSoldDate"))?.getTime();
         if (!purchaseTicks || !soldTicks || purchaseTicks > soldTicks) {
             hasError = true;
             $("#inputPurchaseDate").addClass("is-invalid");
@@ -422,32 +422,53 @@ function isValidMoney(input) {
     const usRegex = /^\$?(?=\(.*\)|[^()]*$)\(?\d{1,3}((,\d{3}){0,8}|(\d{3}){0,8})(\.\d{1,3}?)?\)?$/;
     return (euRegex.test(input) || usRegex.test(input));
 }
+function flatpickrDateFormat() {
+    //translates bootstrap-datepicker-style tokens (getShortDatePattern's format, e.g. "dd/mm/yyyy")
+    //into flatpickr's own token syntax (e.g. "d/m/Y") - kept as a translation rather than a hardcoded
+    //literal so a future change to getShortDatePattern's pattern still works without touching this.
+    return getShortDatePattern().pattern.replace('yyyy', 'Y').replace('mm', 'm').replace('dd', 'd');
+}
+function getPickerDate(input) {
+    //replaces bootstrap-datepicker's $(input).datepicker('getDate') jQuery-plugin API, which
+    //flatpickr doesn't implement. Returns a native Date, same as the old call, so every existing
+    //`?.getTime()` call site keeps working unchanged.
+    let instance = input[0] ? input[0]._flatpickr : undefined;
+    return instance && instance.selectedDates.length ? instance.selectedDates[0] : undefined;
+}
 function initExtraFieldDatePicker(fieldName) {
     let inputField = $(`#${fieldName}`);
     if (inputField.length > 0) {
-        inputField.datepicker({
-            format: getShortDatePattern().pattern,
-            autoclose: true,
-            weekStart: getGlobalConfig().firstDayOfWeek
+        flatpickr(inputField[0], {
+            dateFormat: flatpickrDateFormat(),
+            locale: { firstDayOfWeek: getGlobalConfig().firstDayOfWeek }
         });
     }
 }
 function initDatePicker(input, futureOnly) {
     if (futureOnly) {
-        input.datepicker({
-            startDate: "+0d",
-            format: getShortDatePattern().pattern,
-            autoclose: true,
-            weekStart: getGlobalConfig().firstDayOfWeek
+        flatpickr(input[0], {
+            minDate: "today",
+            dateFormat: flatpickrDateFormat(),
+            locale: { firstDayOfWeek: getGlobalConfig().firstDayOfWeek }
         });
     } else {
-        input.datepicker({
-            endDate: "+0d",
-            format: getShortDatePattern().pattern,
-            autoclose: true,
-            weekStart: getGlobalConfig().firstDayOfWeek
+        flatpickr(input[0], {
+            maxDate: "today",
+            dateFormat: flatpickrDateFormat(),
+            locale: { firstDayOfWeek: getGlobalConfig().firstDayOfWeek }
         });
     }
+}
+function getChartTextColor() {
+    //Chart.js renders to <canvas>, so it can't inherit CSS color the way DOM text does - replaces
+    //the old useDarkMode ? "#fff" : "#000" literal (which ignored any custom theme's actual palette)
+    //with the real computed --bs-body-color, so chart text matches whatever theme is active.
+    return getComputedStyle(document.documentElement).getPropertyValue('--bs-body-color').trim();
+}
+function getChartBgColor() {
+    //pairs with getChartTextColor() for the few chart elements that used the inverse
+    //(useDarkMode ? "#000" : "#fff") - the page's actual background instead of stock black/white.
+    return getComputedStyle(document.documentElement).getPropertyValue('--bs-body-bg').trim();
 }
 function initTagSelector(input, noDataList) {
     if (noDataList) {
@@ -605,6 +626,32 @@ function filterTable(tabName, sender) {
             //disabling other filters
             $(".tagfilter.bg-primary").addClass('bg-secondary');
             $(".tagfilter.bg-primary").removeClass('bg-primary');
+        }
+        $(sender).addClass('bg-primary');
+        $(sender).removeClass('bg-secondary');
+    }
+}
+function filterDocumentsGrid(tabName, sender) {
+    //same filtering logic as filterTable(), kept separate rather than generalizing that function -
+    //filterTable is hardcoded to `table tbody tr` and is shared by every other record-type table in
+    //the app (Service/Gas/Tax/etc.), so it stays untouched; Documents moved to a tile grid, not a
+    //table, for the Phase 3 overhaul (docs/execution/UI_TRANSITION.md).
+    var tileData = $(`#${tabName} .document-tile`);
+    if (sender == undefined) {
+        tileData.removeClass('override-hide');
+        return;
+    }
+    var tagName = sender.textContent;
+    if ($(sender).hasClass("bg-primary")) {
+        tileData.removeClass('override-hide');
+        $(sender).removeClass('bg-primary');
+        $(sender).addClass('bg-secondary');
+    } else {
+        tileData.addClass('override-hide');
+        $(`#${tabName} [data-tags~='${tagName}']`).removeClass('override-hide');
+        if ($(`#${tabName} .tagfilter.bg-primary`).length > 0) {
+            $(`#${tabName} .tagfilter.bg-primary`).addClass('bg-secondary');
+            $(`#${tabName} .tagfilter.bg-primary`).removeClass('bg-primary');
         }
         $(sender).addClass('bg-primary');
         $(sender).removeClass('bg-secondary');
@@ -838,8 +885,8 @@ function getAndValidateCSVExportParameter() {
     let validationErrorMessage = "";
     if (filterByDateRange) {
         //validate date range
-        let startDateTicks = $("#dateRangeStartDate").datepicker('getDate')?.getTime();
-        let endDateTicks = $("#dateRangeEndDate").datepicker('getDate')?.getTime();
+        let startDateTicks = getPickerDate($("#dateRangeStartDate"))?.getTime();
+        let endDateTicks = getPickerDate($("#dateRangeEndDate"))?.getTime();
         if (!startDateTicks || !endDateTicks || startDateTicks > endDateTicks) {
             hasValidationError = true;
             validationErrorMessage = "Invalid date range";

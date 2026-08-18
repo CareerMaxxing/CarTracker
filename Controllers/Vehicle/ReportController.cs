@@ -26,6 +26,9 @@ namespace CarCareTracker.Controllers
             var viewModel = new ReportViewModel() { ReportHeaderForVehicle = new ReportHeader() };
             //check if vehicle map exists
             viewModel.HasVehicleImageMap = !string.IsNullOrWhiteSpace(vehicleData.MapLocation);
+            viewModel.VehicleImageLocation = vehicleData.ImageLocation;
+            viewModel.VehicleIsSold = !string.IsNullOrWhiteSpace(vehicleData.SoldDate);
+            viewModel.VehicleSoldDate = vehicleData.SoldDate;
             //check if custom widgets are configured
             viewModel.CustomWidgetsConfigured = _fileHelper.WidgetsExist();
             //get totalCostMakeUp

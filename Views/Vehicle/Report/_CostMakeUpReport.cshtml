@@ -53,7 +53,8 @@
                     datasets: [
                         {
                             label: decodeHTMLEntities('@translator.Translate(userLanguage, "Expenses by Type")'),
-                            backgroundColor: ["#003f5c", "#58508d", "#bc5090", "#ffa600", "#ff6361" ],
+                            //muted mid-century palette matching the theme, not the stock rainbow default
+                            backgroundColor: ["#3d6b6b", "#a1522f", "#8f6a2a", "#4a6b8a", "#7d5a6b"],
                             data: chartData.data
                         }
                     ]
@@ -71,13 +72,13 @@
                         legend: {
                             position: "bottom",
                             labels: {
-                                color: useDarkMode ? "#fff" : "#000"
+                                color: getChartTextColor()
                             }
                         },
                         title: {
                             display: true,
                             text: decodeHTMLEntities('@translator.Translate(userLanguage, "Expenses by Type")'),
-                            color: useDarkMode ? "#fff" : "#000"
+                            color: getChartTextColor()
                         },
                     }
                 }

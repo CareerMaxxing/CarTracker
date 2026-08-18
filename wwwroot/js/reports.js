@@ -25,8 +25,8 @@ function getAndValidateSelectedColumns() {
     }
     if (filterByDateRange) {
         //validate date range
-        let startDateTicks = $("#dateRangeStartDate").datepicker('getDate')?.getTime();
-        let endDateTicks = $("#dateRangeEndDate").datepicker('getDate')?.getTime();
+        let startDateTicks = getPickerDate($("#dateRangeStartDate"))?.getTime();
+        let endDateTicks = getPickerDate($("#dateRangeEndDate"))?.getTime();
         if (!startDateTicks || !endDateTicks || startDateTicks > endDateTicks) {
             hasValidationError = true;
             validationErrorMessage = "Invalid date range";

@@ -25,7 +25,9 @@
                     datasets: [
                         {
                             label: decodeHTMLEntities('@translator.Translate(userLanguage, "Reminders by Category")'),
-                            backgroundColor: ["#488f31", "#ffa600", "#de425b", "#cccccc"],
+                            //same not-urgent -> urgent -> very-urgent -> past-due order as the labels above,
+                            //retuned to the theme's warm/muted register instead of stock saturated colors
+                            backgroundColor: ["#7a8f6b", "#9c7423", "#c23b2a", "#8a7f70"],
                             data: [
                                 @Model.NotUrgentCount,
                                 @Model.UrgentCount,
@@ -42,13 +44,13 @@
                         legend: {
                             position: "bottom",
                             labels: {
-                                color: useDarkMode ? "#fff" : "#000"
+                                color: getChartTextColor()
                             }
                         },
                         title: {
                             display: true,
                             text: decodeHTMLEntities('@translator.Translate(userLanguage, "Reminders by Urgency")'),
-                            color: useDarkMode ? "#fff" : "#000"
+                            color: getChartTextColor()
                         },
                     }
                 }

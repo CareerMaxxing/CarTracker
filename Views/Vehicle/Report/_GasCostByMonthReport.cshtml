@@ -43,8 +43,8 @@
                             {
                                 label: decodeHTMLEntities('@translator.Translate(userLanguage, "Distance Traveled by Month")'),
                                 data: lineChartData,
-                                borderColor: useDarkMode ? "#fff" : "#000",
-                                backgroundColor: useDarkMode ? "#000" : "#fff",
+                                borderColor: getChartTextColor(),
+                                backgroundColor: getChartBgColor(),
                                 type: 'line',
                                 order: 0,
                                 yAxisID: 'y1',
@@ -63,13 +63,13 @@
                         plugins: {
                             title: {
                                 display: true,
-                                color: useDarkMode ? "#fff" : "#000",
+                                color: getChartTextColor(),
                                 text: decodeHTMLEntities('@translator.Translate(userLanguage, "Expenses and Distance Traveled by Month")')
                             },
                             legend: {
                                 display: false,
                                 labels: {
-                                    color: useDarkMode ? "#fff" : "#000"
+                                    color: getChartTextColor()
                                 }
                             }
                         },
@@ -77,19 +77,19 @@
                             y: {
                                 beginAtZero: true,
                                 ticks: {
-                                    color: useDarkMode ? "#fff" : "#000"
+                                    color: getChartTextColor()
                                 }
                             },
                             y1: {
                                 beginAtZero: true,
                                 position: 'right',
                                 ticks: {
-                                    color: useDarkMode ? "#fff" : "#000"
+                                    color: getChartTextColor()
                                 }
                             },
                             x: {
                                 ticks: {
-                                    color: useDarkMode ? "#fff" : "#000"
+                                    color: getChartTextColor()
                                 }
                             }
                         }

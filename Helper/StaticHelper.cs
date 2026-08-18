@@ -205,7 +205,13 @@ namespace CarCareTracker.Helper
         }
         public static List<string> GetBarChartColors()
         {
-            return new List<string> { "#00876c", "#43956e", "#67a371", "#89b177", "#a9be80", "#c8cb8b", "#e6d79b", "#e4c281", "#e3ab6b", "#e2925b", "#e07952", "#db5d4f" };
+            //cost-intensity gradient (low cost -> high cost), retuned to the Zara+Magneto theme's
+            //muted register - same teal-to-rust progression as the theme's own chart palette
+            //(Views/Vehicle/Report/_CostMakeUpReport.cshtml) rather than a separately stock-Chart.js
+            //style green-to-red gradient with no relationship to it. Found from a live screenshot,
+            //not caught by curl/build verification - this method is plain C#, not CSS, so no amount
+            //of theme-file auditing would have surfaced it.
+            return new List<string> { "#3d6b6b", "#4c6b5f", "#5b6b53", "#6a6a48", "#796a3c", "#886a30", "#91682a", "#94632b", "#975f2c", "#9a5b2d", "#9e562e", "#a1522f" };
         }
 
         public static ServiceRecord GenericToServiceRecord(GenericRecord input)

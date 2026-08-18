@@ -13,5 +13,8 @@
         public List<ImportMode> AvailableMetrics { get; set; } = new List<ImportMode>();
         public bool HasVehicleImageMap { get; set; } = false;
         public VehicleGovernmentDataViewModel GovernmentDataForVehicle { get; set; } = new VehicleGovernmentDataViewModel();
+        public string VehicleImageLocation { get; set; } = string.Empty;
+        public bool VehicleIsSold { get; set; } = false;
+        public string VehicleSoldDate { get; set; } = string.Empty;
     }
 }

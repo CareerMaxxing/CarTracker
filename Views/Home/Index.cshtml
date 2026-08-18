@@ -41,9 +41,23 @@
     <div class="container-fluid lubelogger-navbar-container frosted hideOnPrint">
         <div class="row mt-2">
             <div class="d-flex lubelogger-navbar">
-                <div class="me-2" style="cursor:pointer;" onclick="returnToGarage()">
-                    <img src="@config.GetSmallLogoUrl()" class="lubelogger-logo lubelogger-tab" />
-                    <img src="@config.GetLogoUrl()" class="lubelogger-logo lubelogger-mobile-nav-show" />
+                <div class="me-2 ct-wordmark-wrap" style="cursor:pointer;" onclick="returnToGarage()">
+                    @if (config.GetSmallLogoUrl() == StaticHelper.DefaultSmallLogoPath)
+                    {
+                        <span class="ct-wordmark lubelogger-tab">Car Tracker</span>
+                    }
+                    else
+                    {
+                        <img src="@config.GetSmallLogoUrl()" class="lubelogger-logo lubelogger-tab" />
+                    }
+                    @if (config.GetLogoUrl() == StaticHelper.DefaultLogoPath)
+                    {
+                        <span class="ct-wordmark lubelogger-mobile-nav-show">Car Tracker</span>
+                    }
+                    else
+                    {
+                        <img src="@config.GetLogoUrl()" class="lubelogger-logo lubelogger-mobile-nav-show" />
+                    }
                 </div>
                 <ul class="nav nav-tabs lubelogger-tab flex-grow-1" id="homeTab" role="tablist">
                     @foreach (var tab in homeNavTabs)

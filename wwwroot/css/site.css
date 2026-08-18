@@ -27,6 +27,23 @@ html {
     font-size: 14px;
 }
 
+/* Zara + Magneto overhaul, Phase 5 — respects prefers-reduced-motion, which nothing in this app
+   checked before (not site.css, not any theme, not any JS). The standard universal snippet: makes
+   every animation/transition effectively instant rather than removing them outright, so end-states
+   (hover-lift position, a reveal's final opacity) still apply correctly - nothing here depends on
+   transition/animation completion events firing. Covers everything at once: the bell-shake/
+   tablerow-shake keyframe animations (vehicle.js/shared.js), the app-wide .card hover scale, and
+   every theme-specific hover/reveal effect added on top of it - app-wide, not theme-specific, since
+   respecting an OS-level accessibility preference shouldn't depend on which theme is active. */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
 @media (min-width: 768px) {
     html {
         font-size: 16px;
@@ -34,7 +51,7 @@ html {
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+    box-shadow: 0 0 0 0.1rem var(--ct-focus-ring-inner, white), 0 0 0 0.25rem var(--ct-focus-ring-outer, #258cfb);
 }
 
 html {
@@ -513,13 +530,6 @@ input[type="file"] {
     display: none !important;
 }
 
-.reminderCalendarViewContent .datepicker, .reminderCalendarViewContent .datepicker-inline, .reminderCalendarViewContent .datepicker-days, .reminderCalendarViewContent .table-condensed {
-    width: 100%;
-    height: 100%;
-    table-layout: fixed;
-    cursor: default;
-}
-
 .reminder-exist {
     overflow: auto;
     vertical-align: top;
@@ -527,14 +537,6 @@ input[type="file"] {
 
     .reminder-exist p {
         margin: 0;
-    }
-
-.reminderCalendarViewContent .datepicker table tr td.day {
-    cursor: default;
-}
-
-    .reminderCalendarViewContent .datepicker table tr td.day:hover {
-        cursor: default;
     }
 
 .reminder-calendar-item {
@@ -741,14 +743,12 @@ html[data-bs-theme="light"] .api-method:hover {
     padding: 10px 15px;
 }
 
-html[data-bs-theme="dark"] .frosted {
-    background-color: rgba(33, 37, 41, 0.7);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-}
-
-html[data-bs-theme="light"] .frosted {
-    background-color: rgba(255, 255, 255, 0.7);
+.frosted {
+    /* rgba(33,37,41,.7)/rgba(255,255,255,.7) were uncredited copies of Bootstrap's own default
+       dark/light --bs-body-bg-rgb - referencing the variable directly instead means this now tracks
+       whatever theme is active (including this one) instead of silently reverting to stock
+       Bootstrap grey/white underneath a translucent blur. */
+    background-color: rgba(var(--bs-body-bg-rgb), 0.7);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
 }
@@ -841,7 +841,12 @@ html[data-bs-theme="dark"] .swal2-validation-message {
 }
 
 .badge.garage-metric-badge {
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: rgba(var(--ct-scrim-rgb, 0, 0, 0), 0.6);
+}
+
+.badge.garage-metric-badge.garage-metric-badge-spotlight {
+    background-color: var(--ct-spotlight-solid, var(--bs-warning));
+    color: var(--ct-spotlight-solid-color, var(--bs-dark));
 }
 
 .report-collaborator {
@@ -1001,6 +1006,14 @@ html[data-bs-theme="dark"] .swal2-validation-message {
     color: var(--bs-danger-text-emphasis);
 }
 
+/* Spotlight role — narrow emphasis accent, distinct from success/warning/danger/neutral, reserved
+   for exactly one kind of signal per screen (e.g. an overdue reminder on a Garage card). Falls
+   back to Bootstrap's info hue so this degrades sensibly without a theme supplying --ct-spotlight-*. */
+.status-badge-spotlight {
+    background-color: var(--ct-spotlight-bg, var(--bs-info-bg-subtle));
+    color: var(--ct-spotlight-color, var(--bs-info-text-emphasis));
+}
+
 /* Empty-state primitive (docs/UI_SPEC.md). Not yet adopted by any view. */
 .ct-empty-state {
     display: flex;
@@ -1017,3 +1030,1090 @@ html[data-bs-theme="dark"] .swal2-validation-message {
         font-size: 2.5rem;
         opacity: 0.5;
     }
+/* ============================================================================
+   Zara + Magneto design system — promoted from the prototype theme
+   (data/themes/zara-study.css) to the app's permanent default. Everything below
+   this line was built and reviewed incrementally as a reversible, gitignored
+   custom theme (Controllers/ThemeController.cs's existing upload mechanism) across
+   11 increments, 8 further phases, and a direct study of Magneto magazine's
+   actual Spring 2024 print issue (220 pages) — see docs/execution/UI_TRANSITION.md
+   for the full increment-by-increment log and the reasoning behind each piece.
+   Kept in this same append-only order deliberately: it preserves the exact
+   cascade relationship this already had as two separate files (site.css's own
+   structural tokens/fallbacks first, this design system's actual values after,
+   so later declarations correctly win) — same behaviour, one file. The custom-
+   theme-upload feature itself is untouched and still works for anyone who wants
+   to further customise or revert away from this default.
+   ============================================================================ */
+
+@font-face {
+    font-family: "Fraunces";
+    src: url("/lib/fonts/Fraunces-Variable.woff2") format("woff2");
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Work Sans";
+    src: url("/lib/fonts/WorkSans-Variable.woff2") format("woff2");
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+:root {
+    /* Increment 5 — flatten Bootstrap's boxed-component look app-wide. Nearly every component
+       (buttons, modals, badges, dropdowns, form controls) derives its corner radius from these few
+       root variables via live var() chains (confirmed by reading the compiled bootstrap.min.css
+       directly), so this handful of overrides ripples through the entire app at once rather than
+       needing a per-component pass. --bs-border-radius-pill is deliberately left alone — pill-shaped
+       filter tags are an authentic fashion-retail detail, a sharp/pill contrast rather than a miss. */
+    --bs-border-radius: 0;
+    --bs-border-radius-sm: 0;
+    --bs-border-radius-lg: 0;
+    --bs-border-radius-xl: 0;
+    --bs-border-radius-2xl: 0;
+    --ct-radius-card: 0;
+
+    /* Resting shadows removed - flat by default, matching Zara's whitespace-driven hierarchy rather
+       than Bootstrap's drop-shadow elevation. --ct-shadow-md survives only as a hover-lift cue
+       (see .card:hover/.taskCard:hover in site.css), retinted to the palette's ink instead of a
+       generic black shadow. */
+    --ct-shadow-sm: none;
+    --ct-shadow-md: 0 4px 14px rgba(23, 21, 15, 0.14);
+
+    /* neutrals — warm paper/ink, not stock black/white */
+    --bs-body-bg: #f6f5f1;
+    --bs-body-bg-rgb: 246, 245, 241;
+    --bs-body-color: #17150f;
+    --bs-body-color-rgb: 23, 21, 15;
+    --bs-emphasis-color: #17150f;
+    --bs-secondary-color: #6b6558;
+    --bs-tertiary-bg: #eeebe3;
+    --bs-border-color: #ded9cd;
+    --bs-border-color-translucent: rgba(23, 21, 15, 0.14);
+
+    /* primary — monochrome CTAs (Zara's own buttons are black-filled, white text; the accent red
+       found in research is reserved for a narrow status role in Increment 2, never for primary
+       actions or navigation — see docs/execution/UI_TRANSITION.md's architecture note) */
+    --bs-primary: #17150f;
+    --bs-primary-rgb: 23, 21, 15;
+    --bs-primary-bg-subtle: #eae7dd;
+    --bs-primary-border-subtle: #d6d2c4;
+    --bs-primary-text-emphasis: #17150f;
+    --bs-link-color: #17150f;
+    --bs-link-color-rgb: 23, 21, 15;
+    --bs-link-hover-color: #3a362a;
+    --bs-link-hover-color-rgb: 58, 54, 42;
+
+    /* secondary — warm-hued grey instead of Bootstrap's default cool grey */
+    --bs-secondary: #6b6558;
+    --bs-secondary-rgb: 107, 101, 88;
+    --bs-secondary-bg-subtle: #eeebe3;
+    --bs-secondary-border-subtle: #dad5c7;
+    --bs-secondary-text-emphasis: #4a4638;
+
+    /* danger/warning — retuned warmer, semantics unchanged (destructive / caution) */
+    --bs-danger: #a72a1e;
+    --bs-danger-rgb: 167, 42, 30;
+    --bs-danger-bg-subtle: #f4ded9;
+    --bs-danger-border-subtle: #e3b6ab;
+    --bs-danger-text-emphasis: #7a1e15;
+    --bs-warning: #a6790a;
+    --bs-warning-rgb: 166, 121, 10;
+    --bs-warning-bg-subtle: #f3e6c9;
+    --bs-warning-border-subtle: #dcc27f;
+    --bs-warning-text-emphasis: #6e5006;
+
+    /* type */
+    --bs-body-font-family: "Work Sans", ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    --ct-heading-font-family: "Fraunces", ui-serif, Georgia, "Times New Roman", serif;
+
+    /* accent — the one deliberate spot of color, reserved for a narrow "needs attention" signal
+       (Increment 3: the Garage card reminder badge). Independently tokenized from --bs-danger even
+       though it's the same red family, so the two can be retuned separately later without
+       recreating the ambiguity the Zara teardown flagged (danger-red used for both "delete forever"
+       and "this needs attention"). --ct-scrim-rgb tints the photo-overlay badge scrim with the
+       palette's ink instead of generic black; it doesn't flip in dark mode because it always sits
+       on an arbitrary vehicle photo, never the page background. */
+    --ct-scrim-rgb: 23, 21, 15;
+    --ct-spotlight-bg: #f4ded9;
+    --ct-spotlight-color: #7a1e15;
+    --ct-spotlight-solid: #a72a1e;
+    --ct-spotlight-solid-color: #f6f5f1;
+
+    /* Critical fix, found from a live screenshot (nothing in this environment could have caught it
+       via curl/build) — --bs-success/--bs-info were never retuned at all, so .status-badge-success
+       and anything else touching them rendered stock Bootstrap green/cyan this whole time. Same
+       muted-premium register as the rest of the palette. */
+    --bs-success: #4a7a3d;
+    --bs-success-rgb: 74, 122, 61;
+    --bs-success-bg-subtle: #e2ead9;
+    --bs-success-border-subtle: #c3d4b3;
+    --bs-success-text-emphasis: #2f4d27;
+    --bs-info: #3d6b8a;
+    --bs-info-rgb: 61, 107, 138;
+    --bs-info-bg-subtle: #dde6ec;
+    --bs-info-border-subtle: #b8cbd8;
+    --bs-info-text-emphasis: #24455c;
+
+    /* Increment 6 — generous spacing tier for section-level breathing room, beyond site.css's
+       --ct-space-6 component-internal cap. */
+    --ct-space-7: 3rem;
+
+    /* Increment 8 — focus ring retuned to the palette instead of Bootstrap's stock blue/white
+       (site.css's default, unchanged for anyone not on this theme). References --bs-body-bg/-primary
+       rather than fixed hex so it adapts automatically between light/dark without duplication. */
+    --ct-focus-ring-inner: var(--bs-body-bg);
+    --ct-focus-ring-outer: var(--bs-primary);
+}
+
+[data-bs-theme="dark"] {
+    --bs-body-bg: #17150f;
+    --bs-body-bg-rgb: 23, 21, 15;
+    --bs-body-color: #ece7db;
+    --bs-body-color-rgb: 236, 231, 219;
+    --bs-emphasis-color: #ece7db;
+    --bs-secondary-color: #a39a85;
+    --bs-tertiary-bg: #221f18;
+    --bs-border-color: #3a362a;
+    --bs-border-color-translucent: rgba(236, 231, 219, 0.14);
+
+    --bs-primary: #ece7db;
+    --bs-primary-rgb: 236, 231, 219;
+    --bs-primary-bg-subtle: #2a2720;
+    --bs-primary-border-subtle: #3a362a;
+    --bs-primary-text-emphasis: #ece7db;
+    --bs-link-color: #ece7db;
+    --bs-link-color-rgb: 236, 231, 219;
+    --bs-link-hover-color: #cfc9b6;
+    --bs-link-hover-color-rgb: 207, 201, 182;
+
+    --bs-secondary: #a39a85;
+    --bs-secondary-rgb: 163, 154, 133;
+    --bs-secondary-bg-subtle: #221f18;
+    --bs-secondary-border-subtle: #34301f;
+    --bs-secondary-text-emphasis: #cfc9b6;
+
+    --bs-success: #8fb377;
+    --bs-success-rgb: 143, 179, 119;
+    --bs-success-bg-subtle: #232c1e;
+    --bs-success-border-subtle: #3a4a30;
+    --bs-success-text-emphasis: #c3d9b0;
+    --bs-info: #7fa8c4;
+    --bs-info-rgb: 127, 168, 196;
+    --bs-info-bg-subtle: #1c2831;
+    --bs-info-border-subtle: #324656;
+    --bs-info-text-emphasis: #b8d3e3;
+
+    --bs-danger: #e0785f;
+    --bs-danger-rgb: 224, 120, 95;
+    --bs-danger-bg-subtle: #3a231c;
+    --bs-danger-border-subtle: #5c352a;
+    --bs-danger-text-emphasis: #f0b8a8;
+    --bs-warning: #d9a441;
+    --bs-warning-rgb: 217, 164, 65;
+    --bs-warning-bg-subtle: #3a2f16;
+    --bs-warning-border-subtle: #5c4a23;
+    --bs-warning-text-emphasis: #ecceA0;
+
+    --ct-spotlight-bg: #3a231c;
+    --ct-spotlight-color: #f0b8a8;
+    --ct-spotlight-solid: #e0785f;
+    --ct-spotlight-solid-color: #17150f;
+}
+
+body {
+    font-family: var(--bs-body-font-family);
+}
+
+h1, h2, h3, h4, h5, h6,
+.card-title, .lead, .display-1, .display-2, .display-3, .display-4, .display-5, .display-6,
+.modal-title, .taskCard-title, .lubelogger-vehicle-title {
+    font-family: var(--ct-heading-font-family);
+}
+
+/* Increment 5 — primary CTAs get Zara's actual button voice (confident, tracked, uppercase),
+   scoped to .btn-primary only so it doesn't weigh down every secondary/icon button in the app. */
+.btn-primary {
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* Increment 6 — typographic and spatial confidence. Two type voices now used deliberately: Fraunces
+   for names/titles/content headings (the list above), tracked-uppercase Work Sans for wayfinding and
+   meta text (below) - tab labels and table headers are chrome, not headlines, so they moved out of
+   the heading-font list and into this pattern instead, matching the eyebrow label already shipped on
+   the Garage card in Increment 3. */
+.lubelogger-tab .nav-link span,
+.table thead th, .ll-responsive-table thead th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.lubelogger-vehicle-title {
+    font-size: 1.4rem;
+    line-height: 1;
+    max-width: 260px;
+}
+
+/* Increment 4 — Dashboard tab panel elevation + breathing room. Bootstrap's .border/.rounded
+   utilities carry their own !important, so overriding needs it too; scoped to .reportTabContainer
+   so no other .border.rounded usage elsewhere in the app is affected. Padding bumped to the
+   Increment 6 generous tier for section-level breathing room. */
+.reportTabContainer .border.rounded {
+    border: none !important;
+    border-radius: var(--ct-radius-card) !important;
+    background-color: var(--bs-tertiary-bg);
+    box-shadow: var(--ct-shadow-sm);
+    padding: var(--ct-space-3) var(--ct-space-4) !important;
+}
+
+/* Garage/homepage rebuild. The teardown's own homepage section (§03) documents Zara's actual
+   mechanic — a single full-bleed image, no grid, no overview, "the homepage's job is mood-setting,
+   not wayfinding" — and its closing thought is explicit that minimalism costing the user isn't the
+   same as minimalism serving the brand. A garage of several vehicles needs the overview; what
+   transfers isn't "hide everything," it's oversized considered photography and letting the image
+   carry more weight than surrounding chrome. Structural classes/fallbacks this depends on
+   (.status-badge-spotlight, .garage-metric-badge-spotlight, --ct-scrim-rgb, --ct-spotlight-*) live
+   in site.css; the treatment below is this prototype's own and stays here until approved. */
+/* Magneto PDF study (Spring 2024 issue) — the contents page (p.10) anchors every entry on a huge
+   serif numeral, deliberately larger than the headline next to it, separated by a hairline rule.
+   Applied directly: vehicle count as the dominant element, "Garage" as the secondary label beside
+   it - not the other way round, matching what was actually observed, not a generic "big number
+   somewhere" gesture. */
+.garage-masthead {
+    display: flex;
+    align-items: baseline;
+    gap: var(--ct-space-4);
+    margin: var(--ct-space-5) 0 var(--ct-space-4);
+    padding-left: var(--ct-space-4);
+    border-left: 1px solid var(--bs-border-color);
+}
+
+.garage-masthead-count {
+    font-family: var(--ct-heading-font-family);
+    font-size: clamp(3.2rem, 7vw, 5.5rem);
+    line-height: 0.85;
+    color: var(--bs-secondary-color);
+}
+
+.garage-masthead-title {
+    font-size: clamp(2.2rem, 4vw, 3.2rem);
+    line-height: 1;
+}
+
+/* The "Top 50 Group C Cars" countdown (p.168-180) uses the rank number as the dominant element,
+   small thumbnail as support - the right reference for an index/comparison list, not the varied-
+   crop photo-essay treatment from a single feature (that's for one story's own images, not a grid
+   of comparable items). Kept restrained here since the photo is still the primary thing being
+   compared, not the number - a quiet index mark, not a rank-take-over. */
+.garage-item-index {
+    display: block;
+    font-family: var(--ct-heading-font-family);
+    font-size: 1.1rem;
+    color: var(--bs-secondary-color);
+    margin-bottom: 0.2rem;
+}
+
+.garage-item-photo {
+    width: 100%;
+    height: 380px;
+    object-fit: cover;
+    display: block;
+}
+
+@media (max-width: 767px) {
+    .garage-item-photo {
+        height: 260px;
+    }
+}
+
+.garage-item .card-body {
+    padding: var(--ct-space-4) var(--ct-space-4) var(--ct-space-5);
+}
+
+.garage-item .garage-item-year {
+    display: block;
+    margin-bottom: 0.15rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--bs-secondary-color);
+}
+
+.garage-item h5.garage-item-attribute {
+    margin-bottom: 0.2rem;
+    font-size: 1.6rem;
+    line-height: 1.2;
+}
+
+.garage-item small.garage-item-attribute.card-text:not(.garage-item-year) {
+    color: var(--bs-secondary-color);
+    font-size: 0.8rem;
+}
+
+/* browsing metadata (mileage/cost/active-projects) reveals on hover rather than sitting on the
+   photo permanently - the teardown's §04 documents Zara's own listing cards doing exactly this
+   (hover surfaces price/size without a page load). Status signals that need to be seen regardless
+   (sold, reminder-due) stay in .vehicle-sold-banner, always visible, untouched by this. Gated to
+   devices that actually support hover - touch has no hover concept, so metrics stay always-visible
+   there rather than becoming unreachable. */
+.garage-metrics-reveal {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    z-index: 10;
+    padding: var(--ct-space-2);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .garage-metrics-reveal {
+        opacity: 0;
+        transform: translateY(6px);
+        transition: var(--ct-transition-base) opacity, var(--ct-transition-base) transform;
+    }
+    .garage-item .card:hover .garage-metrics-reveal {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* a calmer lift than the app-wide card zoom (site.css's .card:hover scales every card, including
+   non-photo cards elsewhere) — scoped to .garage-item so nothing outside the grid changes */
+.garage-item .card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--ct-shadow-md);
+}
+
+.garage-item .card img {
+    transition: var(--ct-transition-base) filter;
+}
+
+.garage-item .card:hover img {
+    filter: brightness(1.04);
+}
+
+/* Increment 7 — record tables. site.css's mobile stacked-row view hardcodes a shadow
+   (rgba(0,0,0,.08)) that never got routed through --ct-shadow-sm, so it stayed boxed even after
+   Increment 5 flattened everything else. Flat hairline-bordered rows here too, consistent with the
+   rest of the app; the existing border/radius already correctly reference the themed variables. */
+@media (max-width: 575px) {
+    .ll-responsive-table tbody tr {
+        box-shadow: var(--ct-shadow-sm);
+    }
+}
+
+/* Increment 7 (extended) — Flatpickr theming, replacing bootstrap-datepicker (approved swap: its
+   calendar chrome rendered largely independent of --bs-* variables, same problem the old table
+   shadow had, but with no CSS-only fix available). Flatpickr ships its own static, light-only
+   palette (hardcoded #fff/#393939/#569ff7 etc.) and fixed pixel day-cell sizing, so this needs a
+   real override, not a token hook - there's nothing in its CSS already wired to --bs-*. */
+.flatpickr-calendar {
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    border-radius: var(--ct-radius-card);
+    box-shadow: var(--ct-shadow-md);
+    border: 1px solid var(--bs-border-color);
+}
+
+.flatpickr-months, .flatpickr-weekdays {
+    background-color: var(--bs-body-bg);
+}
+
+.flatpickr-current-month {
+    font-family: var(--ct-heading-font-family);
+    color: var(--bs-body-color);
+}
+
+.flatpickr-current-month input.cur-year,
+.flatpickr-current-month .flatpickr-monthDropdown-months {
+    font-family: var(--ct-heading-font-family);
+    color: var(--bs-body-color);
+    background: transparent;
+}
+
+span.flatpickr-weekday {
+    color: var(--bs-secondary-color);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: transparent;
+}
+
+.flatpickr-prev-month, .flatpickr-next-month {
+    color: var(--bs-secondary-color);
+    fill: var(--bs-secondary-color);
+}
+.flatpickr-prev-month:hover, .flatpickr-next-month:hover {
+    color: var(--bs-body-color);
+    fill: var(--bs-body-color);
+}
+
+.flatpickr-day {
+    color: var(--bs-body-color);
+    border-radius: 0;
+}
+
+.flatpickr-day.today {
+    border-color: var(--bs-secondary-color);
+}
+
+.flatpickr-day.flatpickr-disabled, .flatpickr-day.flatpickr-disabled:hover,
+.flatpickr-day.prevMonthDay, .flatpickr-day.nextMonthDay,
+.flatpickr-day.notAllowed, .flatpickr-day.notAllowed.prevMonthDay, .flatpickr-day.notAllowed.nextMonthDay {
+    color: var(--bs-secondary-color);
+    opacity: 0.4;
+}
+
+.flatpickr-day.today.inRange, .flatpickr-day.prevMonthDay.today.inRange, .flatpickr-day.nextMonthDay.today.inRange,
+.flatpickr-day:hover, .flatpickr-day.prevMonthDay:hover, .flatpickr-day.nextMonthDay:hover,
+.flatpickr-day:focus, .flatpickr-day.prevMonthDay:focus, .flatpickr-day.nextMonthDay:focus {
+    background-color: var(--bs-tertiary-bg);
+    border-color: var(--bs-tertiary-bg);
+}
+
+.flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange,
+.flatpickr-day.selected.inRange, .flatpickr-day.startRange.inRange, .flatpickr-day.endRange.inRange,
+.flatpickr-day.selected:focus, .flatpickr-day.startRange:focus, .flatpickr-day.endRange:focus,
+.flatpickr-day.selected:hover, .flatpickr-day.startRange:hover, .flatpickr-day.endRange:hover {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+    color: var(--bs-body-bg);
+}
+
+/* The reminder calendar (Views/Home/_Calendar.cshtml) is the one inline-mode usage - day cells need
+   to grow well past Flatpickr's default 39px to hold a stack of reminder badges, and the calendar
+   itself needs to fill its container instead of Flatpickr's default fixed 307px popup width. */
+.reminderCalendarViewContent .flatpickr-calendar {
+    width: 100%;
+    height: 100%;
+    box-shadow: none;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.reminderCalendarViewContent .flatpickr-innerContainer,
+.reminderCalendarViewContent .flatpickr-rContainer,
+.reminderCalendarViewContent .flatpickr-days,
+.reminderCalendarViewContent .dayContainer {
+    width: 100%;
+    max-width: 100%;
+    flex: 1;
+}
+
+.reminderCalendarViewContent .flatpickr-day {
+    max-width: initial;
+    height: auto;
+    min-height: 70px;
+    align-items: flex-start;
+    padding-top: 0.25rem;
+    cursor: default;
+}
+
+.reminderCalendarViewContent .flatpickr-day:hover {
+    background-color: transparent;
+    border-color: transparent;
+}
+
+/* Increment 11 — Dashboard/Report tab, the "homepage" of a single vehicle. The 4 headline stats
+   (odometer, distance, cost, MPG) sat at Bootstrap's modest .lead size - promoted to real confident
+   numbers, tabular so digits align across the row, with tracked-uppercase labels matching the
+   Garage eyebrow/masthead pattern instead of plain .text-secondary. */
+.report-stat-value {
+    display: block;
+    font-family: var(--ct-heading-font-family);
+    font-size: clamp(1.8rem, 3vw, 2.6rem);
+    line-height: 1.15;
+    font-variant-numeric: tabular-nums;
+}
+
+.report-stat-label {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--bs-secondary-color);
+}
+
+/* Increment 11 (extended) — every record-add/edit form in the app (203 bare <label> elements found
+   across Views/, only 5 already using Bootstrap's .form-label) gets one shared fix instead of a
+   per-file pass: labels were sitting directly against their inputs with only browser-default
+   spacing. Excludes .form-check-label deliberately - checkbox/switch text reads as a sentence
+   ("Show Search"), not a field name, so it keeps its own voice rather than becoming a micro-label. */
+.modal-body label:not(.form-check-label) {
+    display: block;
+    margin-top: var(--ct-space-3);
+    margin-bottom: 0.2rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--bs-secondary-color);
+}
+
+/* Increment 11 (extended) — record tables. Bootstrap's default cell padding (.5rem .5rem) is tight;
+   a little more room without sacrificing the density this data genuinely needs (dense tables are
+   the one place under-signalling would cost real usability, per the original transition plan).
+   Description reads as the actual content of a row - the rest (date, cost, odometer) is metadata -
+   so it picks up slightly more weight, the same primary-vs-quiet-meta pattern used everywhere else
+   in this theme (Garage title vs. attributes, report stat vs. label). data-column="description" is
+   an existing convention already present on every record table's cells, not new markup. */
+.table > :not(caption) > * > * {
+    padding: 0.65rem 0.6rem;
+}
+
+td[data-column="description"] {
+    font-weight: 500;
+}
+
+/* Zara + Magneto overhaul, Phase 1 — hero typography. Fraunces is a 4-axis variable font (wght, opsz,
+   SOFT, WONK), but the file originally self-hosted here (pulled from Google Fonts' default CSS2
+   delivery) only exposed wght+opsz - confirmed via fontTools' fvar table, not assumed. Re-sourced the
+   full-axis build directly from the type foundry (github.com/undercasetype/Fraunces v1.0 release,
+   same self-hosted/OFL/no-CDN pattern as everything else here) to get SOFT+WONK back.
+   WONK=1 is Fraunces's signature editorial character - leaning h/n/m, flagged italic terminals - the
+   closest open-license echo of what the Magneto research actually named (Ceraph's ligature set,
+   used deliberately for feature titles specifically "to achieve that premium feel", not applied to
+   body text). opsz pushed toward its display end (144, the axis max) since the optical-size axis is
+   built for exactly this - large sizes read better with the tighter spacing/higher contrast that end
+   of the axis gives, vs. the text-oriented spacing at the low end. SOFT kept modest (25 of 0-100) -
+   enough to feel crafted rather than mechanical, not so much it reads as rounded/bubbly and fights
+   the sharp-cornered flat discipline established everywhere else (Phase 5 of the original transition).
+   Scoped to exactly the finite, named list from the plan and nowhere else - this is the whole
+   synthesis rule (see docs/execution/UI_TRANSITION.md), not a general heading treatment. .ct-wordmark
+   added in Phase 6b - this was always meant to be on this list (see the Phase 1 comment on the
+   original 3 selectors), just deferred until the app had an actual text wordmark element to apply it
+   to. */
+.garage-masthead-title,
+.lubelogger-vehicle-title,
+.report-stat-value,
+.ct-wordmark,
+.garage-masthead-count,
+.garage-item-index {
+    font-weight: 600;
+    font-variation-settings: "opsz" 144, "WONK" 1, "SOFT" 25;
+}
+
+/* Zara + Magneto overhaul, Phase 3 — Documents rebuilt from a bare filename/icon table into a
+   considered grid: thumbnail, bold filename, record-type + date as a short excerpt line. This is
+   Magneto's own article-index anatomy (large image, bold headline, short excerpt, real category
+   filter - the filter chips above are untouched) mapped onto a screen that had zero thumbnails
+   before, not a cosmetic restyle. filterDocumentsGrid() in shared.js is a small parallel to
+   filterTable() rather than a change to it - filterTable is shared by every other record-type table
+   in the app and stays a table on purpose (Parts/Odometer are comparison-dense data, exactly where
+   a table is still the right tool - the explicit contrast case named in the plan). */
+.documents-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: var(--ct-space-4);
+}
+
+.document-tile {
+    cursor: pointer;
+    border: 1px solid var(--bs-border-color);
+    transition: var(--ct-transition-base) transform, var(--ct-transition-base) box-shadow;
+}
+
+.document-tile:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--ct-shadow-md);
+}
+
+.document-tile-thumb {
+    position: relative;
+    height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bs-tertiary-bg);
+    overflow: hidden;
+}
+
+.document-tile-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.document-tile-thumb > .bi {
+    font-size: 2.75rem;
+    color: var(--bs-secondary-color);
+}
+
+.document-tile-category {
+    position: absolute;
+    top: var(--ct-space-2);
+    left: var(--ct-space-2);
+    background-color: rgba(var(--ct-scrim-rgb, 0, 0, 0), 0.6);
+    color: #fff;
+}
+
+.document-tile-body {
+    padding: var(--ct-space-3) var(--ct-space-3) var(--ct-space-4);
+}
+
+.document-tile-title {
+    font-family: var(--ct-heading-font-family);
+    font-weight: 600;
+    font-size: 1.05rem;
+}
+
+.document-tile-excerpt {
+    display: block;
+    margin-top: 0.15rem;
+    color: var(--bs-secondary-color);
+}
+
+/* Zara + Magneto overhaul, Phase 4 — Bootstrap Icons -> Phosphor Icons. CSS-only override layer, the
+   same mechanism class as the Flatpickr retheme: Bootstrap Icons' own base rule
+   ([class^="bi-"]::before, [class*=" bi-"]::before { font-family: bootstrap-icons !important; ... })
+   already applies to every bi-* element regardless of which specific icon, so swapping font-family
+   here (matching that exact selector, also !important, to win the specificity tie) plus remapping
+   each icon's ::before content to Phosphor's own codepoint is the entire change - zero Razor/JS
+   edits. Confirmed first, not assumed: grepped every bi-* class actually used across Views/ and
+   wwwroot/js/ (105 distinct icons), hand-mapped each to its closest Phosphor equivalent by meaning
+   (not just name string similarity), and confirmed every target name exists in Phosphor's real
+   icon set before generating this file. bell-fill/pin-*-fill/caret-*-fill/check2-square etc. all
+   map to Phosphor's regular (outline) style rather than pulling in a second "fill" style font family
+   - checked the one case where fill vs. outline looked load-bearing (the reminder bell, vehicle.js)
+   and confirmed the active/inactive state is already carried redundantly by a colour class
+   (text-warning) and a shake animation, not by icon shape alone, so this is a safe simplification,
+   not a lost signal. Self-hosted under wwwroot/lib/phosphor/ (MIT licensed), same vendoring pattern
+   as every other lib here - no CDN. */
+@font-face {
+    font-family: "Phosphor";
+    src: url("/lib/phosphor/Phosphor.woff2") format("woff2");
+    font-weight: normal;
+    font-style: normal;
+    font-display: block;
+}
+
+[class^="bi-"]::before, [class*=" bi-"]::before {
+    font-family: "Phosphor" !important;
+}
+
+.bi-arrow-down::before { content: "\e03e"; }
+.bi-arrow-down-up::before { content: "\e098"; }
+.bi-arrow-left::before { content: "\e058"; }
+.bi-arrow-left-square::before { content: "\e074"; }
+.bi-arrow-repeat::before { content: "\e036"; }
+.bi-arrow-right::before { content: "\e06c"; }
+.bi-arrow-up::before { content: "\e08e"; }
+.bi-ban::before { content: "\e3de"; }
+.bi-bar-chart-steps::before { content: "\e150"; }
+.bi-bell::before { content: "\e0ce"; }
+.bi-bell-fill::before { content: "\e0ce"; }
+.bi-box-arrow-in-right::before { content: "\e428"; }
+.bi-box-arrow-in-up-right::before { content: "\e5de"; }
+.bi-box-arrow-left::before { content: "\e42a"; }
+.bi-box-arrow-right::before { content: "\e42a"; }
+.bi-box-arrow-up-right::before { content: "\e5de"; }
+.bi-box-seam::before { content: "\e390"; }
+.bi-calendar-event::before { content: "\e712"; }
+.bi-calendar-range::before { content: "\e10a"; }
+.bi-calendar-week::before { content: "\e108"; }
+.bi-camera::before { content: "\e10e"; }
+.bi-car-front::before { content: "\e112"; }
+.bi-card-checklist::before { content: "\e198"; }
+.bi-card-heading::before { content: "\e0a8"; }
+.bi-caret-left-fill::before { content: "\e138"; }
+.bi-caret-right-fill::before { content: "\e13a"; }
+.bi-cash-coin::before { content: "\e60e"; }
+.bi-check-all::before { content: "\e53a"; }
+.bi-check-lg::before { content: "\e182"; }
+.bi-check-square::before { content: "\e186"; }
+.bi-check2-all::before { content: "\e53a"; }
+.bi-check2-square::before { content: "\e186"; }
+.bi-chevron-left::before { content: "\e138"; }
+.bi-chevron-up::before { content: "\e13c"; }
+.bi-clipboard-check::before { content: "\e198"; }
+.bi-clock-history::before { content: "\e1a0"; }
+.bi-copy::before { content: "\e1ca"; }
+.bi-currency-dollar::before { content: "\e550"; }
+.bi-disc::before { content: "\e564"; }
+.bi-download::before { content: "\e20a"; }
+.bi-ev-station::before { content: "\e8d0"; }
+.bi-exclamation-octagon::before { content: "\e4e4"; }
+.bi-exclamation-triangle::before { content: "\e4e0"; }
+.bi-eye::before { content: "\e220"; }
+.bi-eye-slash::before { content: "\e224"; }
+.bi-eyeglasses::before { content: "\e7ba"; }
+.bi-file-bar-graph::before { content: "\e150"; }
+.bi-file-earmark-text::before { content: "\e23a"; }
+.bi-files::before { content: "\e710"; }
+.bi-fire::before { content: "\e242"; }
+.bi-folder2::before { content: "\e24a"; }
+.bi-folder2-open::before { content: "\e256"; }
+.bi-fuel-pump::before { content: "\e768"; }
+.bi-fuel-pump-diesel::before { content: "\e768"; }
+.bi-gear::before { content: "\e270"; }
+.bi-geo-alt::before { content: "\e316"; }
+.bi-graph-down-arrow::before { content: "\e4ac"; }
+.bi-graph-up::before { content: "\e4ae"; }
+.bi-graph-up-arrow::before { content: "\e4ae"; }
+.bi-house::before { content: "\e2c2"; }
+.bi-journal-bookmark::before { content: "\e34e"; }
+.bi-link-45deg::before { content: "\e2e2"; }
+.bi-list::before { content: "\e2f0"; }
+.bi-list-task::before { content: "\eadc"; }
+.bi-list-ul::before { content: "\e2f2"; }
+.bi-markdown::before { content: "\e508"; }
+.bi-paperclip::before { content: "\e39a"; }
+.bi-pencil::before { content: "\e3ae"; }
+.bi-pencil-square::before { content: "\e34c"; }
+.bi-people::before { content: "\e4d6"; }
+.bi-person::before { content: "\e3a8"; }
+.bi-person-add::before { content: "\e4d0"; }
+.bi-person-gear::before { content: "\e4cc"; }
+.bi-person-walking::before { content: "\e73a"; }
+.bi-pin-angle::before { content: "\e3e2"; }
+.bi-pin-angle-fill::before { content: "\e3e2"; }
+.bi-pin-fill::before { content: "\e3e2"; }
+.bi-play-fill::before { content: "\e3d0"; }
+.bi-plus::before { content: "\e3d4"; }
+.bi-plus-lg::before { content: "\e3d4"; }
+.bi-plus-slash-minus::before { content: "\e3d8"; }
+.bi-plus-square::before { content: "\ed4a"; }
+.bi-printer::before { content: "\e3dc"; }
+.bi-qr-code::before { content: "\e3e6"; }
+.bi-question-circle::before { content: "\e3e8"; }
+.bi-receipt::before { content: "\e3ec"; }
+.bi-record-fill::before { content: "\e3ee"; }
+.bi-search::before { content: "\e30c"; }
+.bi-send::before { content: "\e398"; }
+.bi-shield-check::before { content: "\e40c"; }
+.bi-shop::before { content: "\e470"; }
+.bi-signpost-2::before { content: "\e89c"; }
+.bi-snow::before { content: "\e5aa"; }
+.bi-sort-numeric-down::before { content: "\e446"; }
+.bi-sort-numeric-down-alt::before { content: "\e446"; }
+.bi-sort-numeric-up::before { content: "\e444"; }
+.bi-speedometer::before { content: "\ee74"; }
+.bi-three-dots::before { content: "\e1fe"; }
+.bi-tools::before { content: "\e5d4"; }
+.bi-trash::before { content: "\e4a6"; }
+.bi-upload::before { content: "\e4be"; }
+.bi-water::before { content: "\e210"; }
+.bi-wrench-adjustable::before { content: "\e5d4"; }
+.bi-x-lg::before { content: "\e4f6"; }
+.bi-x-square::before { content: "\e4fa"; }
+
+/* Zara + Magneto overhaul, Phase 5 (extended) — one restrained reveal, for the same finite named
+   list as Phase 1's hero typography (Garage masthead, vehicle title) and nowhere else. Deliberately
+   NOT an IntersectionObserver scroll-reveal (the original plan wording) - both elements are always
+   above the fold (the masthead is the first thing on the Garage tab; the vehicle title sits in the
+   fixed navbar), so there's nothing to scroll into view, and both load asynchronously via AJAX
+   ($.get(...).html(data) in garage.js/on Vehicle/Index's initial render) well after any
+   DOMContentLoaded-scoped observer setup would have already run - a real timing hazard for that
+   approach, not a hypothetical one. A CSS animation triggers correctly regardless of when the
+   element enters the DOM (initial render or AJAX injection alike), so it's the more robust choice
+   here, not just the simpler one. Site.css's Phase 5 reduced-motion snippet already neutralizes
+   this via animation-duration, but it's redone explicitly (animation: none) here too so intent
+   doesn't depend on one rule in a different file. */
+@keyframes ct-reveal {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.garage-masthead-title,
+.lubelogger-vehicle-title {
+    animation: ct-reveal 0.5s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .garage-masthead-title,
+    .lubelogger-vehicle-title {
+        animation: none;
+    }
+}
+
+/* Zara + Magneto overhaul, Phase 6b — nav visual rebuild. Reframed correctly for what this actually
+   is: a functional tab-strip (Home/Vehicle) or a plain title bar (Admin/API/Setup/Migration, now
+   unified in Phase 6a's _SimpleNavBar partial), not a marketing header - so this is calmer chrome and
+   the wordmark, not a literal magazine-masthead pastiche.
+
+   .ct-wordmark-wrap holds min-height:48px + flex-centering deliberately, NOT because the text needs
+   to be that tall - it's there so the navbar row's overall height stays exactly what it was with the
+   48px-tall .lubelogger-logo image still in place. checkNavBarOverflow() (wwwroot/js/shared.js) reads
+   a hardcoded `navbarHeight > 48` threshold to decide when tabs collapse into the "..." overflow menu;
+   preserving the row height by construction here means that constant stays correct without needing a
+   live-browser re-derivation this environment can't do reliably anyway - the plan's own acceptance
+   criterion for this phase, satisfied by not touching the thing it depends on. */
+.ct-wordmark-wrap {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+}
+
+.ct-wordmark {
+    font-size: 1.3rem;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+/* Active-tab signal. Previously relied entirely on Bootstrap's default active/inactive text-colour
+   contrast alone (border and background were already stripped by the app's own .lubelogger-tab
+   rules in site.css) - a considered underline instead of Bootstrap's default border-bottom trick,
+   consistent with the flat/sharp-cornered discipline (a line, not a pill or background block), and
+   directly answers one of the Zara teardown's own named weaknesses (clickable/active vs. static text
+   looking identical - §10 of the teardown). */
+.lubelogger-tab .nav-link {
+    position: relative;
+    color: var(--bs-secondary-color);
+}
+
+.lubelogger-tab .nav-link.active {
+    color: var(--bs-body-color);
+}
+
+.lubelogger-tab .nav-link.active::after {
+    content: "";
+    position: absolute;
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: 0;
+    height: 2px;
+    background-color: var(--bs-primary);
+}
+
+/* Critical fix, found from a live screenshot showing a stock-blue button that "should" have been
+   themed ink-monochrome. Root cause: Bootstrap 5.3's compiled CSS does NOT derive .btn-primary (or
+   any other .btn-* / .btn-outline-* variant) from the root --bs-primary/--bs-danger/etc. custom
+   properties at all - each button class defines its OWN separate, independently-hardcoded set of
+   --bs-btn-bg/--bs-btn-border-color/etc. baked in as literal hex at Bootstrap's own build time
+   (confirmed by reading bootstrap.min.css directly: .btn-primary{--bs-btn-bg:#0d6efd...}, a hardcoded
+   literal, not var(--bs-primary)). This is exactly the kind of failure curl/build verification cannot
+   catch - the HTML class name (btn-primary) looks correct regardless of what color the browser
+   actually paints, so it silently rendered stock Bootstrap colors on every button across the entire
+   app since Increment 1, undetected until an actual screenshot surfaced it. Same root cause,
+   confirmed by the same method, also affects .form-check-input:checked (checkboxes/switches - 42
+   files use these), .dropdown-menu's active-item highlight, .form-range's slider thumb, and
+   .nav-pills - all fixed together here rather than piecemeal, since they're one bug, not five.
+
+   Hover/active shades use color-mix() against --bs-body-color rather than a dozen hand-picked hex
+   values - body-color is ink in light mode and paper in dark mode, so mixing a small percentage of
+   it into a button colour darkens it in light mode and lightens it in dark mode automatically, with
+   one rule instead of duplicated light/dark blocks. Button text uses --bs-body-bg (not a fixed
+   white/black) for the same reason it works in both themes: every variant colour in this palette is
+   deliberately deep/saturated in light mode and light/desaturated in dark mode, so the page's own
+   background colour is always the correct contrasting text colour, in both directions. */
+.btn-primary, .btn-secondary, .btn-success, .btn-info, .btn-warning, .btn-danger {
+    --bs-btn-color: var(--bs-body-bg);
+    --bs-btn-hover-color: var(--bs-body-bg);
+    --bs-btn-active-color: var(--bs-body-bg);
+    --bs-btn-disabled-color: var(--bs-body-bg);
+}
+.btn-primary { --bs-btn-bg: var(--bs-primary); --bs-btn-border-color: var(--bs-primary); --bs-btn-disabled-bg: var(--bs-primary); --bs-btn-disabled-border-color: var(--bs-primary); --bs-btn-hover-bg: color-mix(in srgb, var(--bs-primary) 85%, var(--bs-body-color) 15%); --bs-btn-hover-border-color: var(--bs-btn-hover-bg); --bs-btn-active-bg: color-mix(in srgb, var(--bs-primary) 75%, var(--bs-body-color) 25%); --bs-btn-active-border-color: var(--bs-btn-active-bg); }
+.btn-secondary { --bs-btn-bg: var(--bs-secondary); --bs-btn-border-color: var(--bs-secondary); --bs-btn-disabled-bg: var(--bs-secondary); --bs-btn-disabled-border-color: var(--bs-secondary); --bs-btn-hover-bg: color-mix(in srgb, var(--bs-secondary) 85%, var(--bs-body-color) 15%); --bs-btn-hover-border-color: var(--bs-btn-hover-bg); --bs-btn-active-bg: color-mix(in srgb, var(--bs-secondary) 75%, var(--bs-body-color) 25%); --bs-btn-active-border-color: var(--bs-btn-active-bg); }
+.btn-success { --bs-btn-bg: var(--bs-success); --bs-btn-border-color: var(--bs-success); --bs-btn-disabled-bg: var(--bs-success); --bs-btn-disabled-border-color: var(--bs-success); --bs-btn-hover-bg: color-mix(in srgb, var(--bs-success) 85%, var(--bs-body-color) 15%); --bs-btn-hover-border-color: var(--bs-btn-hover-bg); --bs-btn-active-bg: color-mix(in srgb, var(--bs-success) 75%, var(--bs-body-color) 25%); --bs-btn-active-border-color: var(--bs-btn-active-bg); }
+.btn-info { --bs-btn-bg: var(--bs-info); --bs-btn-border-color: var(--bs-info); --bs-btn-disabled-bg: var(--bs-info); --bs-btn-disabled-border-color: var(--bs-info); --bs-btn-hover-bg: color-mix(in srgb, var(--bs-info) 85%, var(--bs-body-color) 15%); --bs-btn-hover-border-color: var(--bs-btn-hover-bg); --bs-btn-active-bg: color-mix(in srgb, var(--bs-info) 75%, var(--bs-body-color) 25%); --bs-btn-active-border-color: var(--bs-btn-active-bg); }
+.btn-warning { --bs-btn-bg: var(--bs-warning); --bs-btn-border-color: var(--bs-warning); --bs-btn-disabled-bg: var(--bs-warning); --bs-btn-disabled-border-color: var(--bs-warning); --bs-btn-hover-bg: color-mix(in srgb, var(--bs-warning) 85%, var(--bs-body-color) 15%); --bs-btn-hover-border-color: var(--bs-btn-hover-bg); --bs-btn-active-bg: color-mix(in srgb, var(--bs-warning) 75%, var(--bs-body-color) 25%); --bs-btn-active-border-color: var(--bs-btn-active-bg); }
+.btn-danger { --bs-btn-bg: var(--bs-danger); --bs-btn-border-color: var(--bs-danger); --bs-btn-disabled-bg: var(--bs-danger); --bs-btn-disabled-border-color: var(--bs-danger); --bs-btn-hover-bg: color-mix(in srgb, var(--bs-danger) 85%, var(--bs-body-color) 15%); --bs-btn-hover-border-color: var(--bs-btn-hover-bg); --bs-btn-active-bg: color-mix(in srgb, var(--bs-danger) 75%, var(--bs-body-color) 25%); --bs-btn-active-border-color: var(--bs-btn-active-bg); }
+
+.btn-outline-primary { --bs-btn-color: var(--bs-primary); --bs-btn-border-color: var(--bs-primary); --bs-btn-hover-color: var(--bs-body-bg); --bs-btn-hover-bg: var(--bs-primary); --bs-btn-hover-border-color: var(--bs-primary); --bs-btn-active-color: var(--bs-body-bg); --bs-btn-active-bg: var(--bs-primary); --bs-btn-active-border-color: var(--bs-primary); --bs-btn-disabled-color: var(--bs-primary); --bs-btn-disabled-border-color: var(--bs-primary); }
+.btn-outline-secondary { --bs-btn-color: var(--bs-secondary); --bs-btn-border-color: var(--bs-secondary); --bs-btn-hover-color: var(--bs-body-bg); --bs-btn-hover-bg: var(--bs-secondary); --bs-btn-hover-border-color: var(--bs-secondary); --bs-btn-active-color: var(--bs-body-bg); --bs-btn-active-bg: var(--bs-secondary); --bs-btn-active-border-color: var(--bs-secondary); --bs-btn-disabled-color: var(--bs-secondary); --bs-btn-disabled-border-color: var(--bs-secondary); }
+.btn-outline-success { --bs-btn-color: var(--bs-success); --bs-btn-border-color: var(--bs-success); --bs-btn-hover-color: var(--bs-body-bg); --bs-btn-hover-bg: var(--bs-success); --bs-btn-hover-border-color: var(--bs-success); --bs-btn-active-color: var(--bs-body-bg); --bs-btn-active-bg: var(--bs-success); --bs-btn-active-border-color: var(--bs-success); --bs-btn-disabled-color: var(--bs-success); --bs-btn-disabled-border-color: var(--bs-success); }
+.btn-outline-info { --bs-btn-color: var(--bs-info); --bs-btn-border-color: var(--bs-info); --bs-btn-hover-color: var(--bs-body-bg); --bs-btn-hover-bg: var(--bs-info); --bs-btn-hover-border-color: var(--bs-info); --bs-btn-active-color: var(--bs-body-bg); --bs-btn-active-bg: var(--bs-info); --bs-btn-active-border-color: var(--bs-info); --bs-btn-disabled-color: var(--bs-info); --bs-btn-disabled-border-color: var(--bs-info); }
+.btn-outline-warning { --bs-btn-color: var(--bs-warning); --bs-btn-border-color: var(--bs-warning); --bs-btn-hover-color: var(--bs-body-bg); --bs-btn-hover-bg: var(--bs-warning); --bs-btn-hover-border-color: var(--bs-warning); --bs-btn-active-color: var(--bs-body-bg); --bs-btn-active-bg: var(--bs-warning); --bs-btn-active-border-color: var(--bs-warning); --bs-btn-disabled-color: var(--bs-warning); --bs-btn-disabled-border-color: var(--bs-warning); }
+.btn-outline-danger { --bs-btn-color: var(--bs-danger); --bs-btn-border-color: var(--bs-danger); --bs-btn-hover-color: var(--bs-body-bg); --bs-btn-hover-bg: var(--bs-danger); --bs-btn-hover-border-color: var(--bs-danger); --bs-btn-active-color: var(--bs-body-bg); --bs-btn-active-bg: var(--bs-danger); --bs-btn-active-border-color: var(--bs-danger); --bs-btn-disabled-color: var(--bs-danger); --bs-btn-disabled-border-color: var(--bs-danger); }
+
+.form-check-input:checked,
+.form-check-input[type="checkbox"]:indeterminate {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+.form-range::-webkit-slider-thumb {
+    background-color: var(--bs-primary);
+}
+.form-range::-moz-range-thumb {
+    background-color: var(--bs-primary);
+}
+
+.dropdown-menu {
+    --bs-dropdown-link-active-bg: var(--bs-primary);
+    --bs-dropdown-link-active-color: var(--bs-body-bg);
+}
+
+.nav-pills {
+    --bs-nav-pills-link-active-bg: var(--bs-primary);
+    --bs-nav-pills-link-active-color: var(--bs-body-bg);
+}
+
+/* Magneto PDF study, Phase 1 (post-launch) — every feature in the issue opens on photography before
+   data (the "Starter" pieces, p.22/p.38: full-width photo, then the multi-column content below it -
+   never the reverse). The vehicle Dashboard is the closest real analog this app has to a Magneto
+   feature - a long-form piece about one specific car - so it gets the same opening move: a
+   considered photo band before the stat/chart grid. Deliberately NOT overlaying the vehicle's name
+   on the photo (the Mangusta pages' dramatic text-over-image treatment, p.82-91) - that identity
+   already lives in the nav bar's .lubelogger-vehicle-title just above it, and repeating it here
+   would be redundant, not confident. Skipped entirely server-side (Controllers/Vehicle/
+   ReportController.cs) when the vehicle has no real photo, rather than showing an oversized generic
+   placeholder - an empty hero band would be the exact "minimalism costing the user" failure mode
+   flagged since the Garage rebuild, just relocated to a new screen. */
+.report-hero {
+    position: relative;
+    width: 100%;
+    height: 320px;
+    overflow: hidden;
+    margin-bottom: var(--ct-space-5);
+}
+
+.report-hero-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Phase 5 — the chapter-divider pattern (Senna feature, p.66 etc: full-bleed solid colour band,
+   bold two-tone name typography) doesn't map cleanly onto most of this app - Car Tracker doesn't
+   have sub-narratives within one feature the way a magazine profile interviews multiple people
+   about one subject. The one place it genuinely fits: a sold vehicle's Dashboard is a real "chapter
+   closed" moment, previously signalled only by a grayscale filter on the photo with no caption at
+   all. A solid ink band anchored to the photo's bottom edge, bold "SOLD" + the actual sold date -
+   same confident register as the dividers, applied only where the underlying structure actually
+   matches, not forced onto screens that don't have this shape. */
+.report-hero-sold-band {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: baseline;
+    gap: var(--ct-space-3);
+    padding: var(--ct-space-3) var(--ct-space-4);
+    background-color: var(--bs-primary);
+    color: var(--bs-body-bg);
+}
+
+.report-hero-sold-band span {
+    font-family: var(--ct-heading-font-family);
+    font-weight: 600;
+    font-variation-settings: "opsz" 144, "WONK" 1, "SOFT" 25;
+    font-size: 1.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.report-hero-sold-band small {
+    opacity: 0.75;
+}
+
+@media (max-width: 767px) {
+    .report-hero {
+        height: 220px;
+    }
+}
+
+/* Magneto PDF study, Phase 2 — pull quotes (p.38: a large bold serif statement pulled out of the
+   body copy, anchored with a short rule beneath, breaking up a text-heavy column). This app has no
+   long-form prose to pull a quote FROM, so the honest translation is applying that same device -
+   confident large type + a short anchoring rule - to the one place a bare, small, easily-missed
+   message already exists across the app: the shared .ct-empty-state primitive (site.css, used by
+   Documents/Parts/Government Data). Was plain .bs-secondary-color text at default size; now reads
+   with real presence instead of looking like a system placeholder. Pure CSS against an existing
+   primitive - zero markup changes needed in any of its 3 current call sites. */
+.ct-empty-state .bi {
+    font-size: 3rem;
+    opacity: 0.4;
+    margin-bottom: var(--ct-space-2);
+}
+
+.ct-empty-state span {
+    font-family: var(--ct-heading-font-family);
+    font-size: 1.4rem;
+    font-weight: 500;
+    color: var(--bs-body-color);
+    max-width: 32ch;
+    position: relative;
+    padding-bottom: var(--ct-space-3);
+}
+
+.ct-empty-state span::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    width: 32px;
+    height: 2px;
+    background-color: var(--bs-primary);
+}
+
+/* Magneto PDF study, Phase 3 — the fully-empty Garage (no vehicles at all) is the very first thing a
+   new user ever sees, and it was a bare grey dashed box - the least considered moment in the whole
+   app. p.60 ("GODSPEED") proved the issue is willing to let solid, confident colour carry a whole
+   page with zero photography. A literal 2-word stacked poster headline needed invented, untranslated
+   copy (no existing key fit that shape), so this reuses the modal's own real title string ("Add New
+   Vehicle", already translated - see Views/Vehicle/_VehicleModal.cshtml) rather than inventing new
+   text, and applies GODSPEED's real lesson instead: one deliberate solid-colour moment, oversized,
+   confident, not a bare outline. Uses --ct-spotlight-solid rather than --bs-primary - this is
+   correctly the same "needs your attention" register as the reminder badge (an empty garage IS
+   something to act on), not a routine navigation/button moment. */
+.garage-empty-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ct-space-3);
+    padding: var(--ct-space-7) var(--ct-space-4);
+    background-color: var(--ct-spotlight-solid);
+    color: var(--ct-spotlight-solid-color);
+    cursor: pointer;
+    transition: var(--ct-transition-base) transform, var(--ct-transition-base) box-shadow;
+}
+
+.garage-empty-hero:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--ct-shadow-md);
+}
+
+.garage-empty-hero .bi {
+    font-size: 3.5rem;
+}
+
+.garage-empty-hero span {
+    font-family: var(--ct-heading-font-family);
+    font-weight: 600;
+    font-variation-settings: "opsz" 144, "WONK" 1, "SOFT" 25;
+    font-size: clamp(1.6rem, 3vw, 2.4rem);
+}
+
+/* Phase 4 — interactive/hover language. Can't inspect magnetomagazine.com's actual CSS (WebFetch
+   strips it before analysis - see docs/execution/UI_TRANSITION.md), so this is originated, not
+   copied. Confirmed by reading Bootstrap's compiled CSS directly: .link-body-emphasis (used for
+   every icon-only action in this app - the vehicle-edit icon, attachment-preview's close/copy-link
+   icons, others) has NO hover or focus state at all in Bootstrap's default - a static colour, zero
+   feedback that it's interactive until the moment you click it. That's exactly the "clickable vs.
+   static text look identical" weakness the original Zara research flagged (teardown §10) - the same
+   failure mode, just found in this app's own icon buttons instead of Zara's body copy. Kept
+   restrained (colour shift only, no motion) rather than adding a new animated flourish - consistent
+   with the discipline already established for hover states elsewhere (a considered lift/underline,
+   not a gimmick). */
+.link-body-emphasis {
+    transition: var(--ct-transition-fast) color;
+}
+
+.link-body-emphasis:hover, .link-body-emphasis:focus-visible {
+    color: var(--bs-primary) !important;
+}
+

@@ -160,19 +160,17 @@ function initCalendar() {
             }
         });
     }
-    $(".reminderCalendarViewContent").datepicker({
-        startDate: "+0d",
-        format: getShortDatePattern().pattern,
-        todayHighlight: true,
-        weekStart: getGlobalConfig().firstDayOfWeek,
-        beforeShowDay: function (date) {
+    flatpickr(".reminderCalendarViewContent", {
+        inline: true,
+        minDate: "today",
+        dateFormat: flatpickrDateFormat(),
+        locale: { firstDayOfWeek: getGlobalConfig().firstDayOfWeek },
+        onDayCreate: function (dObj, dStr, fp, dayElem) {
+            var date = dayElem.dateObj;
             var reminderDateIndex = groupedDates.findIndex(x => (x.date == date.getTime() || x.date == (date.getTime() - date.getTimezoneOffset() * 60000))); //take into account server timezone offset
             if (reminderDateIndex > -1) {
-                return {
-                    enabled: true,
-                    classes: 'reminder-exist',
-                    content: `<div class='text-wrap' style='height:20px;'><p>${date.getDate()}</p>${groupedDates[reminderDateIndex].reminders.join('<br>')}</div>`
-                }
+                dayElem.classList.add('reminder-exist');
+                dayElem.innerHTML = `<div class='text-wrap'><p>${date.getDate()}</p>${groupedDates[reminderDateIndex].reminders.join('<br>')}</div>`;
             }
         }
     });

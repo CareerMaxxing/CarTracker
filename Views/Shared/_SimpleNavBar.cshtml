@@ -1,0 +1,33 @@
+@using CarCareTracker.Helper
+@inject IConfigHelper config
+@model (string Title, string? HelpText)
+@*
+    Shared chrome for the app's "simple title bar" nav pattern - a logo, a static page title, and no
+    tab strip. Used by pages that aren't part of the tab-based Garage/Vehicle IA (Admin, API docs,
+    Server Settings, Database Migration). Extracted from 4 independently copy-pasted, near-identical
+    @section Nav blocks (Zara + Magneto overhaul, Phase 6a) - the Home/Vehicle tab-strip navs are a
+    structurally different, more complex pattern (TabOrder-driven tabs, reminder bell, user dropdown,
+    a separate mobile nav) and were deliberately left as-is rather than forced into this same partial.
+*@
+<div class="container-fluid lubelogger-navbar-container frosted hideOnPrint">
+    <div class="row mt-2">
+        <div class="d-flex lubelogger-navbar">
+            <div class="me-2 ct-wordmark-wrap" style="cursor:pointer;" onclick="returnToGarage()">
+                @if (config.GetSmallLogoUrl() == StaticHelper.DefaultSmallLogoPath)
+                {
+                    <span class="ct-wordmark">Car Tracker</span>
+                }
+                else
+                {
+                    <img src="@config.GetSmallLogoUrl()" class="lubelogger-logo" />
+                }
+            </div>
+            <span class="text-truncate lead">@Model.Title</span>
+            @if (!string.IsNullOrWhiteSpace(Model.HelpText))
+            {
+                <span class="lead text-end flex-grow-1 d-none flex-wrap d-md-block">@Model.HelpText</span>
+            }
+        </div>
+    </div>
+    <hr />
+</div>

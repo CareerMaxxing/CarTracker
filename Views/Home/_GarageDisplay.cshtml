@@ -10,7 +10,16 @@
     var searchExist = userConfig.ShowSearch && Model.Count() > 1;
     var renderTopRow = tagsExist || searchExist;
 }
+@{
+    var activeVehicleCount = Model.Count(v => string.IsNullOrWhiteSpace(v.SoldDate));
+}
 <div id="garageContainer">
+<div class="garage-masthead">
+    <div class="garage-masthead-count">@activeVehicleCount.ToString("00")</div>
+    <div class="garage-masthead-heading">
+        <h1 class="garage-masthead-title">@translator.Translate(userLanguage, "Garage")</h1>
+    </div>
+</div>
 @if (renderTopRow)
 {
     <div class='row'>
@@ -42,30 +51,36 @@
 }
     @if (Model.Any())
     {
-    <div class="row gy-3 align-items-stretch vehiclesContainer pb-2 @(renderTopRow ? "" : "mt-2")">
+    <div class="row gy-4 gx-4 align-items-stretch vehiclesContainer pb-2 @(renderTopRow ? "" : "mt-2")">
+        @{
+            var vehicleIndex = 0;
+        }
         @foreach (VehicleViewModel vehicle in Model)
         {
             @if (!(userConfig.HideSoldVehicles && !string.IsNullOrWhiteSpace(vehicle.SoldDate)))
             {
-                <div class="col-lg-4 col-md-6 col-12 garage-item user-select-none" onclick="handleGarageItemClick(this, @vehicle.Id)" oncontextmenu="showGarageContextMenu(this)" data-tags='@string.Join(" ", vehicle.Tags)' data-rowId="@vehicle.Id" id="gridVehicle_@vehicle.Id" data-extra-fields="@await Html.PartialAsync("_VehicleExtraFields", vehicle.ExtraFields)" onmousemove="garageRangeMouseMove(this)" ontouchstart="detectGarageLongTouch(this)" ontouchend="detectGarageTouchEndPremature(this)">
+                vehicleIndex++;
+                <div class="col-lg-6 col-md-6 col-12 garage-item user-select-none" onclick="handleGarageItemClick(this, @vehicle.Id)" oncontextmenu="showGarageContextMenu(this)" data-tags='@string.Join(" ", vehicle.Tags)' data-rowId="@vehicle.Id" id="gridVehicle_@vehicle.Id" data-extra-fields="@await Html.PartialAsync("_VehicleExtraFields", vehicle.ExtraFields)" onmousemove="garageRangeMouseMove(this)" ontouchstart="detectGarageLongTouch(this)" ontouchend="detectGarageTouchEndPremature(this)">
                     <div class="card">
-                        <img src="@vehicle.ImageLocation" style="height:145px; object-fit:cover; pointer-events:none; @(string.IsNullOrWhiteSpace(vehicle.SoldDate) ? "" : "filter: grayscale(100%);")" />
+                        <img src="@vehicle.ImageLocation" class="garage-item-photo" style="pointer-events:none; @(string.IsNullOrWhiteSpace(vehicle.SoldDate) ? "" : "filter: grayscale(100%);")" />
                         @if (!string.IsNullOrWhiteSpace(vehicle.SoldDate))
                         {
                             <div class="vehicle-sold-banner">
                                 <p class='display-6 mb-0'></p>
                                 <span class="badge garage-metric-badge">@($"{translator.Translate(userLanguage, "SOLD")} {vehicle.SoldDate}")</span>
                             </div>
-                        } else if (vehicle.DashboardMetrics.Any())
+                        } else if (vehicle.HasReminders)
                         {
-                            <div class="vehicle-sold-banner d-flex gap-2 flex-wrap">
+                            <div class="vehicle-sold-banner">
+                                <span class="badge garage-metric-badge garage-metric-badge-spotlight"><i class="bi bi-bell-fill"></i></span>
+                            </div>
+                        }
+                        @if (string.IsNullOrWhiteSpace(vehicle.SoldDate) && vehicle.DashboardMetrics.Any())
+                        {
+                            <div class="garage-metrics-reveal d-flex gap-2 flex-wrap">
                             @if (vehicle.DashboardMetrics.Contains(DashboardMetric.Default) && vehicle.LastReportedMileage != default)
                             {
                                     <span class="badge garage-metric-badge"><i class="bi bi-speedometer me-2"></i>@vehicle.LastReportedMileage.ToString("N0")</span>
-                                    @if (vehicle.HasReminders)
-                                    {
-                                        <span class="badge garage-metric-badge" style="order: 1;"><i class="bi bi bi-bell-fill text-warning"></i></span>
-                                    }
                             }
                             @if (vehicle.DashboardMetrics.Contains(DashboardMetric.CostPerMile) && vehicle.CostPerMile != default)
                             {
@@ -82,28 +97,27 @@
                             </div>
                         }
                         <div class="card-body">
-                            <small class="garage-item-attribute card-title text-truncate garage-item-year" data-unit="@vehicle.Year">@($"{vehicle.Year}")</small>
-                            <h5 class="garage-item-attribute card-title text-truncate">@($"{vehicle.Make}")</h5>
-                            <h5 class="garage-item-attribute card-title text-truncate">@($"{vehicle.Model}")</h5>
+                            <span class="garage-item-index">@(vehicleIndex.ToString("00"))</span>
+                            <small class="garage-item-attribute card-text text-truncate garage-item-year" data-unit="@vehicle.Year">@($"{vehicle.Year}")</small>
+                            <h5 class="garage-item-attribute card-title text-truncate">@($"{vehicle.Make} {vehicle.Model}")</h5>
                             <small class="garage-item-attribute card-text text-truncate">@StaticHelper.GetVehicleIdentifier(vehicle)</small>
                         </div>
                     </div>
                 </div>
             }
         }
-         <div class="col-lg-4 col-md-6 col-12 garage-item-add user-select-none">
+         <div class="col-lg-6 col-md-6 col-12 garage-item-add user-select-none">
             <div class="card d-flex justify-content-center align-items-center" onclick="showAddVehicleModal()" style="height:100%; min-height: 145px; border-style:dashed;">
                 <img src="/defaults/addnew_vehicle.png" style="object-fit:scale-down;pointer-events:none;" />
             </div>
-        </div> 
+        </div>
     </div>
     } else
     {
         <div class="d-flex justify-content-center align-items-center mt-2">
-            <div class="col-lg-4 col-md-6 col-12 garage-item-add user-select-none">
-                <div class="card d-flex justify-content-center align-items-center" onclick="showAddVehicleModal()" style="height:100%; min-height: 145px; border-style:dashed;">
-                    <img src="/defaults/addnew_vehicle.png" style="object-fit:scale-down;pointer-events:none;" />
-                </div>
+            <div class="col-lg-8 col-12 garage-empty-hero user-select-none" onclick="showAddVehicleModal()">
+                <i class="bi bi-car-front"></i>
+                <span>@translator.Translate(userLanguage, "Add New Vehicle")</span>
             </div>
         </div>
     }

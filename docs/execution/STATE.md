@@ -95,6 +95,49 @@ Last commit:         fc8d7f4 — "Phase 14 (accessibility): wire aria-labelledby
                      increment.
 ```
 
+## Completed initiative: Zara + Magneto UI overhaul (separate from the roadmap above)
+
+**Status: finalized and promoted to the app's permanent default.** User signalled completion
+("we are finalising on this, wrap it up") and the whole design system now lives directly in the
+tracked `wwwroot/css/site.css` — there is no longer a reversible theme layer to be aware of. Read
+`docs/execution/UI_TRANSITION.md` for the full increment-by-increment log (11 increments + 8 further
+phases + Magneto-PDF-grounded phases + the final promotion entry) and `docs/UI_SPEC.md` for the
+design system as designed. Critical facts a fresh session needs immediately:
+
+- **The design is the default — nothing conditional to know about.** `data/themes/zara-study.css`
+  (the former reversible prototype theme) has been merged into `wwwroot/css/site.css` and deleted;
+  `data/config/userConfig.json`'s `UserTheme` has been reset to `""`. The custom-theme-upload
+  mechanism (`Controllers/ThemeController.cs`, `/css/theme.css`) still works exactly as it did
+  originally in LubeLogger — it's just no longer where *this* design lives, and is available again
+  for its original purpose (a genuinely separate, optional, user-uploaded alternate theme).
+- All CSS for this initiative — tokens, palette, typography, component overrides, the Bootstrap
+  component-local-variable fix (buttons/checkboxes/dropdowns), everything — is now in the single
+  tracked `wwwroot/css/site.css` (2119 lines). No other file needs to be consulted to know what's
+  currently active.
+- Several Razor views and one C# controller/model have real, tracked, additive edits (documented per-
+  increment in UI_TRANSITION.md) — unrelated to the theme-file promotion, already tracked in git
+  as of the normal commit for this work.
+- Self-hosted assets added under `wwwroot/lib/`: Fraunces + Work Sans (full 4-axis variable builds,
+  re-sourced from the type foundry directly after discovering Google's default delivery strips SOFT/
+  WONK axes), Flatpickr (replaced bootstrap-datepicker entirely), Phosphor Icons (replaced Bootstrap
+  Icons via a CSS-only override layer, ~105 hand-mapped glyphs).
+- User provided the actual print PDF (`C:\Users\muham\Downloads\Magneto_Spring_2024.pdf`, 220 pages)
+  as primary-source design reference after web-only research kept producing a reskin instead of a
+  structural translation. All 220 pages were reviewed (contact sheets + full-res deep-dives on the
+  richest examples - see UI_TRANSITION.md for the concrete, directly-observed findings and exactly
+  which patterns have and haven't been applied yet).
+- Dev workflow used throughout this initiative: `dotnet build` -> `dotnet test Tests/
+  CarCareTracker.Tests.csproj` -> kill any running `dotnet run` process -> restart with `dotnet run
+  --urls http://localhost:5299 --no-build` in the background -> curl-verify against real vehicle data
+  (vehicleId=1 in this dev environment) wherever possible. CSS-only changes need no rebuild (served
+  as static files); any `.cshtml`/`.cs` change needs the full cycle. No browser tool exists in this
+  environment - curl/build/test is the verification ceiling; anything visual/interactive is flagged
+  as unverified rather than assumed correct, and the user has been doing live browser review between
+  batches of work.
+- Do not assume a "reskin" (new colours/fonts applied to unchanged Bootstrap structure) satisfies the
+  brief - the user explicitly rejected that twice. The standing goal is structural/layout translation
+  grounded in specifically-cited pages/patterns from the research, not a generic "editorial" vibe.
+
 ## Environment notes for future sessions
 
 - .NET 10 SDK (10.0.400) is installed via winget on this machine. If working from a fresh machine

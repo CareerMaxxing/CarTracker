@@ -64,13 +64,13 @@
                         plugins: {
                             title: {
                                 display: true,
-                                color: useDarkMode ? "#fff" : "#000",
+                                color: getChartTextColor(),
                                 text: decodeHTMLEntities('@($"{translator.Translate(userLanguage, "Fuel Mileage by Month")}({Model.Unit})")')
                             },
                             legend: {
                                 display: false,
                                 labels: {
-                                    color: useDarkMode ? "#fff" : "#000"
+                                    color: getChartTextColor()
                                 }
                             }
                         },
@@ -80,13 +80,13 @@
                                 max: Math.ceil(decodeHTMLEntities('@(cleanedMax)')),
                                 min: Math.floor(decodeHTMLEntities('@(cleanedMin)')),
                                 ticks: {
-                                    color: useDarkMode ? "#fff" : "#000",
+                                    color: getChartTextColor(),
                                     stepSize: Math.ceil(decodeHTMLEntities('@(stepSize)'))
                                 }
                             },
                             x: {
                                 ticks: {
-                                    color: useDarkMode ? "#fff" : "#000"
+                                    color: getChartTextColor()
                                 }
                             }
                         }
