@@ -5,51 +5,64 @@ conversation history.
 
 ```
 PROJECT STATUS
-Current phase:      Phase 16 — Sidebar App Shell & Dashboard Redesign (Increment 8 complete,
-                     Increment 9 next)
-Current task:       PHASE-16-08 (see docs/execution/PHASE_16.md) — Total Spent widget added to the
-                     Dashboard's widget row. Both states verified against real vehicle data - no
-                     throwaway vehicle needed this round.
+Current phase:      Phase 16 — Sidebar App Shell & Dashboard Redesign (Increment 9 complete,
+                     Increment 10 next)
+Current task:       PHASE-16-09 (see docs/execution/PHASE_16.md) — Planned Maintenance list added to
+                     the Dashboard's widget row. Both states verified, including the specific
+                     urgency/badge mapping against a throwaway past-due reminder.
 Status:             Full plan/decision history in git history + PHASE_16.md's intro, not re-summarized
-                     here (increments 1-7's full detail is fully preserved there). Increments 1-7
-                     committed (b669299, b50f3e1, b9ab158, 4a4df63, 72ba466, dda1d24, 0cc6271, 7d71eec).
-                     Increment 8: added Report/_TotalSpentWidget.cshtml (headline via
-                     StaticHelper.HideZeroCost - the exact same call the existing Total Cost stat
-                     panel already uses - a bar-type sparkline fed by CostForVehicleByMonth directly,
-                     deliberately distinct chart type from Fuel Economy's line sparkline), appended as
-                     the second column into Increment 7's open-ended widget row. No new CSS needed
-                     (confirmed via unchanged brace count, not assumed). Verified against real data
-                     directly - vehicle 1 already has real cost history from earlier phase testing, so
-                     no throwaway vehicle was needed this round: populated branch's headline read
-                     exactly "£260.00," matching the known real value visible in the screenshot the
-                     user shared before Increment 6 started. Vehicle 2 (no cost history) correctly
-                     showed the empty state. Verified: dotnet build (0 errors), dotnet test (10/10),
-                     both vehicles' pages still load, /css/site.css still balanced (436/436, unchanged
-                     from Increment 7). Not yet committed - pending alongside this STATE.md update.
+                     here (increments 1-8's full detail is fully preserved there). Increments 1-8
+                     committed (b669299, b50f3e1, b9ab158, 4a4df63, 72ba466, dda1d24, 0cc6271, 7d71eec,
+                     ac74289). Increment 9: found the full per-reminder list was already computed in
+                     ReportController.GetReportPartialView for the pie chart's aggregate counts, then
+                     discarded - added ReportViewModel.UpcomingReminders + one controller line
+                     (`reminders.OrderByDescending(x=>x.Urgency).ThenBy(x=>x.DueDays).Take(5)`) to keep
+                     it instead of a new query. Built Report/_PlannedMaintenanceWidget.cshtml as a
+                     list variant of the same .report-widget-card wrapper (confirmed its flex-column
+                     layout works for a list, not just a single stat - no new card shape needed).
+                     Caught a real small mistake before shipping: translating reminder.Urgency.
+                     ToString() (raw enum name, "PastDue" with no space) would have produced an ugly
+                     label - matched this app's own existing translation-key convention
+                     ("Past Due"/"Very Urgent" etc., found already in _ReminderRecords.cshtml/
+                     _Kiosk.cshtml) instead. First real adoption of .status-badge-spotlight for the
+                     exact case its own introducing CSS comment named ("an overdue reminder on a
+                     Garage card") but had never been wired to a caller. While checking for stray
+                     .status-badge matches to confirm the empty state, found 4 UNRELATED pre-existing
+                     uses on the same page (the Government Data panel, Phase 8) - correctly attributed
+                     to that, not confused with this increment; the "not yet adopted by any view" CSS
+                     comment is simply stale documentation predating Phase 8, not touched (out of
+                     scope). Verified both states for real: both vehicles show "No Data" (neither has
+                     reminders yet); a throwaway past-due reminder added to vehicle 1 via
+                     /api/vehicle/reminders/add rendered with exactly the "Past Due" label and
+                     .status-badge-spotlight class - then deleted, empty state reconfirmed restored.
+                     Verified: dotnet build (0 errors), dotnet test (10/10), both vehicles' pages still
+                     load, /css/site.css still balanced (441/441). Not yet committed - pending
+                     alongside this STATE.md update.
 Last completed:      Phase 15 (Remote Access & Persistent Hosting) - all 5 increments resolved (4
                      explicitly declined by the user, not skipped). See docs/execution/PHASE_15.md.
                      Phase 14's remaining areas (icon-button labels, keyboard nav, form labels, alt
                      text, mobile/responsive validation, performance) are still open, not abandoned -
                      both Phase 15 and now Phase 16 were started because the user raised new,
                      higher-priority requests, not because Phase 14 finished.
-Next task:           Increment 9 (Planned Maintenance list, reusing IReminderHelper.
-                     GetReminderRecordViewModels' already-computed Urgency/DueDays/DueMileage output -
-                     sort by urgency then due-date, show top N, appended as a THIRD column into the
-                     same widget row - note this is a LIST not a stat-card-with-sparkline like
-                     Increments 7-8, so it may need a taller/differently-shaped card, check the
-                     mockup's actual layout before assuming the same .report-widget-card sizing
-                     fits), then 10-11 (Recent Activity extending GetVehicleHistory to include
-                     GasRecord, a Magneto-motif promo tile). See the approved plan / PHASE_16.md's
-                     intro for the full per-increment breakdown. Do not re-litigate the landing-page
-                     decision (Increment 4) - answered directly by the user. Real vehicle data:
-                     vehicleId=1 (BMW Z4, has real cost history but no MPG history), vehicleId=2
-                     (Volvo S80, no cost or MPG history yet) - check whether either has real reminder
-                     data before assuming Increment 9's list will show populated content; if not,
-                     that empty state needs the same real verification treatment Increments 7-8 gave
-                     theirs. Before wiring any new "add record" trigger, learn from Increment 6's bug:
-                     verify empirically where the target modal's shell actually lives, don't assume
-                     from reading the markup alone. If a throwaway test vehicle/record is ever needed
-                     again, always delete it before finishing (see Increment 5/7's pattern).
+Next task:           Increment 10 (Recent Activity feed - extend the existing GetVehicleHistory
+                     projection, currently Service/Repair/Upgrade/Tax only per ARCHITECTURE.md's
+                     research, to also include GasRecord, sorted/truncated to latest N - this is a
+                     genuinely NEW controller method or a modified existing one, not pure reuse like
+                     7-9, since GetVehicleHistory as it exists is a full filterable history report,
+                     not a "latest N" feed shape - read that method fully before assuming how much can
+                     be reused vs. needs a new thin wrapper), then Increment 11 (Magneto-motif promo
+                     tile, purely cosmetic, last). See the approved plan / PHASE_16.md's intro for the
+                     full per-increment breakdown. Do not re-litigate the landing-page decision
+                     (Increment 4) - answered directly by the user. Real vehicle data: vehicleId=1
+                     (BMW Z4 - has cost history, a throwaway reminder was tested and cleaned up, no
+                     MPG history), vehicleId=2 (Volvo S80 - no cost/MPG/reminder history yet) - vehicle
+                     1 likely has enough Service/Tax/etc. history for Increment 10's populated state
+                     (it already showed a real "Expenses by Type" pie chart with Repairs/Service data
+                     in the screenshot the user shared), but confirm this directly rather than assume.
+                     Before wiring any new "add record" trigger, learn from Increment 6's bug: verify
+                     empirically where the target modal's shell actually lives. If a throwaway test
+                     vehicle/record is ever needed again, always delete it before finishing (see
+                     Increment 5/7/9's pattern).
 Known blockers:      1. No browser/screenshot tool in this environment - Phase 14's remaining
                         accessibility work would still need static-code-audit + curl verification,
                         not live screen-reader/keyboard testing.
@@ -125,15 +138,17 @@ Do not:              Assume Phase 14 is "done" - three increments complete (secu
                      ran. dotnet run from the dev repo still works for development but now operates on
                      a separate, diverging dataset - be explicit with the user about which copy
                      they're looking at if this ever comes up.
-Last validation:     Phase 15 + Phase 16 Increments 1-7's full validation history lives in
-                     docs/execution/PHASE_15.md / PHASE_16.md. Phase 16 Increment 8 (current): dotnet
-                     build (0 errors); dotnet test (10/10 passing); dev instance on port 5300; vehicle
-                     1 (real cost history) confirmed the populated card's headline reads exactly
-                     "£260.00" - matched against the known real value, no throwaway vehicle needed;
-                     vehicle 2 (no cost history) confirmed the "No Data" empty state; both vehicles'
-                     Vehicle/Index pages still 200; /css/site.css unchanged at 436/436 (confirming no
-                     new CSS was actually needed) — 2026-08-18.
-Last commit:         7d71eec — "Phase 16 Increment 7: Fuel Economy widget" — 2026-08-18. Increment 8
+Last validation:     Phase 15 + Phase 16 Increments 1-8's full validation history lives in
+                     docs/execution/PHASE_15.md / PHASE_16.md. Phase 16 Increment 9 (current): dotnet
+                     build (0 errors); dotnet test (10/10 passing); dev instance on port 5300; both
+                     vehicles confirmed showing "No Data" (neither has reminders); a throwaway
+                     past-due reminder on vehicle 1 (via /api/vehicle/reminders/add) confirmed
+                     rendering with exactly the "Past Due" label + status-badge-spotlight class - the
+                     specific urgency/badge mapping verified, not just "a row appeared" - then
+                     deleted via /api/vehicle/reminders/delete, empty state reconfirmed restored;
+                     both vehicles' Vehicle/Index pages still 200; /css/site.css balanced (441/441) —
+                     2026-08-18.
+Last commit:         ac74289 — "Phase 16 Increment 8: Total Spent widget" — 2026-08-18. Increment 9
                      (this entry) not yet committed - pending alongside this STATE.md update.
 ```
 

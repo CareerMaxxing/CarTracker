@@ -84,6 +84,7 @@ namespace CarCareTracker.Controllers
 
             //get reminders
             var reminders = GetRemindersAndUrgency(vehicleId, DateTime.Now);
+            viewModel.UpcomingReminders = reminders.OrderByDescending(x => x.Urgency).ThenBy(x => x.DueDays).Take(5).ToList();
             viewModel.ReminderMakeUpForVehicle = new ReminderMakeUpForVehicle
             {
                 NotUrgentCount = reminders.Where(x => x.Urgency == ReminderUrgency.NotUrgent).Count(),

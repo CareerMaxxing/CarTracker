@@ -1,0 +1,47 @@
+@using CarCareTracker.Helper
+@inject IConfigHelper config
+@inject ITranslationHelper translator
+@model List<ReminderRecordViewModel>
+@{
+    var userConfig = config.GetUserConfig(User);
+    var userLanguage = userConfig.UserLanguage;
+    string BadgeClassFor(ReminderUrgency urgency) => urgency switch
+    {
+        ReminderUrgency.PastDue => "status-badge-spotlight",
+        ReminderUrgency.VeryUrgent => "status-badge-danger",
+        ReminderUrgency.Urgent => "status-badge-warning",
+        _ => "status-badge-neutral"
+    };
+    // Matches this app's existing translation-key convention for these exact labels
+    // (Views/Vehicle/Reminder/_ReminderRecords.cshtml, Views/Kiosk/_Kiosk.cshtml) rather than
+    // translating the raw enum name.
+    string LabelFor(ReminderUrgency urgency) => urgency switch
+    {
+        ReminderUrgency.PastDue => "Past Due",
+        ReminderUrgency.VeryUrgent => "Very Urgent",
+        ReminderUrgency.Urgent => "Urgent",
+        _ => "Not Urgent"
+    };
+}
+<div class="report-widget-card">
+    <span class="report-widget-label">@translator.Translate(userLanguage, "Planned Maintenance")</span>
+    @if (Model.Any())
+    {
+        <ul class="report-widget-list">
+            @foreach (var reminder in Model)
+            {
+                <li class="report-widget-list-item">
+                    <span class="status-badge @BadgeClassFor(reminder.Urgency)">@translator.Translate(userLanguage, LabelFor(reminder.Urgency))</span>
+                    <span class="report-widget-list-item-text">
+                        <strong>@reminder.Description</strong>
+                        <small>@(reminder.Metric == ReminderMetric.Date ? reminder.Date.ToShortDateString() : reminder.Mileage.ToString("N0"))</small>
+                    </span>
+                </li>
+            }
+        </ul>
+    }
+    else
+    {
+        <span class="report-widget-value-empty">@translator.Translate(userLanguage, "No Data")</span>
+    }
+</div>

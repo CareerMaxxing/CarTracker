@@ -2169,6 +2169,43 @@ td[data-column="description"] {
     margin-top: var(--ct-space-2);
 }
 
+/* Phase 16, Increment 9 — Planned Maintenance list variant of .report-widget-card. First real
+   adoption of the .status-badge-spotlight primitive (docs/UI_SPEC.md) for its originally-documented
+   use case ("e.g. an overdue reminder on a Garage card") - it existed but had no caller until now. */
+.report-widget-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ct-space-2);
+}
+
+.report-widget-list-item {
+    display: flex;
+    align-items: baseline;
+    gap: var(--ct-space-2);
+}
+
+.report-widget-list-item-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+    .report-widget-list-item-text strong {
+        font-size: 0.85rem;
+        font-weight: 500;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .report-widget-list-item-text small {
+        color: var(--bs-secondary-color);
+        font-size: 0.75rem;
+    }
+
 /* Phase 5 — the chapter-divider pattern (Senna feature, p.66 etc: full-bleed solid colour band,
    bold two-tone name typography) doesn't map cleanly onto most of this app - Car Tracker doesn't
    have sub-narratives within one feature the way a magazine profile interviews multiple people

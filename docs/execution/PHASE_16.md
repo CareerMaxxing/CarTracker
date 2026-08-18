@@ -1028,3 +1028,110 @@ STOP CONDITION: Both states verified against real vehicle data specifically (thi
 
 Complete, both states verified against real vehicle data with an exact-value match on the populated
 case. **Not yet visually verified** - same standing caveat as every increment in this phase.
+
+## Increment 9: Planned Maintenance widget
+
+### Task packet
+
+```
+TASK ID: PHASE-16-09
+TITLE: Add a Planned Maintenance list to the Dashboard widget row, reusing IReminderHelper's
+  already-computed urgency output
+OBJECTIVE: Surface upcoming/overdue reminders directly on the Dashboard, sorted by urgency then due
+  date - the first widget-row card that's a list rather than a stat+sparkline.
+INPUTS: Helper/ReminderHelper.cs's GetReminderRecordViewModels (already computes Urgency/DueDays/
+  DueMileage per reminder - confirmed the exact shape by reading the method, not assumed),
+  Controllers/Vehicle/ReportController.cs's existing GetReportPartialView action (already calls
+  GetRemindersAndUrgency and computes the full reminder list in memory, but previously only kept the
+  aggregate COUNTS for the pie chart - the per-reminder list itself was computed then discarded).
+ALLOWED SCOPE: A new ReportViewModel.UpcomingReminders field + one line in the controller assigning it
+  from the already-computed `reminders` variable (sorted/truncated) - a small, justified model/
+  controller change, not a pure Razor/CSS increment like 7-8, but the underlying computation itself is
+  not new. One new partial (Report/_PlannedMaintenanceWidget.cshtml), new .report-widget-list* CSS.
+NON-SCOPE: Any change to the existing reminder urgency pie chart (_ReminderMakeUpReport.cshtml,
+  untouched) or the full Reminders tab.
+IMPLEMENTATION REQUIREMENTS:
+  - Controller: `viewModel.UpcomingReminders = reminders.OrderByDescending(x => x.Urgency)
+    .ThenBy(x => x.DueDays).Take(5).ToList();` - sorting/truncation done once in the controller, not
+    the view, keeping the partial itself dumb (just renders a pre-sorted list), consistent with how
+    every other ReportViewModel field is already fully-prepared before reaching the view.
+  - Badge classes: first real adoption of `.status-badge-spotlight` for its originally-documented
+    purpose - the CSS comment introducing it literally says "e.g. an overdue reminder on a Garage
+    card," written when the primitive was built but never actually wired to a real caller until now.
+    PastDue -> spotlight, VeryUrgent -> danger, Urgent -> warning, NotUrgent -> neutral.
+  - Badge label text: `reminder.Urgency.ToString()` (raw enum name) was rejected in favor of matching
+    this app's own established translation-key convention for these exact urgency labels ("Past Due",
+    "Very Urgent", "Urgent", "Not Urgent" - found already in use in
+    Views/Vehicle/Reminder/_ReminderRecords.cshtml and Views/Kiosk/_Kiosk.cshtml) - a small but real
+    correctness fix over the naive enum-to-string approach, caught before it shipped.
+  - Due text: `reminder.Metric == ReminderMetric.Date ? reminder.Date.ToShortDateString() :
+    reminder.Mileage` - matches the exact existing convention already used in the full Reminders
+    table (_ReminderRecords.cshtml), not invented fresh.
+  - List variant reuses the same outer `.report-widget-card` wrapper as Increments 7-8's stat cards
+    (confirmed its flex-column layout accommodates a list of children just as well as a single big
+    stat value - no need for a structurally different card shape, despite flagging this as worth
+    checking in STATE.md before starting).
+DELIVERABLES: A working Planned Maintenance list, both empty and populated states verified against
+  real rendering, including the badge/urgency mapping specifically.
+ACCEPTANCE CRITERIA:
+  - dotnet build: 0 errors. dotnet test: 10/10 passing.
+  - Both real vehicles (neither has any reminders yet) render the "No Data" empty state correctly -
+    confirmed real, not assumed, and NOT confused with unrelated pre-existing `.status-badge-*` usage
+    already present elsewhere on the same page (Government Data panel - see below).
+  - A throwaway past-due reminder added to a real vehicle renders in the list with the correct
+    "Past Due" label and `.status-badge-spotlight` class - the actual urgency computation and badge
+    mapping verified end-to-end, not just "some list item appeared."
+  - No regression on either vehicle's full page or /css/site.css's brace balance.
+VALIDATION COMMANDS:
+  dotnet build
+  dotnet test Tests/CarCareTracker.Tests.csproj
+  dotnet run --urls http://localhost:5300 --no-build (background)
+  curl http://localhost:5300/Vehicle/GetReportPartialView?vehicleId=1   (empty state initially)
+  curl -X POST http://localhost:5300/api/vehicle/reminders/add?vehicleId=1 ... (throwaway, past-due)
+  curl http://localhost:5300/Vehicle/GetReportPartialView?vehicleId=1   (populated, verify badge)
+  curl -X DELETE http://localhost:5300/api/vehicle/reminders/delete?id={throwaway}   (cleanup, always)
+  curl http://localhost:5300/Vehicle/Index?vehicleId=1
+  curl http://localhost:5300/Vehicle/Index?vehicleId=2
+  curl http://localhost:5300/css/site.css
+STOP CONDITION: The throwaway reminder's exact urgency/badge mapping verified (not just "a row
+  appeared"), then deleted and the empty state reconfirmed, before this increment is considered done.
+```
+
+### What was done
+
+1. Read `ReminderHelper.GetReminderRecordViewModels` and `ReportController.GetReportPartialView`
+   before assuming a data source existed - found the full per-reminder list (with Urgency/DueDays/
+   DueMileage already computed) was already being calculated in the controller, just discarded after
+   extracting only the aggregate counts for the pie chart. Added
+   `ReportViewModel.UpcomingReminders` and one controller line to keep the already-computed list
+   instead of throwing it away - not a new computation, just no longer discarding an existing one.
+2. Built `Report/_PlannedMaintenanceWidget.cshtml` as a list variant of the `.report-widget-card`
+   pattern - confirmed the existing flex-column card layout accommodates a list of rows just as well
+   as a single stat value, no structurally different card needed.
+3. While writing the badge label text, caught a real small mistake before it shipped: translating
+   `reminder.Urgency.ToString()` (the raw enum name, e.g. "PastDue" with no space) would have produced
+   an ugly, inconsistent label. Checked this app's own existing conventions first
+   (`_ReminderRecords.cshtml`, `_Kiosk.cshtml`) and matched their exact established translation-key
+   strings ("Past Due", "Very Urgent", etc.) instead.
+4. Wired the badge CSS classes to `.status-badge-spotlight`/`-danger`/`-warning`/`-neutral` - the first
+   real adoption of `.status-badge-spotlight` for the exact use case its own introducing comment named
+   ("an overdue reminder on a Garage card") but had never actually been wired up for.
+5. Verified the empty state against both real vehicles (neither has any reminders yet) - and while
+   checking for stray `.status-badge` matches in the rendered output to confirm nothing was
+   miscounted, found and correctly attributed 4 UNRELATED `.status-badge-*` usages already present on
+   the same page from the existing Government Data panel (Phase 8's mocked DVLA/DVSA work) - meaning
+   this CSS primitive's own "not yet adopted by any view" comment is actually stale documentation
+   predating that phase, not a bug in this increment. Didn't "fix" the stale comment (out of scope,
+   not asked, would be scope creep beyond this increment).
+6. Verified the populated branch for real: added a throwaway past-due reminder to vehicle 1 via
+   `/api/vehicle/reminders/add`, confirmed it rendered with exactly the "Past Due" label and
+   `.status-badge-spotlight` class (the actual urgency computation and badge mapping, not just "a row
+   appeared") - then deleted it and reconfirmed the empty state was restored.
+7. Regression pass: `dotnet build` (0 errors), `dotnet test` (10/10), both vehicles' pages still load,
+   `/css/site.css` still balanced (441/441).
+
+### Result
+
+Complete, with a real small correctness catch (translation-key convention over raw enum names) made
+before shipping, and both states verified against real rendering including the specific urgency/badge
+mapping. **Not yet visually verified** - same standing caveat as every increment in this phase.
