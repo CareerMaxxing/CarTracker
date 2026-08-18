@@ -121,6 +121,12 @@ function saveSetup() {
             UrgentDistance: $("#inputUrgentDistance").val(),
             VeryUrgentDistance: $("#inputVeryUrgentDistance").val()
         },
+        DVSAConfig: {
+            TenantId: $("#inputDVSATenantId").val(),
+            ClientId: $("#inputDVSAClientId").val(),
+            ClientSecret: $("#inputDVSAClientSecret").val(),
+            ApiKey: $("#inputDVSAApiKey").val()
+        },
         DefaultReminderEmail: $("#inputDefaultReminderEmail").val(),
         EnableRootUserOIDC: $("#inputOIDCRootUser").val(),
         KestrelAppConfig: {
@@ -174,6 +180,10 @@ function saveSetup() {
     if ($("#skipHTTPS").is(":checked")) {
         setupData["KestrelAppConfig"] = null;
         setupData.SkippedSettings.push('HTTPS');
+    }
+    if ($("#skipDVSA").is(":checked")) {
+        setupData["DVSAConfig"] = null;
+        setupData.SkippedSettings.push('DVSA');
     }
     let rootUserOIDC = $("#inputOIDCRootUser");
     if (rootUserOIDC.length > 0) {

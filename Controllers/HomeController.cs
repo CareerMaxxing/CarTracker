@@ -704,6 +704,7 @@ namespace CarCareTracker.Controllers
                 OpenRegistration = _config.GetServerOpenRegistration(),
                 DisableRegistration = _config.GetServerDisabledRegistration(),
                 ReminderUrgencyConfig = _config.GetReminderUrgencyConfig(),
+                DVSAConfig = _config.GetDVSAConfig(),
                 EnableAuth = _config.GetServerAuthEnabled(),
                 DefaultReminderEmail = _config.GetDefaultReminderEmail(),
                 EnableRootUserOIDC = _config.GetEnableRootUserOIDC(),

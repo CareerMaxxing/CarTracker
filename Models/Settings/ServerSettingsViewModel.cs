@@ -19,6 +19,7 @@ namespace CarCareTracker.Models
         public bool OpenRegistration { get; set; }
         public bool DisableRegistration { get; set; }
         public ReminderUrgencyConfig ReminderUrgencyConfig { get; set; } = new ReminderUrgencyConfig();
+        public DVSAConfig DVSAConfig { get; set; } = new DVSAConfig();
         public string DefaultReminderEmail { get; set; } = string.Empty;
         public bool EnableRootUserOIDC { get; set; }
         public bool EnableAuth { get; set; }

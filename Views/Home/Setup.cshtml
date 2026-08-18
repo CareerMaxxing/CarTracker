@@ -449,6 +449,34 @@
                 <label for="inputVeryUrgentDistance">@translator.Translate(userLanguage, "Very Urgent(Distance)")</label>
                 <input type="number" inputmode="numeric" id="inputVeryUrgentDistance" class="form-control" placeholder="@translator.Translate(userLanguage, "Not Configured")" value="@Model.ReminderUrgencyConfig.VeryUrgentDistance">
             </div>
+            <hr />
+            <div class="mb-2">
+                <span class="display-6">@translator.Translate(userLanguage, "DVSA MOT History API")</span>
+            </div>
+            <div class="form-group">
+                <label for="inputDVSATenantId">@translator.Translate(userLanguage, "Tenant Id")</label>
+                <div class="input-group">
+                    <input type="text" id="inputDVSATenantId" class="form-control" placeholder="@translator.Translate(userLanguage, "Not Configured")" value="@Model.DVSAConfig.TenantId">
+                    <div class="input-group-text">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="skipDVSA" @(Model.SkippedSettings.Contains(SkippedSetting.DVSA) ? "checked" : "")>
+                            <label class="form-check-label" for="skipDVSA">@translator.Translate(userLanguage, "Skip")</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="inputDVSAClientId">@translator.Translate(userLanguage, "Client Id")</label>
+                <input type="text" id="inputDVSAClientId" class="form-control" placeholder="@translator.Translate(userLanguage, "Not Configured")" value="@Model.DVSAConfig.ClientId">
+            </div>
+            <div class="form-group">
+                <label for="inputDVSAClientSecret">@translator.Translate(userLanguage, "Client Secret")</label>
+                <input type="password" id="inputDVSAClientSecret" class="form-control" placeholder="@translator.Translate(userLanguage, "Not Configured")" value="@Model.DVSAConfig.ClientSecret">
+            </div>
+            <div class="form-group">
+                <label for="inputDVSAApiKey">@translator.Translate(userLanguage, "API Key")</label>
+                <input type="password" id="inputDVSAApiKey" class="form-control" placeholder="@translator.Translate(userLanguage, "Not Configured")" value="@Model.DVSAConfig.ApiKey">
+            </div>
         </form>
     </div>
     <div class="setup-wizard-content flex-grow-1" data-page="7" style="display:none;">

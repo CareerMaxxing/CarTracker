@@ -5,6 +5,7 @@
         SMTP = 0,
         OIDC = 1,
         Postgres = 2,
-        HTTPS = 3
+        HTTPS = 3,
+        DVSA = 4
     }
 }

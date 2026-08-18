@@ -22,6 +22,7 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
 | 14 | V1 Hardening | Unit/integration/UI/migration/duplicate-operation/adapter-failure/backup-restore tests, error handling, accessibility, responsive validation, performance, security review. | 🟡 In progress — Increment 1 (security review): real static-file auth bypass + unrestricted upload fixed. Increment 2 (automated tests): xUnit + WebApplicationFactory project stood up, 10 passing tests. Increment 3 (accessibility): all 41 modals audited, aria-labelledby wired on 39, 2 real duplicate-id bugs found and fixed (PHASE_14.md). Icon buttons/keyboard-nav/labels/mobile/performance still open |
 | 15 | Remote Access & Persistent Hosting | Reach the existing app from the user's phone with the same live data as the PC, over a private Tailscale network — no new sync architecture, single server + existing SignalR live updates. Revisits CLAUDE.md's localhost-only/no-cloud-deployment decisions with the human owner's explicit sign-off. | ✅ Complete — Windows Service hosting readiness, publish+register bound to 127.0.0.1:5299 with real data carried over, Tailscale reachability (`https://legion.tail80af14.ts.net/`) verified from the phone over mobile data with wifi off, and a proper PWA install on the phone (Chrome "Install app", Samsung battery/VPN settings tuned for reliability) (PHASE_15.md). Auth enablement explicitly declined by the user — device-level protection + Tailscale's own device authorization judged sufficient; not re-raised unless the user brings it up again |
 | 16 | Sidebar App Shell & Dashboard Redesign | Restructure navigation from a top tab-strip + all-vehicles Garage-grid homepage to a persistent left sidebar, matching a mockup's editorial aesthetic (already close in spirit to the existing Zara + Magneto design system). Intentionally reverses UI_TRANSITION.md's explicit "keep Home/Vehicle nav separate" decision, with the user's sign-off. Visual/layout pass only this phase — new widgets use real existing data; Trips/fuel-gauge/month-over-month%/fleet-stats are flagged as candidate future phases, not built now. | ✅ Complete — all 11 increments shipped: sidebar shell + vehicle switcher (1-3b), landing-page redirect built then explicitly reverted per direct user feedback (4), Dashboard hero rebuild fixing a real photo-less-vehicle gap (5), Quick Actions tiles fixing a real "3 of 4 would silently do nothing" bug (6), and the four widget-row cards — Fuel Economy sparkline, Total Spent, Planned Maintenance, Recent Activity — plus a promo tile (7-11), each verified against real vehicle data. **Found a real deployment gap after "completion": all 11 increments were only ever verified against the dev instance, never actually deployed to the production service the user's phone reaches — fixed via the same elevated stop/publish/start sequence as Phase 15, independently verified via the real Tailscale URL. User confirmed live on their phone: "spot on."** (PHASE_16.md) |
+| 17 | Real MOT History & Advisory Tracking | Pull the vehicle's full MOT history (not just the latest test), extract every advisory/failure across all past tests into tracked Planner items with recurring-advisory detection and a lighter "mark resolved" status. Revisits CLAUDE.md's "mocked DVLA/DVSA adapters only" locked decision with the human owner's explicit sign-off — switches to real DVSA MOT History API data. | 🟡 In progress — Increment 1 (DVSA credential plumbing: DVSAConfig + Setup UI fields, following the MailConfig/OpenIDConfig pattern exactly) complete, build/tests/curl-verified (PHASE_17.md) |
 
 ## Human review checkpoints
 
@@ -39,7 +40,10 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
 - Phase 14 (V1 Hardening) Increment 1 (Security Review): user chose this as first priority; found and fixed a real static-file auth bypass + unrestricted upload, both approved by the user and curl-verified. ✅ done.
 - Phase 14 Increment 2 (Automated Tests): user chose this next; stood up the xUnit/WebApplicationFactory project deferred since Phase 7, 10 tests passing covering the highest-risk flows identified across prior phases. ✅ done.
 - Phase 14 Increment 3 (Accessibility - modals): background code audit found 4 issue categories; user chose the narrowest scope (modal aria-labelledby only). All 41 modals audited, 39 wired correctly, 2 real duplicate-id bugs fixed along the way. ✅ done. **← next: more Phase 14 increments (icon-button labels/keyboard-nav/mobile/performance) or user's next priority**
-- Before real DVLA/DVSA adapters: approve credential/API architecture.
+- Before real DVLA/DVSA adapters: approve credential/API architecture. ✅ done — user chose real DVSA
+  data now (Phase 17); architecture (live-config-read adapter, OAuth2 client-credentials + X-API-Key,
+  ServerConfig-pattern credential storage) reviewed by a Plan agent and the agent directly before
+  implementation started.
 - Before V1: final system review.
 - Phase 15 (Remote Access & Persistent Hosting): user explicitly authorized revisiting the
   localhost-only/no-cloud-deployment locked decisions in conversation and chose Tailscale over
@@ -69,6 +73,19 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
   instance, never actually deployed to the production service the user's phone reaches - fixed via the
   same elevated stop/publish/start sequence as Phase 15, independently verified via the real Tailscale
   URL. **User confirmed live on their phone: "spot on." Phase 16 complete.**
+- Phase 17 (Real MOT History & Advisory Tracking): user asked to expand MOT tracking (full history,
+  Planner items per advisory, recurring-advisory detection, crossed-off resolution). Same EnterPlanMode/
+  Explore-agent/AskUserQuestion/Plan-agent-review process as Phase 15/16. Three real decisions made by
+  the user, not assumed: (1) switch to real DVSA MOT History API data now rather than staying on the
+  mocked adapter - the locked CLAUDE.md decision this phase revisits; (2) MOT-linked Planner items
+  resolve via a new lighter "mark resolved" status, not the existing Done→auto-ServiceRecord pipeline;
+  (3) advisories already resolved before the feature existed (the user's tyres) get a one-time manual
+  cleanup pass, not automated fuzzy-matching. A Plan-agent design review (before implementation started)
+  found `PlanProgress` is load-bearing in the Kanban board's six hardcoded swimlanes and the API's
+  validation - confirmed the "resolved" concept must be an orthogonal field, not a 7th enum value - and
+  confirmed Postgres storage (`PlanRecord` as a single jsonb blob) makes new POCO fields free on both
+  backends. Increment 1 (DVSA credential plumbing) complete. Full increment-by-increment detail in
+  `PHASE_17.md`.
 
 ## Core V1 acceptance scenario
 

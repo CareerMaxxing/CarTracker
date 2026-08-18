@@ -59,6 +59,10 @@ namespace CarCareTracker.Models
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public ReminderUrgencyConfig? ReminderUrgencyConfig { get; set; }
 
+        [JsonPropertyName("DVSAConfig")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public DVSAConfig? DVSAConfig { get; set; }
+
         [JsonPropertyName("LUBELOGGER_OPEN_REGISTRATION")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public bool? OpenRegistration { get; set; }

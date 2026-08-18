@@ -11,6 +11,7 @@ namespace CarCareTracker.Helper
         OpenIDConfig GetOpenIDConfig();
         ReminderUrgencyConfig GetReminderUrgencyConfig();
         MailConfig GetMailConfig();
+        DVSAConfig GetDVSAConfig();
         bool GetAutomatedEventsEnabled();
         NotificationConfig GetNotificationConfig();
         UserConfig GetUserConfig(ClaimsPrincipal user);
@@ -149,6 +150,11 @@ namespace CarCareTracker.Helper
         {
             MailConfig mailConfig = _config.GetSection("MailConfig").Get<MailConfig>() ?? new MailConfig();
             return mailConfig;
+        }
+        public DVSAConfig GetDVSAConfig()
+        {
+            DVSAConfig dvsaConfig = _config.GetSection("DVSAConfig").Get<DVSAConfig>() ?? new DVSAConfig();
+            return dvsaConfig;
         }
         public List<SkippedSetting> GetSkippedSettings()
         {
@@ -296,6 +302,10 @@ namespace CarCareTracker.Helper
             if (string.IsNullOrWhiteSpace(serverConfig.OIDCConfig?.Name ?? string.Empty))
             {
                 serverConfig.OIDCConfig = null;
+            }
+            if (string.IsNullOrWhiteSpace(serverConfig.DVSAConfig?.ClientId ?? string.Empty))
+            {
+                serverConfig.DVSAConfig = null;
             }
             if (serverConfig.OpenRegistration.HasValue && !serverConfig.OpenRegistration.Value)
             {

@@ -5,56 +5,48 @@ conversation history.
 
 ```
 PROJECT STATUS
-Current phase:      Phase 16 — Sidebar App Shell & Dashboard Redesign — ✅ COMPLETE, confirmed live by
-                     the user ("spot on")
-Current task:       None - phase finished, including production deployment. See docs/execution/
-                     PHASE_16.md for full increment-by-increment detail and docs/execution/DEFERRED.md
-                     for nothing new (this phase left no loose ends - all 11 increments shipped).
-Status:             All 11 increments complete and committed (b669299, b50f3e1, b9ab158, 4a4df63,
-                     72ba466, dda1d24, 0cc6271, 7d71eec, ac74289, b0e5aeb, 8e2c5a6, 18d45fe). After
-                     the 11th increment, a real deployment gap was found: every increment had only
-                     been verified against the dev instance (dotnet run, port 5300) - never actually
-                     deployed to the production Windows Service (C:\Services\CarTracker) the user's
-                     phone reaches via Tailscale. The production binary hadn't been rebuilt since
-                     Phase 15. User checked their phone expecting the new Dashboard and saw the old UI
-                     - a real process gap this session owns (verifying against dev is not the same as
-                     the work being live). User was away from their PC at the time; deployment was
-                     deliberately paused (production service left running as-is) rather than risk an
-                     unattended stop/start. Once the user was back home: user ran `sc.exe stop
-                     CarTracker`, agent independently confirmed STATE: 1 STOPPED before proceeding
-                     (not just trusted the report), agent ran `dotnet publish CarCareTracker.csproj -c
-                     Release -o "C:/Services/CarTracker"` (scoped to the main project only - did not
-                     repeat the bare-`dotnet publish`-pulls-in-Tests mistake from the original Phase 15
-                     deployment), confirmed the data folder untouched and the binary timestamp
-                     updated, user ran `sc.exe start CarTracker`, agent independently verified via curl
-                     against BOTH 127.0.0.1:5299 AND the real https://legion.tail80af14.ts.net
-                     Tailscale URL (not just localhost) that the new sidebar/widget markup was being
-                     served and both real vehicles' data was intact. User confirmed live on their
-                     phone: "spot on." This is the first genuine end-to-end visual confirmation of
-                     Phase 16's work.
+Current phase:      Phase 17 — Real MOT History & Advisory Tracking — 🟡 IN PROGRESS
+Current task:       Increment 1 (DVSA credential plumbing) complete. Next: Increment 2 (RealDVSAAdapter
+                     - OAuth2 token fetch/cache + the actual API call, live-config-selected in place of
+                     MockDVSAAdapter, plus the small DVSAMotComment.Dangerous field addition and the
+                     CLAUDE.md locked-decision update). See docs/execution/PHASE_17.md for full
+                     increment-by-increment detail.
+Status:             Increment 1 done and verified: DVSAConfig model + ServerConfig nested property +
+                     IConfigHelper.GetDVSAConfig() (reads live per-call, no restart needed - matches
+                     the existing MailConfig/OpenIDConfig convention) + Setup UI fields (Tenant Id/
+                     Client Id/Client Secret/API Key + a Skip toggle) added to the existing
+                     "Miscellaneous" wizard page rather than a new wizard page. Build clean (0 warn/0
+                     err), all 10 pre-existing tests still pass, curl-verified the fields render, a
+                     throwaway POST round-tripped correctly into data/config/serverConfig.json (reset
+                     to {} afterward - throwaway test data, not real config). A Plan-agent design
+                     review ran before this increment started and reshaped the plan meaningfully: found
+                     PlanProgress is load-bearing in the Kanban board (6 hardcoded swimlanes,
+                     Views/Vehicle/Plan/_PlanRecords.cshtml lines 9-14) and the API's validation
+                     (Controllers/API/PlanController.cs) - confirmed the later "mark resolved" concept
+                     (Increment 6) must be an orthogonal field, not a 7th enum value; found Postgres
+                     stores PlanRecord as a single jsonb blob (no EF Core/migrations anywhere) so new
+                     POCO fields are free on both backends; found the dedup-key field (Increment 5)
+                     should follow the ReminderRecordId precedent (system-internal, excluded from the
+                     user-facing edit form) rather than go in the user-editable ExtraFields; reordered
+                     the advisory-text-normalization step to happen BEFORE the Planner-linkage actions
+                     that depend on it, not after.
 Last completed:      Phase 16 (Sidebar App Shell & Dashboard Redesign) - all 11 increments, deployed to
                      production, confirmed live by the user. Phase 15 (Remote Access & Persistent
                      Hosting) before that - all 5 increments resolved (4 explicitly declined by the
                      user, not skipped). Phase 14's remaining areas (icon-button labels, keyboard nav,
                      form labels, alt text, mobile/responsive validation, performance) are still open,
-                     not abandoned - Phase 15 and 16 were both started because the user raised new,
+                     not abandoned - Phase 15, 16, and 17 were all started because the user raised new,
                      higher-priority requests, not because Phase 14 finished.
-Next task:           None decided yet - user asked "what have we got left" and was given the full
-                     list (see below), no explicit pick made yet. Candidates in the order presented:
-                     (1) MOT expansion - full MOT history -> tracked Planner items with recurring-
-                     advisory detection (tyres example). Not started. Has one real fork to resolve
-                     first: this app's DVSA integration is currently a MOCKED adapter (deterministic
-                     fake data), not the user's real MOT history - building this against real advisory
-                     text describing the user's actual car means the mock-vs-real-DVSA decision (a
-                     locked CLAUDE.md decision requiring explicit sign-off, a listed ROADMAP.md human
-                     review checkpoint) needs to be made explicitly when this starts, not assumed. Full
-                     requirements already captured in memory (project_mot_expansion.md). (2) Phase 14's
-                     remaining hardening areas - see Known blockers below and DEFERRED.md for exact
-                     file pointers. (3) AI/OCR invoice scanning - the feature the user flagged as "an
-                     addition later" back when Phase 15 started. Still fully deferred, nothing built,
-                     no extension points exist yet. Ask the user which they want next rather than
-                     assume the order above is a priority ranking - it was presented as a menu, not a
-                     plan.
+Next task:           Phase 17 Increment 2 (RealDVSAAdapter). Requires reconfirming the exact current
+                     DVSA MOT History API REST endpoint path against live docs at
+                     documentation.history.mot.api.gov.uk at implementation time - prior research did
+                     not fully pin this down (an older/deprecated doc showed a different host/path).
+                     Also requires the user to complete their own DVSA API self-service registration
+                     before real-data behavior can be end-to-end verified - not blocking on Increment 2
+                     itself shipping, since the live-config fallback means it ships and is fully
+                     testable against the existing mock regardless of that timing. Other open items,
+                     unchanged from before Phase 17 started: Phase 14's remaining hardening areas (see
+                     Known blockers/DEFERRED.md), and AI/OCR invoice scanning (still fully deferred).
 Known blockers:      1. No browser/screenshot tool in this environment - Phase 14's remaining
                         accessibility work would still need static-code-audit + curl verification,
                         not live screen-reader/keyboard testing.
@@ -130,19 +122,21 @@ Do not:              Assume Phase 14 is "done" - three increments complete (secu
                      ran. dotnet run from the dev repo still works for development but now operates on
                      a separate, diverging dataset - be explicit with the user about which copy
                      they're looking at if this ever comes up.
-Last validation:     Phase 15 + Phase 16's full dev-instance validation history lives in
-                     docs/execution/PHASE_15.md / PHASE_16.md. Production deployment validation
-                     (2026-08-19, the real confirmation): sc.exe query confirmed STATE: 1 STOPPED
-                     before publish, dotnet publish scoped to CarCareTracker.csproj only, data/ folder
-                     confirmed untouched, binary timestamp confirmed updated, sc.exe query confirmed
-                     STATE: 4 RUNNING after restart, curl against 127.0.0.1:5299 AND the real
-                     https://legion.tail80af14.ts.net Tailscale URL both confirmed the new sidebar/
-                     widget markup present and both real vehicles' data intact. User confirmed live on
-                     their own phone: "spot on."
-Last commit:         18d45fe — "Phase 16 Increment 11: Magneto-motif promo tile (last increment)" —
-                     2026-08-18. This was the last code commit of Phase 16; the production deployment
-                     itself (2026-08-19) involved no code changes, only publishing already-committed
-                     code, so no new commit was needed for that step.
+Last validation:     Phase 17 Increment 1 (2026-08-19): dotnet build (0 warn/0 err after killing a
+                     stale dev-instance process from a prior session holding the build lock), dotnet
+                     test (10/10 passing, no regressions), dev instance on port 5300 (not the
+                     production 5299 service) curl-verified /setup renders the 4 new fields + skip
+                     toggle, a throwaway POST round-tripped into data/config/serverConfig.json
+                     correctly and was reset to {} afterward, GetDVSAConfig() confirmed to return a
+                     non-null default when unconfigured. Not yet deployed to production - this
+                     increment is plumbing-only, no user-visible behavior change; production deployment
+                     is planned once a coherent, user-facing subset of Phase 17 is ready. Phase 15 +
+                     Phase 16's full validation history (including the 2026-08-19 production deployment
+                     that confirmed Phase 16 live on the user's phone) remains in docs/execution/
+                     PHASE_15.md / PHASE_16.md.
+Last commit:         Phase 17 Increment 1 not yet committed as of this STATE.md update - see
+                     docs/execution/PHASE_17.md. Prior commit: 52256f2 — "Phase 16 truly complete:
+                     production deployment confirmed live by user" — 2026-08-19.
 ```
 
 ## Completed initiative: Zara + Magneto UI overhaul (separate from the roadmap above)
