@@ -21,7 +21,7 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
 | 13 | AI/OCR | Explicitly deferred. Leave clean extension points only; no feature work. | ✅ Confirmed deferred — no AI/OCR code exists anywhere in the codebase (verified by grep); see PHASE_13.md |
 | 14 | V1 Hardening | Unit/integration/UI/migration/duplicate-operation/adapter-failure/backup-restore tests, error handling, accessibility, responsive validation, performance, security review. | 🟡 In progress — Increment 1 (security review): real static-file auth bypass + unrestricted upload fixed. Increment 2 (automated tests): xUnit + WebApplicationFactory project stood up, 10 passing tests. Increment 3 (accessibility): all 41 modals audited, aria-labelledby wired on 39, 2 real duplicate-id bugs found and fixed (PHASE_14.md). Icon buttons/keyboard-nav/labels/mobile/performance still open |
 | 15 | Remote Access & Persistent Hosting | Reach the existing app from the user's phone with the same live data as the PC, over a private Tailscale network — no new sync architecture, single server + existing SignalR live updates. Revisits CLAUDE.md's localhost-only/no-cloud-deployment decisions with the human owner's explicit sign-off. | ✅ Complete — Windows Service hosting readiness, publish+register bound to 127.0.0.1:5299 with real data carried over, Tailscale reachability (`https://legion.tail80af14.ts.net/`) verified from the phone over mobile data with wifi off, and a proper PWA install on the phone (Chrome "Install app", Samsung battery/VPN settings tuned for reliability) (PHASE_15.md). Auth enablement explicitly declined by the user — device-level protection + Tailscale's own device authorization judged sufficient; not re-raised unless the user brings it up again |
-| 16 | Sidebar App Shell & Dashboard Redesign | Restructure navigation from a top tab-strip + all-vehicles Garage-grid homepage to a persistent left sidebar with a single-current-vehicle-focused Dashboard, matching a mockup's editorial aesthetic (already close in spirit to the existing Zara + Magneto design system). Intentionally reverses UI_TRANSITION.md's explicit "keep Home/Vehicle nav separate" decision, with the user's sign-off. Visual/layout pass only this phase — new widgets use real existing data; Trips/fuel-gauge/month-over-month%/fleet-stats are flagged as candidate future phases, not built now. | 🟡 In progress — Increments 1-3 complete, user reviewed Increment 3 live ("bang on, continue"). Increment 3b (vehicle switcher, reusing the existing GetVehicleSelector filtering pattern) structurally complete — discovered this household actually has two real vehicles (BMW Z4 + Volvo S80), the first genuine multi-vehicle test case this phase has had (PHASE_16.md). Awaiting visual confirmation that clicking a different vehicle actually navigates correctly, before Increment 4 (landing-page routing) starts |
+| 16 | Sidebar App Shell & Dashboard Redesign | Restructure navigation from a top tab-strip + all-vehicles Garage-grid homepage to a persistent left sidebar with a single-current-vehicle-focused Dashboard, matching a mockup's editorial aesthetic (already close in spirit to the existing Zara + Magneto design system). Intentionally reverses UI_TRANSITION.md's explicit "keep Home/Vehicle nav separate" decision, with the user's sign-off. Visual/layout pass only this phase — new widgets use real existing data; Trips/fuel-gauge/month-over-month%/fleet-stats are flagged as candidate future phases, not built now. | 🟡 In progress — Increments 1-3b complete (nav port + vehicle switcher, verified against the real two-vehicle household). Increment 4 (landing page routes to the current vehicle's Dashboard instead of the Garage grid) structurally complete — caught and solved a real design trap before writing code (an unconditional redirect would have made the Garage grid unreachable forever), verified against 4 real scenarios including invalid-id fallback and preference-respecting redirects, not just the happy path (PHASE_16.md). This is a genuine UX shift, not just a markup port — real visual/UX review needed before continuing to the Dashboard widget increments |
 
 ## Human review checkpoints
 
@@ -73,9 +73,17 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
   (vehicle switcher): reused the existing GetVehicleSelector filtering pattern (built for an unrelated
   "duplicate record to another vehicle" feature) rather than re-deriving vehicle-access rules;
   discovered along the way that this household has two real vehicles, the first genuine multi-vehicle
-  test case this phase has exercised. **Next: user needs to confirm the switcher actually navigates
-  correctly when clicked (curl confirms the pieces work independently, not the full click-through)
-  before Increment 4 (landing-page routing to the current vehicle's Dashboard) starts.**
+  test case this phase has exercised. User said "continue" (read as approval). Increment 4 (landing
+  page routes to the current vehicle's Dashboard): caught a real design trap before coding it - an
+  unconditional redirect would have made the Garage grid permanently unreachable, since every "back to
+  Home" link would just bounce forward again. Solved with an explicit showGarage=true opt-out,
+  grepping the whole wwwroot tree first to find every existing bare-/Home navigation (login.js,
+  vehicle.js's delete flow) and deliberately leaving those two unchanged, since landing on the new
+  dashboard-first experience is correct for both. Verified against 4 real scenarios (default redirect,
+  explicit garage bypass, respects a specific stored preference, invalid-id fallback), not just the
+  happy path. **Next: this is a genuine UX shift (what happens when you open the app), not just a
+  markup port like Increments 2-3b - needs real visual/UX review, not a rubber-stamp, before
+  continuing to the Dashboard widget increments (5-11).**
 
 ## Core V1 acceptance scenario
 

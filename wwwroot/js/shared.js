@@ -6,7 +6,7 @@
 const mobileScreen = window.matchMedia("(max-width: 575px)");
 var eventHubConn = undefined;
 function returnToGarage() {
-    window.location.href = '/Home';
+    window.location.href = '/Home?showGarage=true';
 }
 var vehicleSwitcherLoaded = false;
 function loadVehicleSwitcher() {

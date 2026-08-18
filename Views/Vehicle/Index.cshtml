@@ -99,6 +99,7 @@
             </li>
         </ul>
         <div class="ct-sidebar-footer">
+            <button type="button" class="ct-sidebar-link" style="cursor:pointer;" onclick="returnToGarage()"><i class="bi bi-car-front"></i><span>@translator.Translate(userLanguage, "Vehicles")</span></button>
             <button type="button" class="ct-sidebar-link" style="cursor:pointer;" onclick="editVehicle(@Model.Id)"><i class="bi bi-pencil-square"></i><span>@translator.Translate(userLanguage, "Edit Vehicle")</span></button>
         </div>
     </div>

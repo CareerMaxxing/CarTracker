@@ -467,3 +467,128 @@ visually verified** - specifically, whether clicking a different vehicle in the 
 navigates and lands on the right page has not been exercised end-to-end by this agent (curl confirms
 the pieces work independently, not the full click-through). User review needed before Increment 4
 (landing page routing to the current vehicle's Dashboard).
+
+User said "continue" without explicitly confirming the click-through - read as approval to proceed.
+Moved on to Increment 4, the first increment that actually consumes CurrentVehicleId rather than just
+plumbing/setting it, so extra care was taken here.
+
+## Increment 4: Landing page routes to the current vehicle's Dashboard
+
+### Task packet
+
+```
+TASK ID: PHASE-16-04
+TITLE: Make / and /Home land on the current vehicle's Dashboard instead of the all-vehicles Garage
+  grid, with an explicit, discoverable way back to the grid
+OBJECTIVE: Complete the mockup's IA - "Dashboard" as the default landing experience, "Vehicles" as a
+  deliberate, separate destination - using the CurrentVehicleId plumbing and vehicle switcher already
+  built in Increments 1-3b.
+INPUTS: Controllers/HomeController.cs's Index() action (currently a bare `return View()`), the
+  filtering pattern already established twice (GetVehicleSelector, GetVehicleSwitcherList), all
+  callers of the shared returnToGarage() JS function (found by grepping the whole wwwroot tree, not
+  assumed to be Vehicle/Index-only).
+ALLOWED SCOPE: HomeController.Index() gains a resolve-and-redirect branch; returnToGarage() gains a
+  query parameter to explicitly opt out of the new redirect; one new "Vehicles" sidebar item in
+  Vehicle/Index's footer for discoverability (previously only reachable by clicking the wordmark, not
+  labeled as a distinct action).
+NON-SCOPE: Any change to _GarageDisplay.cshtml's own empty-state handling (already exists, untouched,
+  still reachable exactly as before once showGarage=true is passed); changing login.js's or
+  vehicle.js's own bare-/Home redirects (deliberately left alone - see reasoning below).
+IMPLEMENTATION REQUIREMENTS:
+  - A real, easy-to-miss design trap found and solved before writing any code: if `/Home` always
+    redirects to a vehicle whenever one exists, there would be NO way to ever reach the Garage grid
+    again - every link back to "/Home" (the wordmark click, the mobile drawer's Garage item, both
+    already wired to returnToGarage()) would just bounce straight back into a vehicle redirect loop.
+    Solved with an explicit `showGarage` query flag: `Index(bool showGarage = false)` skips the
+    redirect entirely when true; `returnToGarage()` was updated to pass it
+    (`/Home?showGarage=true`), which is the ONLY call site that needed to change - the mobile drawer's
+    Garage item already called returnToGarage() and inherited the fix automatically, no separate edit
+    needed there.
+  - Grepped the whole wwwroot tree for every other place that navigates to a bare '/Home' before
+    deciding what NOT to touch: login.js's post-login redirect and vehicle.js's post-delete-vehicle
+    redirect both stay bare (no showGarage=true) - both are cases where landing on the (new) dashboard-
+    first experience is the correct behavior, not an oversight. Deleting a vehicle naturally falls
+    through to whichever vehicle remains (CurrentVehicleId won't match the deleted id, so the resolver
+    falls back to the first remaining one) or the empty-state Garage view if none remain - handled
+    entirely by the existing fallback logic already in the redirect, no special-casing needed for the
+    delete flow specifically.
+  - Index()'s resolver reuses the exact filtering pattern from GetVehicleSelector/
+    GetVehicleSwitcherList (GetVehicles -> FilterUserVehicles for non-root -> HideSoldVehicles removal)
+    for the third time now - deliberately not extracted into a shared helper method in this pass (three
+    call sites with slightly different follow-on logic each), left as a candidate refactor if a fourth
+    call site appears.
+  - Picks userConfig.CurrentVehicleId if it's still in the accessible/filtered list, else the first
+    accessible vehicle, else (empty list) falls through to `return View()` - the pre-existing Garage
+    empty-state, untouched.
+DELIVERABLES: Working landing-page redirect, verified against multiple real scenarios, not just the
+  happy path.
+ACCEPTANCE CRITERIA:
+  - dotnet build: 0 errors. dotnet test: 10/10 passing.
+  - GET /Home (plain) returns 302 to /Vehicle/Index?vehicleId={the real current vehicle}.
+  - GET /Home?showGarage=true returns 200 and renders the Garage tab-strip normally, not a redirect.
+  - Setting CurrentVehicleId to the OTHER real vehicle (this household has two) and reloading /Home
+    redirects to that specific vehicle, not just "some" vehicle - confirms the stored preference is
+    actually respected, not coincidentally always picking the same one.
+  - Setting CurrentVehicleId to a nonexistent id and reloading /Home falls back to the first accessible
+    vehicle without erroring - confirms the fallback path, not just the happy path.
+  - The new "Vehicles" sidebar item is present in Vehicle/Index's rendered HTML.
+  - /Home/Garage (the AJAX partial) and /css/site.css (brace balance) both still fine - regression
+    checks on already-shipped pages.
+VALIDATION COMMANDS:
+  dotnet build
+  dotnet test Tests/CarCareTracker.Tests.csproj
+  dotnet run --urls http://localhost:5300 --no-build (background)
+  curl -i http://localhost:5300/Home | head -5                              (expect 302 + Location)
+  curl -o /dev/null -w "%{http_code}" "http://localhost:5300/Home?showGarage=true"   (expect 200)
+  curl -X POST http://localhost:5300/Home/SetCurrentVehicle -d "vehicleId=2"
+  curl -i http://localhost:5300/Home | grep -i location                     (expect vehicleId=2)
+  curl -X POST http://localhost:5300/Home/SetCurrentVehicle -d "vehicleId=999"
+  curl -i http://localhost:5300/Home | grep -i location                     (expect fallback, no 500)
+  curl http://localhost:5300/Vehicle/Index?vehicleId=1 | grep -o 'bi-car-front'
+  curl http://localhost:5300/Home/Garage
+  curl http://localhost:5300/css/site.css
+STOP CONDITION: All four redirect scenarios (default, explicit-garage-bypass, respects-preference,
+  invalid-id-fallback) verified independently via curl before considering this done - this is the
+  first increment that actually changes what happens when someone opens the app, so the happy path
+  alone wasn't enough confidence.
+```
+
+### What was done
+
+1. Before writing any redirect code, worked out (and nearly missed) that an unconditional redirect
+   would trap users - every path back to "/Home" would just bounce forward again, with no way to ever
+   see the Garage grid. Solved with an explicit `showGarage` opt-out flag rather than any cleverer
+   heuristic (referrer sniffing, session flags) that would have been more fragile.
+2. Grepped the whole `wwwroot` tree for every existing bare `/Home` navigation before touching
+   anything, rather than assuming `returnToGarage()` was the only call site: found two more
+   (`login.js`'s post-login redirect, `vehicle.js`'s post-delete-vehicle redirect) and deliberately
+   left both unchanged - both are cases where landing on the new dashboard-first experience is
+   correct, not a gap.
+3. Implemented `HomeController.Index(bool showGarage = false)`: resolves the current vehicle using the
+   same three-part filtering pattern already established in `GetVehicleSelector` and
+   `GetVehicleSwitcherList` (this codebase's third use of it now - noted as a refactor candidate if a
+   fourth appears, not extracted yet since the three call sites' follow-on logic still differs enough
+   to make a shared helper premature).
+4. Updated `returnToGarage()` (the one function that needed to change) to pass `showGarage=true` -
+   the mobile drawer's own Garage link already calls this same shared function, so it was fixed for
+   free without a separate edit.
+5. Added a new, explicitly labeled "Vehicles" sidebar item to `Vehicle/Index`'s footer (previously
+   only reachable by clicking the wordmark/vehicle-title, an affordance that isn't obviously
+   "click here to see all vehicles" without already knowing the app).
+6. Verified against real, deliberately adversarial scenarios, not just the happy path: confirmed plain
+   `/Home` returns `302` to the real current vehicle; confirmed `?showGarage=true` returns `200` and
+   bypasses the redirect entirely; set `CurrentVehicleId` to this household's *other* real vehicle
+   (id=2, the Volvo) and confirmed `/Home` redirects specifically there, not coincidentally always to
+   id=1 - proving the stored preference is actually read, not ignored; set `CurrentVehicleId` to a
+   nonexistent id (999) and confirmed graceful fallback to the first accessible vehicle with no error;
+   confirmed the new "Vehicles" nav item renders; re-confirmed `/Home/Garage` and `/css/site.css`
+   (brace balance) both unaffected. Reset the dev instance's `CurrentVehicleId` back to a sane value
+   (1) afterward so the test scenarios didn't leave dev state in a confusing spot.
+
+### Result
+
+Structurally complete, verified against multiple real (not just happy-path) scenarios. **Not yet
+visually verified** - the user needs to confirm the actual landing experience feels right (does it
+make sense that opening the app now goes straight to a vehicle instead of the Garage grid?) before any
+further increments. This is a genuine UX shift, not just a markup port like Increments 2-3b - worth a
+real look, not a rubber-stamp.

@@ -5,46 +5,51 @@ conversation history.
 
 ```
 PROJECT STATUS
-Current phase:      Phase 16 — Sidebar App Shell & Dashboard Redesign (Increment 3b structurally
-                     complete, awaiting the user's live click-through review)
-Current task:       PHASE-16-03B (see docs/execution/PHASE_16.md) — vehicle switcher built in
-                     Vehicle/Index's sidebar header. Structurally verified (build/tests/curl,
-                     including the switcher's own endpoint returning this household's real two-vehicle
-                     list); NOT yet click-tested live - curl confirms the pieces work independently,
-                     not that clicking a vehicle actually navigates correctly end-to-end.
+Current phase:      Phase 16 — Sidebar App Shell & Dashboard Redesign (Increment 4 structurally
+                     complete - a genuine UX shift, needs real review not a rubber-stamp)
+Current task:       PHASE-16-04 (see docs/execution/PHASE_16.md) — / and /Home now redirect to the
+                     current vehicle's Dashboard instead of showing the Garage grid. Structurally
+                     verified against 4 real scenarios (build/tests/curl); NOT yet visually/UX
+                     reviewed - this changes what happens the moment the app opens.
 Status:             Full plan/decision history in git history + PHASE_16.md's intro, not re-summarized
-                     here. Increments 1-3 done (b669299, b50f3e1, b9ab158) - user reviewed each live
-                     ("better, carry on" after 2, "bang on, continue" after 3). Increment 3b: added
-                     HomeController.GetVehicleSwitcherList (reused the existing GetVehicleSelector
-                     filtering pattern - built originally for an unrelated "duplicate record to
-                     another vehicle" feature - rather than re-deriving vehicle-access rules from
-                     scratch), a new _VehicleSwitcherList.cshtml partial, and
-                     loadVehicleSwitcher()/switchToVehicle() in shared.js (the latter sequences the
-                     SetCurrentVehicle POST and the page navigation deliberately, success-callback-
-                     only, so Increment 4's later read of CurrentVehicleId can't race an in-flight
-                     save). Restructured Vehicle/Index's sidebar header into two siblings (existing
-                     wordmark-click-to-Garage area, new switcher dropdown) since they can't share one
-                     onclick. Discovered along the way, not assumed: this household actually has TWO
-                     real vehicles (BMW Z4 + Volvo S80) - the first genuine multi-vehicle case this
-                     phase has exercised, confirmed by curling the switcher's own endpoint and getting
-                     real data back, not an empty/single-item list. Verified structurally: dotnet build
-                     (0 errors), dotnet test (10/10), curl-confirmed the switcher markup/endpoint/
-                     SetCurrentVehicle-regression/Garage-regression/CSS-balance all green. Not yet
-                     committed - pending alongside this STATE.md update.
+                     here. Increments 1-3b done (b669299, b50f3e1, b9ab158, 4a4df63) - user approved
+                     each live ("better, carry on" / "bang on, continue" / "continue"). Increment 4:
+                     before writing any code, worked out a real trap - an unconditional redirect from
+                     /Home to a vehicle would make the Garage grid permanently unreachable, since every
+                     existing "back to Home" link (wordmark click, mobile drawer) would just bounce
+                     forward again. Solved with `Index(bool showGarage = false)` - grepped the whole
+                     wwwroot tree for every bare '/Home' navigation before deciding what to touch:
+                     only returnToGarage() needed the showGarage=true flag added; login.js's post-login
+                     redirect and vehicle.js's post-delete-vehicle redirect were deliberately left
+                     bare, since landing on the new dashboard-first experience is correct behavior for
+                     both, not a gap. Resolver reuses the same GetVehicles/FilterUserVehicles/
+                     HideSoldVehicles pattern now used a third time (GetVehicleSelector,
+                     GetVehicleSwitcherList, this) - not yet extracted to a shared helper, the three
+                     call sites' follow-on logic still differs enough to make that premature. Added an
+                     explicit "Vehicles" sidebar item to Vehicle/Index's footer (was previously only
+                     reachable by clicking the wordmark, not a labeled action). Verified against 4 real
+                     scenarios, not just the happy path: plain /Home -> 302 to the actual current
+                     vehicle; /Home?showGarage=true -> 200, no redirect; set CurrentVehicleId to this
+                     household's OTHER real vehicle (id=2, Volvo) -> /Home redirects specifically
+                     there, proving the stored preference is read, not ignored; set CurrentVehicleId to
+                     a nonexistent id (999) -> graceful fallback to the first accessible vehicle, no
+                     error. Reset dev state's CurrentVehicleId back to 1 afterward. Not yet committed -
+                     pending alongside this STATE.md update.
 Last completed:      Phase 15 (Remote Access & Persistent Hosting) - all 5 increments resolved (4
                      explicitly declined by the user, not skipped). See docs/execution/PHASE_15.md.
                      Phase 14's remaining areas (icon-button labels, keyboard nav, form labels, alt
                      text, mobile/responsive validation, performance) are still open, not abandoned -
                      both Phase 15 and now Phase 16 were started because the user raised new,
                      higher-priority requests, not because Phase 14 finished.
-Next task:           STOP before writing more code: user needs to actually open the switcher dropdown
-                     and click the OTHER vehicle (this household has two - BMW Z4 id=1, Volvo S80
-                     id=2) and confirm it navigates to the right vehicle's page - this agent has only
-                     verified the pieces independently via curl, never exercised the actual click-
-                     through. After that sign-off: Increment 4 (landing page routes to the current
-                     vehicle's Dashboard instead of the Garage grid; "Vehicles" becomes its own sidebar
-                     item) - the first increment that actually CONSUMES CurrentVehicleId rather than
-                     just plumbing it, so get this one right rather than rushing it.
+Next task:           STOP before writing more code: this is the first Phase 16 increment that changes
+                     actual app BEHAVIOR (what happens when you open the app), not just markup/CSS
+                     structure - the user needs to genuinely evaluate whether landing straight on a
+                     vehicle's Dashboard (instead of the Garage grid) feels right, not just glance and
+                     say "continue" the way prior increments got approved. After that: Increments 5-11,
+                     the actual Dashboard widgets (hero card rebuild, Quick Actions, Fuel Economy
+                     sparkline, Total Spent, Planned Maintenance, Recent Activity, Magneto-motif promo
+                     tile) - see the approved plan / PHASE_16.md's intro for the full per-increment
+                     breakdown and which existing data each one reuses.
 Known blockers:      1. No browser/screenshot tool in this environment - Phase 14's remaining
                         accessibility work would still need static-code-audit + curl verification,
                         not live screen-reader/keyboard testing.
@@ -121,16 +126,15 @@ Do not:              Assume Phase 14 is "done" - three increments complete (secu
                      a separate, diverging dataset - be explicit with the user about which copy
                      they're looking at if this ever comes up.
 Last validation:     Phase 15's full validation history lives in docs/execution/PHASE_15.md. Phase 16
-                     Increment 3b (current, structural only - NOT click-tested): dotnet build (0
-                     errors); dotnet test (10/10 passing); dev instance on port 5300; curl
-                     /Home/GetVehicleSwitcherList returned real data for both actual vehicles (BMW Z4
-                     id=1, Volvo S80 id=2); curl /Vehicle/Index?vehicleId=1 shows the switcher toggle +
-                     empty #vehicleSwitcherMenu; POST /Home/SetCurrentVehicle still round-trips
-                     (regression check on Increment 1); /Home/Garage still 200; /css/site.css still
-                     balanced (no new CSS needed) — 2026-08-18. The actual click-through (open
-                     dropdown, click other vehicle, land on its page) has NOT been exercised by this
-                     agent.
-Last commit:         b9ab158 — "Phase 16 Increment 3" — 2026-08-18. Increment 3b (this entry) not yet
+                     Increment 4 (current, structural only - NOT UX-reviewed): dotnet build (0 errors);
+                     dotnet test (10/10 passing); dev instance on port 5300; curl -i /Home -> 302 to
+                     the real current vehicle; curl /Home?showGarage=true -> 200 no redirect; after
+                     POST SetCurrentVehicle=2, /Home redirects specifically to vehicleId=2 (not just
+                     "a" vehicle); after POST SetCurrentVehicle=999 (invalid), /Home falls back to
+                     vehicleId=1 with no error; "Vehicles" nav item confirmed present in rendered HTML;
+                     /Home/Garage and /css/site.css (brace balance) both unaffected — 2026-08-18. Dev
+                     state's CurrentVehicleId reset back to 1 after testing.
+Last commit:         4a4df63 — "Phase 16 Increment 3b" — 2026-08-18. Increment 4 (this entry) not yet
                      committed - pending alongside this STATE.md update.
 ```
 

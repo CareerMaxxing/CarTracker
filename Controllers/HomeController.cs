@@ -65,8 +65,26 @@ namespace CarCareTracker.Controllers
         {
             return int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
         }
-        public IActionResult Index()
+        public IActionResult Index(bool showGarage = false)
         {
+            if (!showGarage)
+            {
+                var userConfig = _config.GetUserConfig(User);
+                var vehiclesStored = _dataAccess.GetVehicles();
+                if (!User.IsInRole(nameof(UserData.IsRootUser)))
+                {
+                    vehiclesStored = _userLogic.FilterUserVehicles(vehiclesStored, GetUserID());
+                }
+                if (userConfig.HideSoldVehicles)
+                {
+                    vehiclesStored.RemoveAll(x => !string.IsNullOrWhiteSpace(x.SoldDate));
+                }
+                if (vehiclesStored.Any())
+                {
+                    var currentVehicle = vehiclesStored.FirstOrDefault(x => x.Id == userConfig.CurrentVehicleId) ?? vehiclesStored.First();
+                    return Redirect($"/Vehicle/Index?vehicleId={currentVehicle.Id}");
+                }
+            }
             return View();
         }
         public IActionResult Garage()
