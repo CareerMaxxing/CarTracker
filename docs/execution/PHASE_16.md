@@ -1313,3 +1313,30 @@ this environment. The user has done spot-checks along the way ("better, carry on
 / the landing-page decision / "where are the differences" question) but a full end-to-end look at the
 finished Dashboard, on both desktop and the phone's installed PWA (Phase 15), is the natural next step
 before considering this phase truly done.
+
+## Post-completion: production deployment gap found and fixed
+
+When the user actually checked the finished Dashboard on their phone (the way they'd really use this
+app day to day, per the entire point of Phase 15), they saw the *old* pre-Phase-16 UI. Root cause: all
+11 increments had only ever been built and verified against the **dev instance** (`dotnet run` on port
+5300, in the repo checkout) - never actually deployed to the production Windows Service
+(`C:\Services\CarTracker`) that the phone reaches via Tailscale. The production binaries hadn't been
+rebuilt since Phase 15 (confirmed via file timestamp - last built 2026-08-18 14:29, before Phase 16
+started). This was a real process gap, not a code bug: "verified against the dev instance" was silently
+treated as equivalent to "the user can see this," which it wasn't. Recorded as a lesson for future
+phases - explicitly deploy to production and verify via the real Tailscale URL before telling the user
+to check their phone, not just the PC dev URL.
+
+Fixed once the user was back at their PC, following the same elevated-command pattern established in
+Phase 15: user ran `sc.exe stop CarTracker`, agent independently confirmed `STATE: 1 STOPPED` before
+proceeding (not just trusted the user's report), agent ran `dotnet publish CarCareTracker.csproj -c
+Release -o "C:/Services/CarTracker"` (scoped to the main project only - the bare `dotnet publish`
+mistake from the original Phase 15 deployment was not repeated), confirmed the data folder was
+untouched and the binary's timestamp updated, user ran `sc.exe start CarTracker`, agent independently
+verified via curl against BOTH `127.0.0.1:5299` and the real `https://legion.tail80af14.ts.net`
+Tailscale URL (not just localhost) that the new sidebar/widget markup was actually being served and
+both real vehicles' data was intact.
+
+**User confirmed live on their phone: "spot on."** This is the first genuine end-to-end visual
+confirmation of Phase 16's work, closing out the phase for real - not just structurally complete, but
+seen and approved by the user on the actual device they use it from.

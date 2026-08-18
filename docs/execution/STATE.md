@@ -5,54 +5,56 @@ conversation history.
 
 ```
 PROJECT STATUS
-Current phase:      Phase 16 — Sidebar App Shell & Dashboard Redesign — ALL 11 INCREMENTS COMPLETE,
-                     awaiting the user's full live visual review before this phase can be called done
-Current task:       PHASE-16-11 (see docs/execution/PHASE_16.md) — Magneto-motif promo tile added,
-                     the last planned increment. Structurally verified across both vehicles + a
-                     full-app regression sweep (Home/Garage included).
-Status:             Full plan/decision history in git history + PHASE_16.md's intro, not re-summarized
-                     here (all 11 increments' full detail - the redirect-then-revert saga, the hero gap
-                     fix, the Quick Actions modal-shell bug, the widget-row build-out - is fully
-                     preserved there). Increments 1-10 committed (b669299, b50f3e1, b9ab158, 4a4df63,
-                     72ba466, dda1d24, 0cc6271, 7d71eec, ac74289, b0e5aeb, 8e2c5a6). Increment 11: the
-                     mockup's own promo tile advertised a real magazine article - rather than fabricate
-                     fake content to visually match it (shipping fabricated content dressed up as real
-                     is not acceptable), kept this app's existing ink-band "chapter-divider" motif
-                     (already used for the sold-vehicle indicator) and pointed it at something real,
-                     the Documents tab - using the actual Bootstrap 5 `bootstrap.Tab` JS API so the
-                     same lazy-load mechanism Increment 6 discovered fires correctly (applied
-                     correctly from the start this time, not rediscovered as a bug). CSS reuses
-                     .report-hero-sold-band's exact color tokens and Fraunces treatment rather than
-                     introducing new values. Verified: dotnet build (0 errors), dotnet test (10/10),
-                     both vehicles' Dashboard tiles render correctly targeting the real documents-tab
-                     id, and - since this closes the whole phase - a wider regression sweep than usual
-                     including Home/Garage (not just the two Vehicle pages this phase focused on),
-                     /css/site.css still balanced (446/446). Not yet committed - pending alongside this
-                     STATE.md update.
-Last completed:      Phase 15 (Remote Access & Persistent Hosting) - all 5 increments resolved (4
-                     explicitly declined by the user, not skipped). See docs/execution/PHASE_15.md.
-                     Phase 14's remaining areas (icon-button labels, keyboard nav, form labels, alt
-                     text, mobile/responsive validation, performance) are still open, not abandoned -
-                     both Phase 15 and now Phase 16 were started because the user raised new,
+Current phase:      Phase 16 — Sidebar App Shell & Dashboard Redesign — ✅ COMPLETE, confirmed live by
+                     the user ("spot on")
+Current task:       None - phase finished, including production deployment. See docs/execution/
+                     PHASE_16.md for full increment-by-increment detail and docs/execution/DEFERRED.md
+                     for nothing new (this phase left no loose ends - all 11 increments shipped).
+Status:             All 11 increments complete and committed (b669299, b50f3e1, b9ab158, 4a4df63,
+                     72ba466, dda1d24, 0cc6271, 7d71eec, ac74289, b0e5aeb, 8e2c5a6, 18d45fe). After
+                     the 11th increment, a real deployment gap was found: every increment had only
+                     been verified against the dev instance (dotnet run, port 5300) - never actually
+                     deployed to the production Windows Service (C:\Services\CarTracker) the user's
+                     phone reaches via Tailscale. The production binary hadn't been rebuilt since
+                     Phase 15. User checked their phone expecting the new Dashboard and saw the old UI
+                     - a real process gap this session owns (verifying against dev is not the same as
+                     the work being live). User was away from their PC at the time; deployment was
+                     deliberately paused (production service left running as-is) rather than risk an
+                     unattended stop/start. Once the user was back home: user ran `sc.exe stop
+                     CarTracker`, agent independently confirmed STATE: 1 STOPPED before proceeding
+                     (not just trusted the report), agent ran `dotnet publish CarCareTracker.csproj -c
+                     Release -o "C:/Services/CarTracker"` (scoped to the main project only - did not
+                     repeat the bare-`dotnet publish`-pulls-in-Tests mistake from the original Phase 15
+                     deployment), confirmed the data folder untouched and the binary timestamp
+                     updated, user ran `sc.exe start CarTracker`, agent independently verified via curl
+                     against BOTH 127.0.0.1:5299 AND the real https://legion.tail80af14.ts.net
+                     Tailscale URL (not just localhost) that the new sidebar/widget markup was being
+                     served and both real vehicles' data was intact. User confirmed live on their
+                     phone: "spot on." This is the first genuine end-to-end visual confirmation of
+                     Phase 16's work.
+Last completed:      Phase 16 (Sidebar App Shell & Dashboard Redesign) - all 11 increments, deployed to
+                     production, confirmed live by the user. Phase 15 (Remote Access & Persistent
+                     Hosting) before that - all 5 increments resolved (4 explicitly declined by the
+                     user, not skipped). Phase 14's remaining areas (icon-button labels, keyboard nav,
+                     form labels, alt text, mobile/responsive validation, performance) are still open,
+                     not abandoned - Phase 15 and 16 were both started because the user raised new,
                      higher-priority requests, not because Phase 14 finished.
-Next task:           Phase 16's 11 increments are all built and structurally verified, but the phase
-                     is NOT done yet - it needs a real, full live visual review from the user (desktop
-                     AND the phone's installed PWA from Phase 15). Every increment in this phase has
-                     only ever been verified via build/test/curl and, where real data existed,
-                     cross-checked against known values (e.g. Increment 10's £260.00 match) - never
-                     actually seen rendered, since no browser tool exists in this environment. Do not
-                     mark this phase ROADMAP.md status as "complete" until the user explicitly confirms
-                     the whole thing looks/works right, not just individual increments along the way.
-                     After that sign-off: ask the user what's next (Phase 14's remaining hardening
-                     areas - icon-button labels, keyboard nav, form labels, alt text, mobile/responsive
-                     validation, performance - or a new priority) rather than assuming. Do not
-                     re-litigate the landing-page decision (Increment 4) - answered directly by the
-                     user. Real vehicle data: vehicleId=1 (BMW Z4 - cost/activity history, no MPG/
-                     reminder history), vehicleId=2 (Volvo S80 - no history yet). Before wiring any new
-                     "add record" trigger in future work, learn from Increment 6's bug: verify
-                     empirically where the target modal's shell actually lives, don't assume from
-                     markup alone. If a throwaway test vehicle/record is ever needed again, always
-                     delete it before finishing (see Increments 5/7/9's pattern).
+Next task:           None decided yet - user asked "what have we got left" and was given the full
+                     list (see below), no explicit pick made yet. Candidates in the order presented:
+                     (1) MOT expansion - full MOT history -> tracked Planner items with recurring-
+                     advisory detection (tyres example). Not started. Has one real fork to resolve
+                     first: this app's DVSA integration is currently a MOCKED adapter (deterministic
+                     fake data), not the user's real MOT history - building this against real advisory
+                     text describing the user's actual car means the mock-vs-real-DVSA decision (a
+                     locked CLAUDE.md decision requiring explicit sign-off, a listed ROADMAP.md human
+                     review checkpoint) needs to be made explicitly when this starts, not assumed. Full
+                     requirements already captured in memory (project_mot_expansion.md). (2) Phase 14's
+                     remaining hardening areas - see Known blockers below and DEFERRED.md for exact
+                     file pointers. (3) AI/OCR invoice scanning - the feature the user flagged as "an
+                     addition later" back when Phase 15 started. Still fully deferred, nothing built,
+                     no extension points exist yet. Ask the user which they want next rather than
+                     assume the order above is a priority ranking - it was presented as a menu, not a
+                     plan.
 Known blockers:      1. No browser/screenshot tool in this environment - Phase 14's remaining
                         accessibility work would still need static-code-audit + curl verification,
                         not live screen-reader/keyboard testing.
@@ -128,15 +130,19 @@ Do not:              Assume Phase 14 is "done" - three increments complete (secu
                      ran. dotnet run from the dev repo still works for development but now operates on
                      a separate, diverging dataset - be explicit with the user about which copy
                      they're looking at if this ever comes up.
-Last validation:     Phase 15 + Phase 16 Increments 1-10's full validation history lives in
-                     docs/execution/PHASE_15.md / PHASE_16.md. Phase 16 Increment 11 (current, LAST
-                     increment): dotnet build (0 errors); dotnet test (10/10 passing); dev instance on
-                     port 5300; promo tile confirmed rendering on both vehicles with the correct real
-                     documents-tab click target; wider-than-usual regression sweep since this closes
-                     the phase - both Vehicle/Index pages AND Home/Garage all still 200; /css/site.css
-                     balanced (446/446) — 2026-08-18.
-Last commit:         8e2c5a6 — "Phase 16 Increment 10: Recent Activity widget" — 2026-08-18. Increment
-                     11 (this entry) not yet committed - pending alongside this STATE.md update.
+Last validation:     Phase 15 + Phase 16's full dev-instance validation history lives in
+                     docs/execution/PHASE_15.md / PHASE_16.md. Production deployment validation
+                     (2026-08-19, the real confirmation): sc.exe query confirmed STATE: 1 STOPPED
+                     before publish, dotnet publish scoped to CarCareTracker.csproj only, data/ folder
+                     confirmed untouched, binary timestamp confirmed updated, sc.exe query confirmed
+                     STATE: 4 RUNNING after restart, curl against 127.0.0.1:5299 AND the real
+                     https://legion.tail80af14.ts.net Tailscale URL both confirmed the new sidebar/
+                     widget markup present and both real vehicles' data intact. User confirmed live on
+                     their own phone: "spot on."
+Last commit:         18d45fe — "Phase 16 Increment 11: Magneto-motif promo tile (last increment)" —
+                     2026-08-18. This was the last code commit of Phase 16; the production deployment
+                     itself (2026-08-19) involved no code changes, only publishing already-committed
+                     code, so no new commit was needed for that step.
 ```
 
 ## Completed initiative: Zara + Magneto UI overhaul (separate from the roadmap above)

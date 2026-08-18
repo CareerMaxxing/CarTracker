@@ -21,7 +21,7 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
 | 13 | AI/OCR | Explicitly deferred. Leave clean extension points only; no feature work. | ✅ Confirmed deferred — no AI/OCR code exists anywhere in the codebase (verified by grep); see PHASE_13.md |
 | 14 | V1 Hardening | Unit/integration/UI/migration/duplicate-operation/adapter-failure/backup-restore tests, error handling, accessibility, responsive validation, performance, security review. | 🟡 In progress — Increment 1 (security review): real static-file auth bypass + unrestricted upload fixed. Increment 2 (automated tests): xUnit + WebApplicationFactory project stood up, 10 passing tests. Increment 3 (accessibility): all 41 modals audited, aria-labelledby wired on 39, 2 real duplicate-id bugs found and fixed (PHASE_14.md). Icon buttons/keyboard-nav/labels/mobile/performance still open |
 | 15 | Remote Access & Persistent Hosting | Reach the existing app from the user's phone with the same live data as the PC, over a private Tailscale network — no new sync architecture, single server + existing SignalR live updates. Revisits CLAUDE.md's localhost-only/no-cloud-deployment decisions with the human owner's explicit sign-off. | ✅ Complete — Windows Service hosting readiness, publish+register bound to 127.0.0.1:5299 with real data carried over, Tailscale reachability (`https://legion.tail80af14.ts.net/`) verified from the phone over mobile data with wifi off, and a proper PWA install on the phone (Chrome "Install app", Samsung battery/VPN settings tuned for reliability) (PHASE_15.md). Auth enablement explicitly declined by the user — device-level protection + Tailscale's own device authorization judged sufficient; not re-raised unless the user brings it up again |
-| 16 | Sidebar App Shell & Dashboard Redesign | Restructure navigation from a top tab-strip + all-vehicles Garage-grid homepage to a persistent left sidebar, matching a mockup's editorial aesthetic (already close in spirit to the existing Zara + Magneto design system). Intentionally reverses UI_TRANSITION.md's explicit "keep Home/Vehicle nav separate" decision, with the user's sign-off. Visual/layout pass only this phase — new widgets use real existing data; Trips/fuel-gauge/month-over-month%/fleet-stats are flagged as candidate future phases, not built now. | 🟡 In progress — Increments 1-3b complete (nav port + vehicle switcher). Increment 4 (auto-redirect landing page) built, then **explicitly reverted per direct user feedback** — Garage grid stays the homepage, with a "Jump to Vehicle" quick-switcher on both sidebars instead. Increment 5 (Dashboard hero rebuild) and Increment 6 (Quick Actions tile grid — a real "3 of 4 tiles would silently do nothing" bug found and fixed before shipping) both complete. Increment 7 (Fuel Economy widget with a real Chart.js sparkline) complete — discovered neither real vehicle has enough gas history for MPG yet, so the empty state is the actually-exercised path; both states verified against real rendering, including a known-value throwaway test (400mi/40gal → exactly 10.00mpg). Increment 8 (Total Spent widget) complete — both states verified against real data with no throwaway vehicle needed this time (vehicle 1's real £260.00 total matched exactly). Increment 9 (Planned Maintenance list) complete — first real adoption of the previously-unused .status-badge-spotlight primitive for its own documented purpose, verified against a throwaway past-due reminder's exact urgency/badge mapping. Increment 10 (Recent Activity feed) complete — deliberately avoided reusing the heavier GetVehicleHistory method (a different-purpose report generator); verified with a real cross-widget check, vehicle 1's three activity costs sum to exactly the same £260.00 Increment 8 already showed. Increment 11 (Magneto-motif promo tile) complete — chose to point the tile at the real Documents tab rather than fabricate the mockup's fake magazine-article content (PHASE_16.md). **All 11 planned increments complete — the phase now needs a full live visual review from the user, never yet seen rendered by this agent** |
+| 16 | Sidebar App Shell & Dashboard Redesign | Restructure navigation from a top tab-strip + all-vehicles Garage-grid homepage to a persistent left sidebar, matching a mockup's editorial aesthetic (already close in spirit to the existing Zara + Magneto design system). Intentionally reverses UI_TRANSITION.md's explicit "keep Home/Vehicle nav separate" decision, with the user's sign-off. Visual/layout pass only this phase — new widgets use real existing data; Trips/fuel-gauge/month-over-month%/fleet-stats are flagged as candidate future phases, not built now. | ✅ Complete — all 11 increments shipped: sidebar shell + vehicle switcher (1-3b), landing-page redirect built then explicitly reverted per direct user feedback (4), Dashboard hero rebuild fixing a real photo-less-vehicle gap (5), Quick Actions tiles fixing a real "3 of 4 would silently do nothing" bug (6), and the four widget-row cards — Fuel Economy sparkline, Total Spent, Planned Maintenance, Recent Activity — plus a promo tile (7-11), each verified against real vehicle data. **Found a real deployment gap after "completion": all 11 increments were only ever verified against the dev instance, never actually deployed to the production service the user's phone reaches — fixed via the same elevated stop/publish/start sequence as Phase 15, independently verified via the real Tailscale URL. User confirmed live on their phone: "spot on."** (PHASE_16.md) |
 
 ## Human review checkpoints
 
@@ -54,91 +54,21 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
   battery/VPN settings tuned so the always-running background connection doesn't get silently killed,
   user confirmed the home-screen icon opens the real app full-screen. **Phase 15 complete.**
 - Phase 16 (Sidebar App Shell & Dashboard Redesign): user shared a dashboard mockup and asked to plan
-  matching its editorial look. Explicitly chose the full sidebar/IA restructure (not just a Dashboard
-  reskin) and a "real data only" scope for new widgets (Trips/fuel-gauge/month-over-month%/fleet-stats
-  flagged as future-phase candidates, not built now) via AskUserQuestion. Increment 1
-  (CurrentVehicleId plumbing) complete, verified via a real curl round-trip, zero visual change yet.
-  Increment 2 (shared sidebar shell, Home/Index only) structurally complete - build, tests, and
-  curl-inspected markup/CSS all green; caught and fixed a real bug along the way (the old
-  overflow-collapse JS would have spun in an infinite 500ms retry loop with no horizontal tab list
-  left to measure). One design choice flagged for the user rather than guessed at: active-nav
-  indicator is a left border accent bar, not the mockup's dot, reasoned from the app's flat/sharp-
-  corner design language. User reviewed live and said "better, carry on" - read as approval, no
-  specific changes requested. Increment 3 (Vehicle/Index ported onto the same shell): structurally
-  complete, verified against the real vehicle - preserved TabOrder drag-and-drop ordering, VisibleTabs
-  per-tab visibility gating, and the live reminder-bell urgency icon, all found by reading the actual
-  helper/JS behind them rather than assumed. Split the vehicle-switcher out to its own increment (3b)
-  instead of bundling it with the nav port, since Vehicle's nav was already the riskiest single change
-  in this phase. User reviewed live and said "bang on, continue" - clear approval. Increment 3b
-  (vehicle switcher): reused the existing GetVehicleSelector filtering pattern (built for an unrelated
-  "duplicate record to another vehicle" feature) rather than re-deriving vehicle-access rules;
-  discovered along the way that this household has two real vehicles, the first genuine multi-vehicle
-  test case this phase has exercised. User said "continue" (read as approval). Increment 4 (landing
-  page routes to the current vehicle's Dashboard): caught a real design trap before coding it - an
-  unconditional redirect would have made the Garage grid permanently unreachable, since every "back to
-  Home" link would just bounce forward again. Solved with an explicit showGarage=true opt-out,
-  grepping the whole wwwroot tree first to find every existing bare-/Home navigation (login.js,
-  vehicle.js's delete flow) and deliberately leaving those two unchanged. Verified against 4 real
-  scenarios (default redirect, explicit garage bypass, respects a specific stored preference,
-  invalid-id fallback), not just the happy path. User's answer to the real-UX-review ask: **"open on
-  the grid, but leave the option to transition to other cars in the corner"** - a deliberate decision,
-  not a bug report. Reverted cleanly (Index() back to a bare return View(), returnToGarage() back to
-  plain /Home, the showGarage plumbing removed entirely rather than left dormant) and added the
-  Increment 3b vehicle switcher to Home/Index's sidebar too (labeled "Jump to Vehicle" there, no
-  "current" vehicle context to be "switching" relative to on the Garage page). CurrentVehicleId itself
-  and the switcher's set-and-navigate behavior were never part of what got reverted. Increment 5
-  (Dashboard hero rebuild): reused an existing design decision already articulated elsewhere in this
-  codebase (a CSS comment on the same photo band already reasoned that repeating the vehicle's
-  identity in the hero would be "redundant, not confident" since the sidebar already shows it) rather
-  than re-deciding whether to add a title. Found a real gap while reading the code to plan the change:
-  vehicles without a photo showed no hero band AND no sold indicator at all (the sold band was nested
-  inside the photo-only conditional). Fixed with a placeholder reusing .ct-empty-state's established
-  muted-icon language, verified against a throwaway test vehicle (not just the two real ones, which
-  both happen to have photos), cleaned up afterward. User looked at the live result and asked "where
-  are the differences I should be seeing?" - fair question, since Increment 5's fix doesn't apply to
-  either real vehicle (both have photos). Answered directly: most of what's visible so far is
-  Increments 1-4 (the sidebar); confirmed via AskUserQuestion to continue into the increments that
-  actually change the Dashboard's content. Increment 6 (Quick Actions tile grid): found and fixed a
-  real bug before it shipped, not after - 3 of the 4 planned tiles (Add Fuel/Service/Planned Work)
-  would have silently done nothing on a fresh page load, because their target "add" modals live inside
-  each record type's own lazily-loaded tab partial (never visited yet, since Dashboard is the default
-  tab), not in Vehicle/Index.cshtml itself - only the Reminder tile's modal happens to live there
-  directly. Fixed with an optional callback param on the existing tab-loader functions (fetch the
-  target tab's content first, which populates its modal shell, then open the modal) rather than
-  duplicating fetch logic or switching the visible tab. Verified against real endpoint responses, not
-  just re-read the markup. Increment 7 (Fuel Economy widget): reused the existing full-size MPG chart's
-  own empty-state condition and chart-color helper rather than inventing new ones. Discovered while
-  investigating the live Dashboard's "0 mpg" headline that NEITHER real vehicle has enough gas history
-  for MPG to compute yet - the empty state is the actually-exercised real-data path, not a hypothetical
-  edge case. Verified both states for real: the two real vehicles correctly show "No Data," and a
-  throwaway vehicle with two gas records a month apart (400mi/40gal) rendered the populated sparkline
-  with the headline showing exactly 10.00 mpg - the precise expected value, not just "a number
-  appeared." Increment 8 (Total Spent widget): reused _GasCostByMonthReport.cshtml's empty-state
-  condition and StaticHelper.HideZeroCost (the same formatting call the existing Total Cost stat panel
-  already uses) rather than inventing new ones. No throwaway vehicle needed this round - vehicle 1
-  already has real cost history, and the populated card's headline matched the known real value
-  (£260.00) exactly. Increment 9 (Planned Maintenance list): found the full per-reminder list was
-  already being computed in the controller for the pie chart's counts, then discarded - kept it
-  instead of a new query. Caught a small mistake before shipping (translating the raw enum name
-  instead of matching this app's own existing "Past Due"/"Very Urgent" label convention). First real
-  use of the .status-badge-spotlight primitive for the exact case its own introducing comment named
-  but never actually wired up. Verified against a throwaway past-due reminder's exact badge/label
-  mapping, not just "a row appeared." Increment 10 (Recent Activity feed): read GetVehicleHistory in
-  full before assuming it could be reused directly - confirmed it's a heavier, differently-purposed
-  report generator (tag/date filters, depreciation calc, feeds the Maintenance Report export), so
-  built a lightweight projection into the already-existing GetReportPartialView action instead,
-  reusing only its GenericReportModel shape. Found `_translationHelper` isn't injected in that
-  controller when trying to label gas records "Fuel" - moved that decision into the widget partial
-  instead, which already has the translator. Verified with an unusually strong real-data check:
-  vehicle 1's three real activity items' costs sum to exactly £260.00, matching Increment 8's Total
-  Spent figure precisely - an independent cross-widget consistency check. Increment 11 (promo tile):
-  the mockup's own promo tile advertised a real magazine article - rather than fabricate fake content
-  to match it, kept the existing ink-band "chapter-divider" visual motif (already used for the sold-
-  vehicle indicator) and pointed it at something real, the Documents tab, using the actual Bootstrap 5
-  Tab API so the same lazy-load mechanism Increment 6 discovered fires correctly. **All 11 planned
-  increments complete (PHASE_16.md). Next: a full live visual review of the whole phase from the user
-  - every increment has been structurally verified (build/tests/curl, cross-checked against real data
-  where possible) but never actually seen rendered, since no browser tool exists in this environment.**
+  matching its editorial look, same EnterPlanMode/Explore-agent/AskUserQuestion process as Phase 15.
+  Two real design decisions made by the user along the way, not assumed: chose the full sidebar/IA
+  restructure over a smaller reskin; then, after Increment 4 built an auto-redirect to the current
+  vehicle's Dashboard, explicitly reverted it ("open on the grid, but leave the option to transition to
+  other cars in the corner") in favor of a "Jump to Vehicle" quick-switcher instead. All 11 increments
+  shipped: sidebar shell + vehicle switcher (1-3b), the redirect-then-revert (4), Dashboard hero rebuild
+  (5, fixed a real photo-less-vehicle gap), Quick Actions tiles (6, fixed a real "3 of 4 buttons would
+  silently do nothing" bug), and the widget row - Fuel Economy sparkline, Total Spent, Planned
+  Maintenance, Recent Activity, promo tile (7-11) - each verified against real vehicle data, including
+  an independent cross-widget consistency check (Increment 10's activity costs summing to exactly the
+  same £260.00 Increment 8 showed). Full increment-by-increment detail in `PHASE_16.md`. After
+  "completion," found a real deployment gap: every increment had only been verified against the dev
+  instance, never actually deployed to the production service the user's phone reaches - fixed via the
+  same elevated stop/publish/start sequence as Phase 15, independently verified via the real Tailscale
+  URL. **User confirmed live on their phone: "spot on." Phase 16 complete.**
 
 ## Core V1 acceptance scenario
 
