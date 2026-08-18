@@ -2206,6 +2206,12 @@ td[data-column="description"] {
         font-size: 0.75rem;
     }
 
+.report-widget-list-icon {
+    color: var(--bs-secondary-color);
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
 /* Phase 5 — the chapter-divider pattern (Senna feature, p.66 etc: full-bleed solid colour band,
    bold two-tone name typography) doesn't map cleanly onto most of this app - Car Tracker doesn't
    have sub-narratives within one feature the way a magazine profile interviews multiple people

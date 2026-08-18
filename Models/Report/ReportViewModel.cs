@@ -8,6 +8,7 @@
         public CostMakeUpForVehicle CostMakeUpForVehicle { get; set; } = new CostMakeUpForVehicle();
         public ReminderMakeUpForVehicle ReminderMakeUpForVehicle { get; set; } = new ReminderMakeUpForVehicle();
         public List<ReminderRecordViewModel> UpcomingReminders { get; set; } = new List<ReminderRecordViewModel>();
+        public List<GenericReportModel> RecentActivity { get; set; } = new List<GenericReportModel>();
         public List<int> Years { get; set; } = new List<int>();
         public VehicleCollaboratorViewModel Collaborators { get; set; } = new VehicleCollaboratorViewModel();
         public bool CustomWidgetsConfigured { get; set; } = false;

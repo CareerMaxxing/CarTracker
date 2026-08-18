@@ -85,6 +85,17 @@ namespace CarCareTracker.Controllers
             //get reminders
             var reminders = GetRemindersAndUrgency(vehicleId, DateTime.Now);
             viewModel.UpcomingReminders = reminders.OrderByDescending(x => x.Urgency).ThenBy(x => x.DueDays).Take(5).ToList();
+            //get recent activity - a lightweight "latest N" feed, distinct from GetVehicleHistory's
+            //full filterable report (tag/date-range filters, depreciation calc - a different purpose).
+            //Reuses the record lists already fetched above; adds GasRecord, which GetVehicleHistory's
+            //own projection omits.
+            var recentActivity = new List<GenericReportModel>();
+            recentActivity.AddRange(serviceRecords.Select(x => new GenericReportModel { Date = x.Date, Odometer = x.Mileage, Description = x.Description, Cost = x.Cost, DataType = ImportMode.ServiceRecord }));
+            recentActivity.AddRange(collisionRecords.Select(x => new GenericReportModel { Date = x.Date, Odometer = x.Mileage, Description = x.Description, Cost = x.Cost, DataType = ImportMode.RepairRecord }));
+            recentActivity.AddRange(upgradeRecords.Select(x => new GenericReportModel { Date = x.Date, Odometer = x.Mileage, Description = x.Description, Cost = x.Cost, DataType = ImportMode.UpgradeRecord }));
+            recentActivity.AddRange(taxRecords.Select(x => new GenericReportModel { Date = x.Date, Odometer = 0, Description = x.Description, Cost = x.Cost, DataType = ImportMode.TaxRecord }));
+            recentActivity.AddRange(gasRecords.Select(x => new GenericReportModel { Date = x.Date, Odometer = x.Mileage, Cost = x.Cost, DataType = ImportMode.GasRecord }));
+            viewModel.RecentActivity = recentActivity.OrderByDescending(x => x.Date).Take(6).ToList();
             viewModel.ReminderMakeUpForVehicle = new ReminderMakeUpForVehicle
             {
                 NotUrgentCount = reminders.Where(x => x.Urgency == ReminderUrgency.NotUrgent).Count(),

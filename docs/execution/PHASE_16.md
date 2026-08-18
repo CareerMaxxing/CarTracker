@@ -1135,3 +1135,101 @@ STOP CONDITION: The throwaway reminder's exact urgency/badge mapping verified (n
 Complete, with a real small correctness catch (translation-key convention over raw enum names) made
 before shipping, and both states verified against real rendering including the specific urgency/badge
 mapping. **Not yet visually verified** - same standing caveat as every increment in this phase.
+
+## Increment 10: Recent Activity widget
+
+### Task packet
+
+```
+TASK ID: PHASE-16-10
+TITLE: Add a Recent Activity feed to the Dashboard widget row, the last data widget in this phase
+OBJECTIVE: Surface the latest N maintenance/cost events across record types, matching the mockup's
+  mixed-type activity feed - without misusing the existing GetVehicleHistory method, which serves a
+  different, heavier purpose.
+INPUTS: Controllers/Vehicle/ReportController.cs's GetVehicleHistory (read in full before assuming it
+  could be reused directly - confirmed it's a full filterable history REPORT generator with tag/date-
+  range filtering and depreciation calculations, returning VehicleHistoryViewModel, a shape carrying
+  purchase-price/depreciation fields entirely irrelevant to a simple feed - calling it from a Dashboard
+  widget would have been semantically wrong, not just inefficient), its GenericReportModel projection
+  pattern for Service/Repair/Upgrade/Tax records (reused for the mapping shape, not the method itself),
+  and GetReportPartialView's own already-fetched serviceRecords/collisionRecords/upgradeRecords/
+  taxRecords/gasRecords locals (all in scope already - zero new queries needed).
+ALLOWED SCOPE: A new ReportViewModel.RecentActivity field + inline projection logic added directly to
+  the existing GetReportPartialView action (not a new controller method, since all the source data
+  was already local to that action) - reuses GenericReportModel's existing shape and adds GasRecord,
+  which GetVehicleHistory's own projection confirmed omits. One new partial
+  (Report/_RecentActivityWidget.cshtml), new .report-widget-list-icon CSS.
+NON-SCOPE: Any change to GetVehicleHistory or the "Vehicle Maintenance Report" export feature it
+  serves (untouched, different purpose, different audience).
+IMPLEMENTATION REQUIREMENTS:
+  - `_translationHelper` is not injected in ReportController (found by trying to use it and checking,
+    not assumed) - moved the "Fuel" label decision for gas records (which have no Description field of
+    their own) into the VIEW instead of the controller, where `ITranslationHelper` is already available
+    via the standard partial-injection pattern every other widget partial already uses. The controller
+    leaves GasRecord's GenericReportModel.Description at its default empty string; the partial fills
+    in "Fuel" specifically when DataType is GasRecord and Description is blank.
+  - Icon-per-record-type mapping reuses the exact same Bootstrap Icon names already used for these
+    record types in the sidebar nav (Increment 3) - bi-card-checklist/bi-exclamation-octagon/
+    bi-wrench-adjustable/bi-currency-dollar/bi-fuel-pump - visual consistency with the nav rather than
+    a fresh icon choice per widget.
+  - Sort: `recentActivity.OrderByDescending(x => x.Date).Take(6)` - newest first, capped at 6.
+DELIVERABLES: A working Recent Activity feed, verified against real vehicle data with an independent
+  cross-check against Increment 8's Total Spent figure.
+ACCEPTANCE CRITERIA:
+  - dotnet build: 0 errors. dotnet test: 10/10 passing.
+  - Vehicle 1 (known real history) renders 3 real activity items, correctly sorted newest-first, with
+    correct icons per type and correct cost formatting.
+  - The three displayed costs sum to exactly the same £260.00 already shown by Increment 8's Total
+    Spent widget - an independent consistency check across two different widgets pulling from
+    overlapping data, not just "some rows appeared."
+  - Vehicle 2 (no history) renders the "No Data" empty state.
+  - No regression on either vehicle's full page or /css/site.css's brace balance.
+VALIDATION COMMANDS:
+  dotnet build
+  dotnet test Tests/CarCareTracker.Tests.csproj
+  dotnet run --urls http://localhost:5300 --no-build (background)
+  curl http://localhost:5300/Vehicle/GetReportPartialView?vehicleId=1   (populated - real data)
+  curl http://localhost:5300/Vehicle/GetReportPartialView?vehicleId=2   (empty - real data)
+  curl http://localhost:5300/Vehicle/Index?vehicleId=1
+  curl http://localhost:5300/Vehicle/Index?vehicleId=2
+  curl http://localhost:5300/css/site.css
+STOP CONDITION: The populated case's actual content (descriptions, dates, costs, sort order) checked
+  against known real records, including the cross-widget cost-sum consistency check, not just "some
+  content rendered."
+```
+
+### What was done
+
+1. Read `GetVehicleHistory` in full before assuming it could be reused - confirmed it's a heavyweight,
+   differently-purposed method (tag/date-range filtering, depreciation calculations, feeds the
+   "Vehicle Maintenance Report" export) returning a shape with fields irrelevant to a simple feed.
+   Reused only its `GenericReportModel` projection PATTERN, not the method itself, avoiding both
+   duplicated business logic and a semantically wrong dependency.
+2. Added the projection directly into the already-existing `GetReportPartialView` action rather than
+   a new controller method, since every source list (`serviceRecords`/`collisionRecords`/
+   `upgradeRecords`/`taxRecords`/`gasRecords`) was already fetched and in scope there - genuinely zero
+   new queries, not just "reuses a helper."
+3. Hit a real small issue immediately: tried using `_translationHelper` in the controller for the
+   gas-record "Fuel" label and found it isn't injected there at all. Rather than adding a new
+   controller dependency for one label, moved that decision into the widget partial itself, where
+   `ITranslationHelper` is already available via the same injection pattern every other widget partial
+   in this phase already uses - a cleaner fix than the alternative.
+4. Built `Report/_RecentActivityWidget.cshtml` with an icon-per-record-type mapping reusing the exact
+   same Bootstrap Icon names already used for these record types in the Increment 3 sidebar, for
+   visual consistency rather than a fresh per-widget icon choice.
+5. Verified against real data with an unusually strong cross-check: vehicle 1 rendered 3 real activity
+   items ("Initial service after purchase" £40, "Radio replaced" £20, "ECU Repaired for CHECKSUM RAM
+   Failure" £200), correctly sorted newest-first, with correct icons - and the three costs sum to
+   exactly £260.00, matching Increment 8's Total Spent figure precisely. This is an independent
+   consistency check across two different widgets built in two different increments, both pulling
+   from overlapping real data, not just "some rows appeared." Vehicle 2 (no history) correctly showed
+   the empty state.
+6. Regression pass: `dotnet build` (0 errors), `dotnet test` (10/10), both vehicles' pages still load,
+   `/css/site.css` still balanced (442/442).
+
+### Result
+
+Complete. The last data widget in this phase, verified with a real cross-widget consistency check
+(matching Increment 8's total exactly) rather than just confirming content appeared. **Not yet visually
+verified** - same standing caveat as every increment in this phase. Increment 11 (Magneto-motif promo
+tile) is the last increment - purely cosmetic, no data.

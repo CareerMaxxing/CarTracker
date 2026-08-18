@@ -1,0 +1,42 @@
+@using CarCareTracker.Helper
+@inject IConfigHelper config
+@inject ITranslationHelper translator
+@model List<GenericReportModel>
+@{
+    var userConfig = config.GetUserConfig(User);
+    var userLanguage = userConfig.UserLanguage;
+    string IconFor(ImportMode dataType) => dataType switch
+    {
+        ImportMode.ServiceRecord => "bi-card-checklist",
+        ImportMode.RepairRecord => "bi-exclamation-octagon",
+        ImportMode.UpgradeRecord => "bi-wrench-adjustable",
+        ImportMode.TaxRecord => "bi-currency-dollar",
+        ImportMode.GasRecord => "bi-fuel-pump",
+        _ => "bi-circle"
+    };
+    string DescriptionFor(GenericReportModel activity) => activity.DataType == ImportMode.GasRecord && string.IsNullOrWhiteSpace(activity.Description)
+        ? translator.Translate(userLanguage, "Fuel")
+        : activity.Description;
+}
+<div class="report-widget-card">
+    <span class="report-widget-label">@translator.Translate(userLanguage, "Recent Activity")</span>
+    @if (Model.Any())
+    {
+        <ul class="report-widget-list">
+            @foreach (var activity in Model)
+            {
+                <li class="report-widget-list-item">
+                    <i class="bi @IconFor(activity.DataType) report-widget-list-icon"></i>
+                    <span class="report-widget-list-item-text">
+                        <strong>@DescriptionFor(activity)</strong>
+                        <small>@activity.Date.ToShortDateString() &middot; @StaticHelper.HideZeroCost(activity.Cost.ToString("C2"), true)</small>
+                    </span>
+                </li>
+            }
+        </ul>
+    }
+    else
+    {
+        <span class="report-widget-value-empty">@translator.Translate(userLanguage, "No Data")</span>
+    }
+</div>
