@@ -20,7 +20,7 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
 | 12 | Local Reliability / Offline Hardening | Reliable startup, DB integrity, attachment integrity, backup, restore, export/import, recovery from interrupted operations. | ✅ Complete — found and fixed two real data-loss/orphan bugs affecting Part/PartPurchase (missing from cleanup + vehicle-deletion cascade), added a broken-attachment-link diagnostic, backup/restore round-trip curl-verified (PHASE_12.md) |
 | 13 | AI/OCR | Explicitly deferred. Leave clean extension points only; no feature work. | ✅ Confirmed deferred — no AI/OCR code exists anywhere in the codebase (verified by grep); see PHASE_13.md |
 | 14 | V1 Hardening | Unit/integration/UI/migration/duplicate-operation/adapter-failure/backup-restore tests, error handling, accessibility, responsive validation, performance, security review. | 🟡 In progress — Increment 1 (security review): real static-file auth bypass + unrestricted upload fixed. Increment 2 (automated tests): xUnit + WebApplicationFactory project stood up, 10 passing tests. Increment 3 (accessibility): all 41 modals audited, aria-labelledby wired on 39, 2 real duplicate-id bugs found and fixed (PHASE_14.md). Icon buttons/keyboard-nav/labels/mobile/performance still open |
-| 15 | Remote Access & Persistent Hosting | Reach the existing app from the user's phone with the same live data as the PC, over a private Tailscale network — no new sync architecture, single server + existing SignalR live updates. Revisits CLAUDE.md's localhost-only/no-cloud-deployment decisions with the human owner's explicit sign-off. | 🟡 In progress — Increment 1 (Windows Service hosting readiness): CWD-relative data-path fix + DataProtection key persistence, build/tests/health-check all green (PHASE_15.md). Increment 2 (publish + register service + Kestrel loopback binding + Tailscale) needs the user present for admin elevation and their phone — not started. Auth enablement and PWA install verification also open |
+| 15 | Remote Access & Persistent Hosting | Reach the existing app from the user's phone with the same live data as the PC, over a private Tailscale network — no new sync architecture, single server + existing SignalR live updates. Revisits CLAUDE.md's localhost-only/no-cloud-deployment decisions with the human owner's explicit sign-off. | 🟡 In progress — Increment 1 (Windows Service hosting readiness): CWD-relative data-path fix + DataProtection key persistence, build/tests/health-check all green. Increment 2 (publish + carry over real data + register as a Windows Service bound to 127.0.0.1:5299): complete, independently verified RUNNING with real data (PHASE_15.md). Increment 3 (Tailscale on PC + phone, verify remote reachability) needs the user present with their phone — not started. Auth enablement and PWA install verification also open |
 
 ## Human review checkpoints
 
@@ -43,9 +43,11 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
 - Phase 15 (Remote Access & Persistent Hosting): user explicitly authorized revisiting the
   localhost-only/no-cloud-deployment locked decisions in conversation and chose Tailscale over
   LAN-only or public-internet hosting. Increment 1 (Windows Service hosting readiness) complete,
-  build/tests/health-check verified. **← next: Increment 2 needs the user present (admin elevation +
-  their phone) to publish/register the service, bind Kestrel to loopback via the existing Setup UI,
-  and set up Tailscale on both devices.**
+  build/tests/health-check verified. Increment 2 (publish, carry over real data, register as a
+  Windows Service bound to 127.0.0.1:5299) complete — service confirmed RUNNING with real vehicle
+  data, independently verified by the agent, not just the user's report. **← next: Increment 3 needs
+  the user present with their phone to install Tailscale on both devices and verify remote
+  reachability.**
 
 ## Core V1 acceptance scenario
 

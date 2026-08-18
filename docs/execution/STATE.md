@@ -5,12 +5,11 @@ conversation history.
 
 ```
 PROJECT STATUS
-Current phase:      Phase 15 — Remote Access & Persistent Hosting (Increment 1: Windows Service
-                     hosting readiness)
-Current task:       PHASE-15-01 (see docs/execution/PHASE_15.md) — make the app safe to run as a
-                     persistent Windows Service, without changing the existing interactive dotnet run
-                     workflow
-Status:             Increment 1 complete. User asked to plan phone access with live sync to the PC
+Current phase:      Phase 15 — Remote Access & Persistent Hosting (Increment 2 complete, Increment 3
+                     next)
+Current task:       PHASE-15-02 (see docs/execution/PHASE_15.md) — complete: publish + carry over
+                     real data + register as a Windows Service bound to 127.0.0.1:5299
+Status:             Increments 1-2 complete. User asked to plan phone access with live sync to the PC
                      app; since this is a single-server architecture with SignalR already
                      broadcasting live updates to every connected client, "sync" needs no new
                      data-layer work - only reachability. User explicitly authorized revisiting
@@ -19,34 +18,40 @@ Status:             Increment 1 complete. User asked to plan phone access with l
                      or public-internet hosting via AskUserQuestion. Plan (4 increments: Windows
                      Service hosting, Tailscale + Kestrel loopback binding, auth enablement, PWA
                      install verification) was written via EnterPlanMode/ExitPlanMode and approved.
-                     User then chose "code first" over "install Tailscale together first" when asked
-                     how to start. Increment 1 code change: added
-                     Microsoft.Extensions.Hosting.WindowsServices + UseWindowsService(); found and
-                     fixed a real gap not in the original plan - every data path in this app
-                     (StaticHelper.DbName/UserConfigPath/ServerConfigPath) is CWD-relative, and the
-                     Windows Service Control Manager defaults to a System32 working directory, so a
-                     service deployment would have silently created data/ under System32 without a
-                     WindowsServiceHelpers.IsWindowsService()-gated
+                     Increment 1: added Microsoft.Extensions.Hosting.WindowsServices +
+                     UseWindowsService(); found and fixed a real gap not in the original plan - every
+                     data path in this app (StaticHelper.DbName/UserConfigPath/ServerConfigPath) is
+                     CWD-relative, and the Windows Service Control Manager defaults to a System32
+                     working directory, so a service deployment would have silently created data/
+                     under System32 without a WindowsServiceHelpers.IsWindowsService()-gated
                      Directory.SetCurrentDirectory(AppContext.BaseDirectory) fix; also added
-                     DataProtection .PersistKeysToFileSystem("data/keys") since the default
-                     profile-based key storage isn't reliable under a service account. Verified:
-                     dotnet build (0 errors), dotnet test (10/10 passing), dotnet run + curl
-                     /health confirmed the interactive workflow is unaffected and data/keys/ was
-                     created correctly.
+                     DataProtection .PersistKeysToFileSystem("data/keys"). Committed as ab97b66/
+                     7f99541, pushed. Increment 2: published to C:\Services\CarTracker (user's choice
+                     of two offered install-path options), confirmed the dev repo's data/ contains
+                     real vehicle data (224KB db, not test fixtures - user confirmed) and copied it
+                     over once (user explicitly confirmed carrying it over as the live copy, dev
+                     repo's original left untouched as fallback), pre-wrote
+                     data/config/serverConfig.json's Kestrel section to bind 127.0.0.1:5299 only
+                     (verified via netstat before involving the user), then handed the user exact
+                     sc.exe commands to run in an elevated PowerShell (agent's shell confirmed
+                     non-admin via WindowsPrincipal check first, didn't attempt and fail). User ran
+                     them (screenshot showed CreateService SUCCESS + START_PENDING); agent
+                     independently re-verified (not just trusted the screenshot) via sc.exe query
+                     (STATE: 4 RUNNING), curl /health, and curl /api/vehicles (real BMW Z4 record
+                     confirmed, not an empty db). Not yet committed to git (no code changes in this
+                     increment, only external install/service-registration + docs updates pending).
 Last completed:      Phase 14 Increment 3 (accessibility - modal aria-labelledby), see prior entries
                      in docs/execution/PHASE_14.md. Phase 14's remaining areas (icon-button labels,
                      keyboard nav, form labels, alt text, mobile/responsive validation, performance)
                      are still open, not abandoned - Phase 15 was started because the user raised a
                      new, higher-priority request (phone access), not because Phase 14 finished.
-Next task:           Phase 15 Increment 2: publish the app (dotnet publish -c Release), register it
-                     as a Windows Service (sc.exe create, start=auto, failure-restart policy), bind
-                     Kestrel to 127.0.0.1 only via the existing /Home/Setup "Server Endpoints" UI,
-                     install Tailscale on the PC and the user's phone (same tailnet), run
-                     `tailscale serve https / http://127.0.0.1:5299` on the PC, and verify reachability
-                     from the phone with home wifi OFF (mobile data only, to prove it's actually
-                     tailnet reachability). This increment needs the user physically present - admin
-                     elevation for sc.exe, and their phone for the Tailscale app/verification - it is
-                     NOT something to attempt unattended.
+Next task:           Phase 15 Increment 3: install Tailscale on the PC and the user's phone (same
+                     tailnet), run `tailscale serve https / http://127.0.0.1:5299` on the PC, and
+                     verify reachability from the phone with home wifi OFF (mobile data only, to
+                     prove it's actually tailnet reachability, not accidental LAN access). Needs the
+                     user physically present with their phone - NOT something to attempt unattended.
+                     After that: Increment 4 (turn on auth via Settings UI) and Increment 5 (confirm
+                     PWA "Add to Home Screen" install from the tailnet URL).
 Known blockers:      1. No browser/screenshot tool in this environment - Phase 14's remaining
                         accessibility work would still need static-code-audit + curl verification,
                         not live screen-reader/keyboard testing.
@@ -118,9 +123,15 @@ Last validation:     dotnet build (0 errors, 0 new warnings - 224 pre-existing n
                      curl http://localhost:5299/health returned {"status":"pass",...}, and
                      data/keys/key-<guid>.xml was created, confirming the DataProtection change works
                      and the interactive dev workflow is unaffected — 2026-08-18.
-Last commit:         ab97b66 — "Phase 15 Increment 1: Windows Service hosting readiness" —
-                     2026-08-18, awaiting user confirmation before Increment 2 (which needs the user
-                     physically present for admin elevation and their phone).
+Last validation (Increment 2): sc.exe query CarTracker → STATE: 4 RUNNING; curl
+                     http://127.0.0.1:5299/health → {"status":"pass",...}; curl
+                     http://127.0.0.1:5299/api/vehicles → real BMW Z4 record (id 1), confirming the
+                     service is serving the carried-over real data, not a fresh database; netstat
+                     confirmed binding to 127.0.0.1:5299 only, no wildcard/non-loopback address —
+                     2026-08-18.
+Last commit:         ab97b66/7f99541 — "Phase 15 Increment 1" (code) — 2026-08-18. Increment 2 (this
+                     entry) has no code changes, only docs - to be committed alongside this STATE.md
+                     update.
 ```
 
 ## Completed initiative: Zara + Magneto UI overhaul (separate from the roadmap above)

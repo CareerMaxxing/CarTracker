@@ -105,3 +105,114 @@ session-invalidation failure, and the interactive `dotnet run` workflow is uncha
 and a live health-check all confirm no regression). Increment 2 (actually publishing, registering the
 service, configuring Kestrel to loopback-only via the existing Setup UI, and setting up Tailscale)
 needs the user physically present for admin elevation and their phone - not started yet.
+
+## Increment 2: Publish, install, and register as a persistent Windows Service
+
+### Task packet
+
+```
+TASK ID: PHASE-15-02
+TITLE: Publish the app, carry over real data, and run it as a persistent Windows Service bound to
+  loopback only
+OBJECTIVE: Replace the manual "dotnet run in a terminal" dev workflow with a persistent, always-on
+  service the phone can eventually reach, without losing or duplicating the user's real vehicle data,
+  and without exposing Kestrel beyond loopback (Tailscale, in Increment 3, does the actual external
+  exposure).
+INPUTS: The Increment 1 code (Program.cs's UseWindowsService()/CWD fix, already verified),
+  Views/Home/Setup.cshtml + Helper/ConfigHelper.cs's existing Kestrel-binding mechanism, the real
+  data/ directory at the dev repo root (confirmed to contain a real 224KB LiteDB database, not just
+  test fixtures - user confirmed this is their actual vehicle data).
+ALLOWED SCOPE: Publishing a Release build to a new, dedicated install location outside the dev repo's
+  bin/obj; a one-time copy (not move) of the existing data/ folder into that location; directly
+  writing data/config/serverConfig.json's Kestrel section (same JSON shape the Setup UI itself
+  produces) rather than a UI round-trip; registering and starting the Windows Service (requires the
+  user's admin elevation - not something to attempt unattended).
+NON-SCOPE: Tailscale installation/configuration (Increment 3); enabling auth (Increment 4); deleting
+  or modifying the dev repo's original data/ folder (left untouched as a fallback, per user's explicit
+  choice when asked).
+IMPLEMENTATION REQUIREMENTS:
+  - Publish scoped explicitly to CarCareTracker.csproj (not the .sln, which also pulls in the Tests
+    project - discovered empirically on the first attempt, which published CarCareTracker.Tests.dll
+    alongside the real app unnecessarily).
+  - Install location: C:\Services\CarTracker (user's choice from two offered options, picked over
+    a custom path).
+  - data/ copy: verified twice - once naively (which nested as data/data/ because the destination
+    directory already existed, requiring a redo) and once correctly at the top level, then verified
+    the published copy actually reads it (compared GET /api/vehicles between the dev instance and the
+    published copy running on a scratch port - identical BMW Z4 record confirmed byte-for-byte
+    matching JSON).
+  - Kestrel binding: wrote data/config/serverConfig.json's "Kestrel" key directly
+    (`{"Endpoints":{"Http":{"Url":"http://127.0.0.1:5299"}}}`), matching KestrelAppConfig's exact
+    JsonPropertyName shape, rather than requiring the user to click through the Setup UI. Verified by
+    starting the published exe standalone (no --urls override) and confirming via netstat it bound
+    only to 127.0.0.1:5299, not also the wildcard/IPv6-any address.
+  - Service registration (run by the user in an elevated PowerShell, not by the agent): sc.exe create
+    with start=auto, a description, a failure/restart policy (3x restart with 5s delay, resetting the
+    failure counter after 24h), then sc.exe start.
+DELIVERABLES: A running Windows Service serving the user's real vehicle data on
+  http://127.0.0.1:5299, confirmed independently by the agent (query health + vehicle data over the
+  loopback address) after the user completed the elevated steps.
+ACCEPTANCE CRITERIA:
+  - sc.exe query CarTracker reports STATE: 4 RUNNING.
+  - GET http://127.0.0.1:5299/health returns {"status":"pass",...}.
+  - GET http://127.0.0.1:5299/api/vehicles returns the real vehicle data (BMW Z4, id 1), not an
+    empty/fresh database.
+  - The service is not reachable on any non-loopback address (netstat shows only 127.0.0.1:5299, no
+    0.0.0.0 or wildcard binding).
+VALIDATION COMMANDS:
+  dotnet publish CarCareTracker.csproj -c Release -o C:\Services\CarTracker
+  sc.exe query CarTracker
+  curl http://127.0.0.1:5299/health
+  curl http://127.0.0.1:5299/api/vehicles
+  netstat -ano | findstr 5299
+STOP CONDITION: Service confirmed RUNNING with real data, verified independently by the agent (not
+  just trusted from the user's screenshot) before moving to Increment 3 (Tailscale).
+```
+
+### What was done
+
+1. First publish attempt (`dotnet publish -c Release -o C:\Services\CarTracker`, no project argument)
+   resolved to the .sln in the current directory and published both CarCareTracker and
+   CarCareTracker.Tests into the same output folder - unwanted test-project clutter in a production
+   deployment. Redone scoped explicitly to `CarCareTracker.csproj`.
+2. Copied the dev repo's `data/` folder (confirmed to contain a real, non-trivial 224KB
+   `cartracker.db` - the user confirmed this is their actual vehicle data, not test fixtures) into the
+   publish output. First attempt nested incorrectly as `data/data/...` because the destination
+   directory already existed from the aborted first publish; caught by inspecting the copied tree,
+   removed, and redone correctly at the top level.
+3. Asked the user two questions before touching anything data-related: where to install the published
+   app (offered `C:\Services\CarTracker` vs. a custom path - user picked the recommended default), and
+   whether to carry the real data over as the service's live copy vs. starting fresh (user confirmed
+   yes, carry it over; the dev repo's original `data/` stays untouched as a fallback/backup, not
+   deleted).
+4. Verified the copy actually works before trusting it: ran the published exe standalone on a scratch
+   port (5300) and diffed `GET /api/vehicles` against the still-running dev instance (port 5299) -
+   byte-for-byte identical BMW Z4 record confirmed the copy is real and readable, not silently empty.
+5. Pre-wrote `data/config/serverConfig.json`'s `"Kestrel"` section directly (matching
+   `KestrelAppConfig`'s exact JSON shape - confirmed by reading `Models/Settings/KestrelAppConfig.cs`
+   and `ConfigHelper.SaveServerConfig`'s validation logic first) rather than requiring a UI round-trip
+   through `/Home/Setup`. Verified empirically: started the published exe with no `--urls` override
+   (so only the config file could be driving the binding) and confirmed via `netstat` it bound to
+   `127.0.0.1:5299` only - not also the IPv6 loopback or any wildcard address, which is what it had
+   done before the config file existed.
+6. Hit a real ordering issue during this verification: the dev instance (still running on port 5299
+   from Increment 1's testing) blocked the new binding attempt, throwing
+   `AddressInUseException`/`SocketException 10048` - not a config bug, just two processes wanting the
+   same port. Stopped the dev instance first, then re-verified cleanly.
+7. Handed the user exact, copy-pasteable `sc.exe` commands to run in an elevated PowerShell (admin
+   rights not available to the agent's shell - confirmed via a `WindowsPrincipal`/`IsInRole` check
+   before even attempting), including a description, a failure/restart policy, and explicit
+   stop/delete commands for full reversibility if anything went wrong. User ran them and shared a
+   screenshot showing `[SC] CreateService SUCCESS` and the service starting.
+8. Independently re-verified from the agent's own shell rather than trusting the screenshot alone:
+   `sc.exe query CarTracker` → `STATE: 4 RUNNING`; `curl http://127.0.0.1:5299/health` →
+   `{"status":"pass",...}`; `curl http://127.0.0.1:5299/api/vehicles` → the real BMW Z4 record,
+   confirming the running service is serving the carried-over real data, not a fresh database.
+
+### Result
+
+Complete. `CarTracker` is now a running Windows Service (`start=auto`, restart-on-failure), bound only
+to `127.0.0.1:5299`, serving the user's real vehicle data. The dev repo at
+`D:\Personal\CarTracker\lubelog` is unaffected and can still be used for `dotnet run` development on a
+different port. Increment 3 (Tailscale on the PC and the user's phone, `tailscale serve` for HTTPS,
+verified reachable from the phone with home wifi off) is next.
