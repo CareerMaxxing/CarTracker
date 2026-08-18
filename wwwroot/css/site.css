@@ -2128,6 +2128,47 @@ td[data-column="description"] {
         font-weight: 500;
     }
 
+/* Phase 16, Increment 7 — report widget cards (Fuel Economy, and Total Spent/Planned Maintenance/
+   Recent Activity in later increments), matching the mockup's compact stat-card row. Sits alongside
+   the existing full-size chart grid below (untouched) rather than replacing it - those charts offer
+   real interactivity (year filter, metrics toggle) this summary row doesn't attempt to duplicate. */
+.report-widget-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: var(--ct-space-4);
+    border: 1px solid var(--bs-border-color);
+    background-color: var(--bs-body-bg);
+}
+
+.report-widget-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--bs-secondary-color);
+    margin-bottom: var(--ct-space-2);
+}
+
+.report-widget-value {
+    font-family: var(--ct-heading-font-family);
+    font-size: 1.6rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.report-widget-value-empty {
+    color: var(--bs-secondary-color);
+    font-size: 1.1rem;
+}
+
+.report-widget-sparkline {
+    flex-grow: 1;
+    min-height: 48px;
+    max-height: 64px;
+    margin-top: var(--ct-space-2);
+}
+
 /* Phase 5 — the chapter-divider pattern (Senna feature, p.66 etc: full-bleed solid colour band,
    bold two-tone name typography) doesn't map cleanly onto most of this app - Car Tracker doesn't
    have sub-narratives within one feature the way a magazine profile interviews multiple people

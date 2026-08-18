@@ -1,0 +1,58 @@
+@using CarCareTracker.Helper
+@inject IConfigHelper config
+@inject ITranslationHelper translator
+@model ReportViewModel
+@{
+    var userConfig = config.GetUserConfig(User);
+    var userLanguage = userConfig.UserLanguage;
+    var mpgData = Model.FuelMileageForVehicleByMonth;
+}
+<div class="report-widget-card">
+    <span class="report-widget-label">@translator.Translate(userLanguage, "Fuel Economy")</span>
+    @if (mpgData.CostData.Any(x => x.Cost > 0))
+    {
+        <span class="report-widget-value">@Model.ReportHeaderForVehicle.AverageMPG</span>
+        <canvas id="sparkline-mpg" class="report-widget-sparkline"></canvas>
+        <script>
+            renderMPGSparkline();
+            function renderMPGSparkline() {
+                var sparkData = [];
+                @foreach (CostForVehicleByMonth monthMpg in mpgData.CostData)
+                {
+                    @:sparkData.push(globalParseFloat('@monthMpg.Cost'));
+                }
+                new Chart($("#sparkline-mpg"), {
+                    type: 'line',
+                    data: {
+                        labels: sparkData.map((x, i) => i),
+                        datasets: [{
+                            data: sparkData,
+                            borderColor: getChartTextColor(),
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            tension: 0.3,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            title: { display: false },
+                            tooltip: { enabled: false }
+                        },
+                        scales: {
+                            x: { display: false },
+                            y: { display: false }
+                        }
+                    }
+                });
+            }
+        </script>
+    }
+    else
+    {
+        <span class="report-widget-value report-widget-value-empty">@translator.Translate(userLanguage, "No Data")</span>
+    }
+</div>

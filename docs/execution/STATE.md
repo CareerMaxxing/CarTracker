@@ -5,66 +5,57 @@ conversation history.
 
 ```
 PROJECT STATUS
-Current phase:      Phase 16 — Sidebar App Shell & Dashboard Redesign (Increment 6 complete,
-                     Increment 7 next)
-Current task:       PHASE-16-06 (see docs/execution/PHASE_16.md) — Quick Actions tile grid added to
-                     the Dashboard. A real bug was found and fixed before shipping (see below) -
-                     verified against real endpoint responses, not just re-read markup.
+Current phase:      Phase 16 — Sidebar App Shell & Dashboard Redesign (Increment 7 complete,
+                     Increment 8 next)
+Current task:       PHASE-16-07 (see docs/execution/PHASE_16.md) — Fuel Economy widget (real Chart.js
+                     sparkline) added to the Dashboard's new widget row. Both empty and populated
+                     states verified against real rendering output.
 Status:             Full plan/decision history in git history + PHASE_16.md's intro, not re-summarized
-                     here (increments 1-5's full detail, including the redirect-then-revert saga and
-                     the hero-band gap fix, is fully preserved there). Increments 1-5 committed
-                     (b669299, b50f3e1, b9ab158, 4a4df63, 72ba466, dda1d24). User looked at the live
-                     Increment 5 result and asked "where are the differences I should be seeing?" -
-                     fair question, since neither real vehicle triggers Increment 5's fix (both have
-                     photos). Answered directly (most visible change so far is the Increments 1-4
-                     sidebar), confirmed via AskUserQuestion to continue. Increment 6: added a 2x2
-                     Quick Actions tile grid (Add Fuel/Service/Reminder/Planned Work) to the Dashboard.
-                     Found a real bug while verifying WHERE each target modal's shell actually lives
-                     (not assumed from the .cshtml files): #gasRecordModal/#serviceRecordModal/
-                     #planRecordModal are defined inside their own record type's lazily-loaded tab
-                     partial, not in Vehicle/Index.cshtml - and vehicle.js's existing show.bs.tab
-                     handler CLEARS a tab's content when you navigate away "for performance." Since
-                     Dashboard is the default tab, 3 of the 4 planned tiles would have silently done
-                     nothing on a fresh page load (AJAX fires, .html(data) targets an empty jQuery
-                     selection, modal never shows) - only Reminder's modal (which lives directly in
-                     Vehicle/Index.cshtml) would have worked. Fixed with an optional `onLoaded`
-                     callback param added to the 4 relevant getVehicleX() loader functions in
-                     vehicle.js (backward compatible, no existing call site changed) - each tile now
-                     fetches its target tab's content first (populating the modal shell), then opens
-                     the modal in the callback, reusing existing correct loaders rather than
-                     duplicating fetch logic or switching the visible tab. Verified the fix's actual
-                     premise empirically: curled GetGasRecordsByVehicleId/GetServiceRecordsByVehicleId/
-                     GetPlanRecordsByVehicleId and confirmed each response really contains its modal
-                     shell id; curled each GetAddXRecordPartialView and confirmed real, error-free
-                     content; confirmed the reminder tab's response does NOT contain a
-                     reminderRecordModal id (as expected - harmless one extra fetch for that tile, not
-                     a bug). Verified: dotnet build (0 errors), dotnet test (10/10), both real
-                     vehicles' Vehicle/Index pages still load, /css/site.css still balanced (431/431).
-                     Not yet committed - pending alongside this STATE.md update.
+                     here (increments 1-6's full detail - the redirect-then-revert saga, the hero-band
+                     gap fix, the Quick Actions modal-shell bug - is fully preserved there). Increments
+                     1-6 committed (b669299, b50f3e1, b9ab158, 4a4df63, 72ba466, dda1d24, 0cc6271).
+                     Increment 7: added Report/_FuelEconomyWidget.cshtml (headline from the already-
+                     formatted ReportHeaderForVehicle.AverageMPG, a real line-chart sparkline fed by
+                     FuelMileageForVehicleByMonth.CostData - hidden axes/legend/tooltip, reusing the
+                     existing full-size MPG chart's own empty-state condition and getChartTextColor()
+                     helper rather than inventing new ones), in a new open-ended widget-row container
+                     in _Report.cshtml that Increments 8-10 will append their own cards into. While
+                     investigating the live Dashboard's "0 mpg" headline (visible in the screenshot the
+                     user shared before Increment 6), discovered NEITHER real vehicle has enough gas
+                     history for MPG to compute yet - so the empty state is the actually-exercised
+                     real-data path, not a hypothetical to skip. Verified BOTH states for real: both
+                     real vehicles correctly show "No Data"; a throwaway vehicle with two gas records a
+                     month apart (400mi/40gal, added via /api/vehicle/gasrecords/add) rendered the
+                     populated sparkline with the headline showing exactly 10.00 mpg (the precise
+                     expected value, not just "a number appeared") - then deleted, confirmed via
+                     /api/vehicles only the two real vehicles remain. Verified: dotnet build (0
+                     errors), dotnet test (10/10), both real vehicles' pages still load, /css/site.css
+                     still balanced (436/436). Not yet committed - pending alongside this STATE.md
+                     update.
 Last completed:      Phase 15 (Remote Access & Persistent Hosting) - all 5 increments resolved (4
                      explicitly declined by the user, not skipped). See docs/execution/PHASE_15.md.
                      Phase 14's remaining areas (icon-button labels, keyboard nav, form labels, alt
                      text, mobile/responsive validation, performance) are still open, not abandoned -
                      both Phase 15 and now Phase 16 were started because the user raised new,
                      higher-priority requests, not because Phase 14 finished.
-Next task:           Increment 7 (Fuel Economy card - real Chart.js sparkline fed by
-                     FuelMileageForVehicleByMonth.CostData, already computed server-side; headline
-                     number from the already-computed AverageMPG), then Increments 8-11 (Total Spent
-                     reusing CostForVehicleByMonth, Planned Maintenance reusing IReminderHelper's
-                     already-computed Urgency/DueDays/DueMileage output, Recent Activity extending
-                     GetVehicleHistory to include GasRecord, Magneto-motif promo tile). See the
-                     approved plan / PHASE_16.md's intro for the full per-increment breakdown. Do not
-                     re-litigate the landing-page decision (Increment 4) - answered directly by the
-                     user. Real vehicle data in this dev environment: vehicleId=1 (BMW Z4), vehicleId=2
-                     (Volvo S80) - both active, both with real photos; note from Increment 5's
-                     investigation that vehicle 1's MPG-by-month chart showed "No data found" despite
-                     a non-zero Total Cost, so Increment 7's sparkline may need to handle a
-                     sparse/empty data case gracefully - check this before assuming the chart will have
-                     visible content. Before wiring any new "add record" trigger, learn from Increment
-                     6's bug: verify empirically where the target modal's shell actually lives (it may
-                     be inside a lazily-loaded tab partial, not always present in the DOM), don't
-                     assume from reading the markup alone. If a throwaway test vehicle is ever needed
-                     again, always delete it before finishing (see Increment 5's pattern).
+Next task:           Increment 8 (Total Spent card, reusing CostForVehicleByMonth + ReportHeader.
+                     TotalCost - a trimmed clone of the existing _GasCostByMonthReport.cshtml bar
+                     dataset, same widget-row pattern Increment 7 established), then 9-11 (Planned
+                     Maintenance reusing IReminderHelper's already-computed Urgency/DueDays/DueMileage
+                     output, Recent Activity extending GetVehicleHistory to include GasRecord, a
+                     Magneto-motif promo tile). See the approved plan / PHASE_16.md's intro for the
+                     full per-increment breakdown. Do not re-litigate the landing-page decision
+                     (Increment 4) - answered directly by the user. Real vehicle data in this dev
+                     environment: vehicleId=1 (BMW Z4), vehicleId=2 (Volvo S80) - both active, both
+                     with real photos, NEITHER with enough gas history for MPG yet (confirmed
+                     Increment 7) - check whether they have enough OTHER record history (service/tax/
+                     repair) for Increment 8's Total Spent chart before assuming it'll show populated
+                     data either; if not, that empty state needs the same real verification treatment
+                     Increment 7 gave its own. Before wiring any new "add record" trigger, learn from
+                     Increment 6's bug: verify empirically where the target modal's shell actually
+                     lives, don't assume from reading the markup alone. If a throwaway test vehicle is
+                     ever needed again, always delete it before finishing (see Increment 5/7's
+                     pattern).
 Known blockers:      1. No browser/screenshot tool in this environment - Phase 14's remaining
                         accessibility work would still need static-code-audit + curl verification,
                         not live screen-reader/keyboard testing.
@@ -140,18 +131,17 @@ Do not:              Assume Phase 14 is "done" - three increments complete (secu
                      ran. dotnet run from the dev repo still works for development but now operates on
                      a separate, diverging dataset - be explicit with the user about which copy
                      they're looking at if this ever comes up.
-Last validation:     Phase 15 + Phase 16 Increments 1-5's full validation history lives in
-                     docs/execution/PHASE_15.md / PHASE_16.md. Phase 16 Increment 6 (current): dotnet
-                     build (0 errors); dotnet test (10/10 passing); dev instance on port 5300; curl
-                     confirmed all 4 Quick Action tiles render with correct onclick handlers; curl
-                     confirmed GetGasRecordsByVehicleId/GetServiceRecordsByVehicleId/
-                     GetPlanRecordsByVehicleId responses actually contain their modal shell ids (the
-                     fix's core premise, verified not assumed); curl confirmed each
-                     GetAddXRecordPartialView returns real error-free content; both real vehicles'
-                     Vehicle/Index pages still 200; /css/site.css still balanced (431/431) —
+Last validation:     Phase 15 + Phase 16 Increments 1-6's full validation history lives in
+                     docs/execution/PHASE_15.md / PHASE_16.md. Phase 16 Increment 7 (current): dotnet
+                     build (0 errors); dotnet test (10/10 passing); dev instance on port 5300; both
+                     real vehicles confirmed showing the "No Data" empty state correctly; a throwaway
+                     vehicle with 2 gas records (400mi/40gal) confirmed the populated sparkline with
+                     the headline reading exactly "10.00 mpg" - the precise expected value - then
+                     deleted, /api/vehicles confirmed only vehicleId 1/2 remain; both real vehicles'
+                     Vehicle/Index pages still 200; /css/site.css still balanced (436/436) —
                      2026-08-18.
-Last commit:         dda1d24 — "Phase 16 Increment 5: Dashboard hero rebuild" — 2026-08-18. Increment 6
-                     (this entry) not yet committed - pending alongside this STATE.md update.
+Last commit:         0cc6271 — "Phase 16 Increment 6: Quick Actions tile grid" — 2026-08-18. Increment
+                     7 (this entry) not yet committed - pending alongside this STATE.md update.
 ```
 
 ## Completed initiative: Zara + Magneto UI overhaul (separate from the roadmap above)

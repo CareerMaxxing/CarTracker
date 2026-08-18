@@ -49,6 +49,13 @@
             <button type="button" class="report-quick-action" onclick="getVehiclePlanRecords(GetVehicleId().vehicleId, showAddPlanRecordModal)"><i class="bi bi-bar-chart-steps"></i><span>@translator.Translate(userLanguage, "Add Planned Work")</span></button>
         </div>
     </div>
+    <!-- Report widget row - Increments 8-10 append Total Spent/Planned Maintenance/Recent Activity
+         cards here alongside Fuel Economy, matching the mockup's stat-card row. -->
+    <div class="row hideOnPrint mb-2 gy-2">
+        <div class="col-md-3 col-12">
+            @await Html.PartialAsync("Report/_FuelEconomyWidget", Model)
+        </div>
+    </div>
     <div class="row hideOnPrint flex-wrap gap-1">
         <div class="col-md-3 col-12 border rounded">
             <div class="row pt-1">

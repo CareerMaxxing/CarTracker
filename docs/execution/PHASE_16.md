@@ -852,3 +852,100 @@ endpoint responses rather than assumed from the markup. **Not yet visually verif
 caveat as every increment in this phase; specifically, whether *clicking* a tile in a live browser
 actually opens the modal (not just that the underlying AJAX chain is provably correct) hasn't been
 exercised by this agent.
+
+## Increment 7: Fuel Economy widget (real sparkline)
+
+### Task packet
+
+```
+TASK ID: PHASE-16-07
+TITLE: Add a Fuel Economy stat card with a real Chart.js sparkline, first of the mockup's widget row
+OBJECTIVE: Match the mockup's "number + trend line" card pattern using only already-computed server
+  data (FuelMileageForVehicleByMonth, already built for the existing full-size MPG-by-month chart) -
+  a genuine sparkline, not a fake CSS trend indicator, since the exact monthly series already exists.
+INPUTS: Views/Vehicle/Report/_MPGByMonthReport.cshtml (studied as the existing, working Chart.js
+  pattern for this exact data - reused its empty-state condition and chart-color helpers rather than
+  inventing new ones), Models/Report/MPGForVehicleByMonth.cs's CostData (confusingly named - holds
+  average MPG per month, not a cost, in this specific model), ReportHeader.AverageMPG (the
+  already-formatted headline string).
+ALLOWED SCOPE: One new partial (Report/_FuelEconomyWidget.cshtml), a new widget-row container in
+  _Report.cshtml (left open for Increments 8-10 to append their own cards into), new
+  .report-widget-* CSS - no controller/model changes, no changes to the existing full-size MPG chart.
+NON-SCOPE: Removing or replacing the existing full-size MPG-by-month chart lower on the page (kept -
+  it offers real interactivity, a year filter and metrics toggle, that a glance-level sparkline
+  doesn't attempt to replace); any other widget-row card (Increments 8-10).
+IMPLEMENTATION REQUIREMENTS:
+  - Sparkline: type 'line', x/y scales both display:false, no legend/title/tooltip, thin (2px) line,
+    no points, borderColor via the existing getChartTextColor() helper (already reads live CSS custom
+    properties so it themes correctly light/dark - reused, not reinvented).
+  - Empty state: identical condition to the existing full chart's own gate
+    (`mpgData.CostData.Any(x => x.Cost > 0)`) - found while checking why the currently-visible Dashboard
+    showed "0 mpg" as its headline stat that NEITHER real vehicle in this household has enough gas
+    history to compute a monthly MPG series yet, so the empty state is the actually-exercised path for
+    real data right now, not a hypothetical edge case that can be skipped.
+  - Widget row deliberately left open-ended (`<div class="row ... gy-2"><div class="col-md-3
+    col-12">...Fuel Economy...</div></div>`) with a comment noting Increments 8-10 append their cards
+    into the same row, rather than hardcoding a 1-column layout that would need restructuring later.
+DELIVERABLES: A working Fuel Economy card, both its empty and populated states verified against real
+  chart-rendering output, not just read as correct from the Razor.
+ACCEPTANCE CRITERIA:
+  - dotnet build: 0 errors. dotnet test: 10/10 passing.
+  - Both real vehicles (neither has enough gas history for MPG yet) render the "No Data" empty state
+    correctly - the actually-common case for this household right now.
+  - A vehicle WITH enough gas history (2 fill-ups, a real delta-mileage/consumption pair) renders the
+    populated branch: sparkline canvas present, Chart.js call present, headline number matches the
+    real computed MPG value - not just "doesn't error," the actual number was checked against the
+    known input (400 miles / 40 gallons = 10.00 mpg, matching the test data exactly).
+  - No regression on either vehicle's full Vehicle/Index page or /css/site.css's brace balance.
+VALIDATION COMMANDS:
+  dotnet build
+  dotnet test Tests/CarCareTracker.Tests.csproj
+  dotnet run --urls http://localhost:5300 --no-build (background)
+  curl http://localhost:5300/Vehicle/GetReportPartialView?vehicleId=1   (real vehicle, empty state)
+  curl http://localhost:5300/Vehicle/GetReportPartialView?vehicleId=2   (real vehicle, empty state)
+  curl -X POST http://localhost:5300/api/vehicles/add ...                (throwaway vehicle)
+  curl -X POST http://localhost:5300/api/vehicle/gasrecords/add ... (x2, a month apart, known
+    mileage delta and fuel consumed, to produce a verifiable MPG value)
+  curl http://localhost:5300/Vehicle/GetReportPartialView?vehicleId={throwaway}   (populated branch)
+  curl -X DELETE http://localhost:5300/api/vehicles/delete?id={throwaway}        (cleanup, always)
+  curl http://localhost:5300/Vehicle/Index?vehicleId=1
+  curl http://localhost:5300/Vehicle/Index?vehicleId=2
+  curl http://localhost:5300/css/site.css
+STOP CONDITION: Both the empty state (against real data) and the populated state (against a
+  known-value throwaway test) verified - not just one or the other - before the throwaway vehicle is
+  deleted and this increment is considered done.
+```
+
+### What was done
+
+1. Read `_MPGByMonthReport.cshtml` (the existing full-size chart for the same underlying data) before
+   designing anything new - reused its exact empty-state condition, its `getChartTextColor()` helper
+   for theme-correct coloring, and confirmed `CostData`'s `Cost` field actually holds average MPG in
+   this specific model (a naming quirk inherited from a shared `CostForVehicleByMonth` type reused
+   across cost and MPG reporting) rather than guessing at the data shape.
+2. While checking why the live Dashboard's headline stat showed "0 mpg" (visible in the screenshot the
+   user shared before this increment started), confirmed neither real vehicle in this household has
+   enough gas record history yet for MPG to compute for any month - meaning the empty state isn't a
+   hypothetical edge case for this increment, it's the actually-exercised path against real data right
+   now. Built it as a first-class state, not an afterthought.
+3. Built `Report/_FuelEconomyWidget.cshtml`: headline from the already-formatted
+   `ReportHeaderForVehicle.AverageMPG`, a real Chart.js line sparkline (hidden axes/legend/tooltip,
+   thin line, no points) fed directly by `FuelMileageForVehicleByMonth.CostData` - the exact same data
+   source as the existing full chart, no new query.
+4. Added an open-ended widget-row container in `_Report.cshtml` (one populated column so far, a
+   comment noting Increments 8-10 append their own cards into the same row) rather than a fixed
+   single-column layout that would need restructuring when the next widgets arrive.
+5. Verified BOTH states against real behavior, not just one: confirmed both real vehicles correctly
+   show "No Data" (the empty state, actually exercised); created a throwaway vehicle, added two gas
+   records a month apart with a known mileage delta (400 mi) and fuel consumed (40 gal), confirmed the
+   populated branch renders the sparkline canvas + Chart.js call AND that the headline number is
+   exactly correct (10.00 mpg, matching 400/40 precisely, not just "a number appeared") - then deleted
+   the throwaway vehicle and confirmed via `/api/vehicles` only the two real vehicles remain.
+6. Regression pass: `dotnet build` (0 errors), `dotnet test` (10/10), both real vehicles' pages still
+   load, `/css/site.css` still balanced (436/436).
+
+### Result
+
+Complete, with both the empty and populated states genuinely exercised against real rendering output -
+not just the common case, and not just assumed correct from reading the Razor/JS. **Not yet visually
+verified** - same standing caveat as every increment in this phase.
