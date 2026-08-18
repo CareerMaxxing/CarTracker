@@ -592,3 +592,38 @@ visually verified** - the user needs to confirm the actual landing experience fe
 make sense that opening the app now goes straight to a vehicle instead of the Garage grid?) before any
 further increments. This is a genuine UX shift, not just a markup port like Increments 2-3b - worth a
 real look, not a rubber-stamp.
+
+### Amendment: reverted, per direct user feedback
+
+User's answer: "open on the grid, but leave the option to transition to other cars in the corner."
+This is a genuine, deliberate product decision (not a bug report) - the Garage grid stays the landing
+experience; the mockup's "Dashboard as default landing" idea is explicitly declined for this app. What
+the user DID want kept: quick one-click access to jump to a specific vehicle without navigating
+through the grid - i.e. the vehicle switcher already built in Increment 3b, just relocated.
+
+Reverted cleanly rather than layering a workaround on top:
+- `HomeController.Index()` back to a bare `return View()` - the `showGarage` parameter and its whole
+  resolve-and-redirect branch removed entirely, not just disabled, since nothing needs it anymore.
+- `returnToGarage()` back to plain `/Home` - the `showGarage=true` flag it was passing existed only to
+  bypass a redirect that no longer exists.
+- Added the vehicle switcher (unchanged infrastructure from Increment 3b - same
+  `GetVehicleSwitcherList` endpoint, same `_VehicleSwitcherList.cshtml` partial, same
+  `loadVehicleSwitcher()`/`switchToVehicle()` JS) to `Home/Index`'s sidebar header too, not just
+  `Vehicle/Index`'s - labeled "Jump to Vehicle" rather than "Switch Vehicle" here, since there's no
+  "current" vehicle context on the Garage page for "switch" to be relative to.
+- `Home/Index`'s header restructured into the same two-sibling pattern `Vehicle/Index` already uses
+  (wordmark-click area separate from the switcher dropdown), for the same reason: they can't share one
+  onclick handler.
+
+`CurrentVehicleId` (Increment 1) and the switcher's set-and-navigate behavior are unaffected - they
+were never the part being reverted, only the auto-redirect-on-landing behavior was.
+
+Verified: `dotnet build` (0 errors), `dotnet test` (10/10), curl confirmed `/Home` now returns `200`
+directly (no more `302`), the switcher renders in `Home/Index`'s sidebar with real vehicle data, the
+switcher endpoint still works, `Vehicle/Index` and `/Home/Garage` both unaffected, `/css/site.css`
+still balanced.
+
+**Result**: Landing behavior reverted to the Garage grid, with a "Jump to Vehicle" quick-switcher now
+available from both `Home/Index` and `Vehicle/Index`. This closes out the increment - no further
+review needed on the redirect question specifically, since the user's answer settled it directly
+rather than needing another round of "does this look right."

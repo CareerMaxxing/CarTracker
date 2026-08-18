@@ -5,51 +5,44 @@ conversation history.
 
 ```
 PROJECT STATUS
-Current phase:      Phase 16 — Sidebar App Shell & Dashboard Redesign (Increment 4 structurally
-                     complete - a genuine UX shift, needs real review not a rubber-stamp)
-Current task:       PHASE-16-04 (see docs/execution/PHASE_16.md) — / and /Home now redirect to the
-                     current vehicle's Dashboard instead of showing the Garage grid. Structurally
-                     verified against 4 real scenarios (build/tests/curl); NOT yet visually/UX
-                     reviewed - this changes what happens the moment the app opens.
-Status:             Full plan/decision history in git history + PHASE_16.md's intro, not re-summarized
-                     here. Increments 1-3b done (b669299, b50f3e1, b9ab158, 4a4df63) - user approved
-                     each live ("better, carry on" / "bang on, continue" / "continue"). Increment 4:
-                     before writing any code, worked out a real trap - an unconditional redirect from
-                     /Home to a vehicle would make the Garage grid permanently unreachable, since every
-                     existing "back to Home" link (wordmark click, mobile drawer) would just bounce
-                     forward again. Solved with `Index(bool showGarage = false)` - grepped the whole
-                     wwwroot tree for every bare '/Home' navigation before deciding what to touch:
-                     only returnToGarage() needed the showGarage=true flag added; login.js's post-login
-                     redirect and vehicle.js's post-delete-vehicle redirect were deliberately left
-                     bare, since landing on the new dashboard-first experience is correct behavior for
-                     both, not a gap. Resolver reuses the same GetVehicles/FilterUserVehicles/
-                     HideSoldVehicles pattern now used a third time (GetVehicleSelector,
-                     GetVehicleSwitcherList, this) - not yet extracted to a shared helper, the three
-                     call sites' follow-on logic still differs enough to make that premature. Added an
-                     explicit "Vehicles" sidebar item to Vehicle/Index's footer (was previously only
-                     reachable by clicking the wordmark, not a labeled action). Verified against 4 real
-                     scenarios, not just the happy path: plain /Home -> 302 to the actual current
-                     vehicle; /Home?showGarage=true -> 200, no redirect; set CurrentVehicleId to this
-                     household's OTHER real vehicle (id=2, Volvo) -> /Home redirects specifically
-                     there, proving the stored preference is read, not ignored; set CurrentVehicleId to
-                     a nonexistent id (999) -> graceful fallback to the first accessible vehicle, no
-                     error. Reset dev state's CurrentVehicleId back to 1 afterward. Not yet committed -
-                     pending alongside this STATE.md update.
+Current phase:      Phase 16 — Sidebar App Shell & Dashboard Redesign (Increment 4 resolved by direct
+                     user decision - landing page reverted to Garage grid)
+Current task:       PHASE-16-04 (see docs/execution/PHASE_16.md) — COMPLETE. Built an auto-redirect to
+                     the current vehicle's Dashboard, asked for real UX review since it changed what
+                     happens when the app opens, and got a direct, clear answer: "open on the grid, but
+                     leave the option to transition to other cars in the corner." Reverted the redirect
+                     cleanly (not left dormant) and instead added the Increment 3b vehicle switcher to
+                     Home/Index's sidebar too (as "Jump to Vehicle"), so both Home and Vehicle pages now
+                     have quick one-click vehicle access without the auto-redirect. This closes the
+                     landing-page question - no further review needed on it specifically.
+Status:             Full plan/decision history in git history + PHASE_16.md's intro (including the full
+                     original redirect implementation, its 4-scenario verification, and the revert), not
+                     re-summarized here. Increments 1-4 done (b669299, b50f3e1, b9ab158, 4a4df63,
+                     1a6f213 - the last one superseded by an uncommitted revert). Current uncommitted
+                     state: HomeController.Index() back to a bare `return View()` (the showGarage
+                     parameter and resolve-and-redirect branch removed entirely); returnToGarage() back
+                     to plain `/Home`; Home/Index.cshtml's sidebar header now has the same switcher
+                     dropdown Vehicle/Index already had (reusing the exact same GetVehicleSwitcherList
+                     endpoint/_VehicleSwitcherList partial/loadVehicleSwitcher()/switchToVehicle() JS
+                     from Increment 3b - no new backend). Verified: dotnet build (0 errors), dotnet test
+                     (10/10), curl confirmed /Home now returns 200 directly (no more 302), the switcher
+                     renders in Home's sidebar with real vehicle data, Vehicle/Index and /Home/Garage
+                     both unaffected, /css/site.css still balanced. Not yet committed - pending
+                     alongside this STATE.md update.
 Last completed:      Phase 15 (Remote Access & Persistent Hosting) - all 5 increments resolved (4
                      explicitly declined by the user, not skipped). See docs/execution/PHASE_15.md.
                      Phase 14's remaining areas (icon-button labels, keyboard nav, form labels, alt
                      text, mobile/responsive validation, performance) are still open, not abandoned -
                      both Phase 15 and now Phase 16 were started because the user raised new,
                      higher-priority requests, not because Phase 14 finished.
-Next task:           STOP before writing more code: this is the first Phase 16 increment that changes
-                     actual app BEHAVIOR (what happens when you open the app), not just markup/CSS
-                     structure - the user needs to genuinely evaluate whether landing straight on a
-                     vehicle's Dashboard (instead of the Garage grid) feels right, not just glance and
-                     say "continue" the way prior increments got approved. After that: Increments 5-11,
-                     the actual Dashboard widgets (hero card rebuild, Quick Actions, Fuel Economy
-                     sparkline, Total Spent, Planned Maintenance, Recent Activity, Magneto-motif promo
-                     tile) - see the approved plan / PHASE_16.md's intro for the full per-increment
-                     breakdown and which existing data each one reuses.
+Next task:           Increments 5-11: the actual Dashboard widgets on the per-vehicle Dashboard/Report
+                     tab (hero card rebuild, Quick Actions, Fuel Economy sparkline, Total Spent,
+                     Planned Maintenance, Recent Activity, Magneto-motif promo tile) - these still apply
+                     regardless of whether that page is reached via the grid or the new switcher, since
+                     the landing-page question is now settled. See the approved plan / PHASE_16.md's
+                     intro for the full per-increment breakdown and which existing data each one reuses.
+                     Do not re-litigate the landing-page decision - it was answered directly, not left
+                     ambiguous.
 Known blockers:      1. No browser/screenshot tool in this environment - Phase 14's remaining
                         accessibility work would still need static-code-audit + curl verification,
                         not live screen-reader/keyboard testing.
@@ -126,16 +119,16 @@ Do not:              Assume Phase 14 is "done" - three increments complete (secu
                      a separate, diverging dataset - be explicit with the user about which copy
                      they're looking at if this ever comes up.
 Last validation:     Phase 15's full validation history lives in docs/execution/PHASE_15.md. Phase 16
-                     Increment 4 (current, structural only - NOT UX-reviewed): dotnet build (0 errors);
-                     dotnet test (10/10 passing); dev instance on port 5300; curl -i /Home -> 302 to
-                     the real current vehicle; curl /Home?showGarage=true -> 200 no redirect; after
-                     POST SetCurrentVehicle=2, /Home redirects specifically to vehicleId=2 (not just
-                     "a" vehicle); after POST SetCurrentVehicle=999 (invalid), /Home falls back to
-                     vehicleId=1 with no error; "Vehicles" nav item confirmed present in rendered HTML;
-                     /Home/Garage and /css/site.css (brace balance) both unaffected — 2026-08-18. Dev
-                     state's CurrentVehicleId reset back to 1 after testing.
-Last commit:         4a4df63 — "Phase 16 Increment 3b" — 2026-08-18. Increment 4 (this entry) not yet
-                     committed - pending alongside this STATE.md update.
+                     Increment 4's original redirect was fully verified against 4 scenarios (see git
+                     history / PHASE_16.md), then reverted per direct user feedback. Current state
+                     (this entry): dotnet build (0 errors); dotnet test (10/10 passing); dev instance on
+                     port 5300; curl -i /Home -> 200 directly (confirmed NOT a 302 anymore); switcher
+                     confirmed present in Home/Index's rendered sidebar with real vehicle data (BMW Z4,
+                     Volvo S80); Vehicle/Index and /Home/Garage both unaffected; /css/site.css still
+                     balanced (424/424) — 2026-08-18.
+Last commit:         1a6f213 — "Phase 16 Increment 4" (the now-reverted redirect) — 2026-08-18. This
+                     entry (the revert + Home switcher) not yet committed - pending alongside this
+                     STATE.md update.
 ```
 
 ## Completed initiative: Zara + Magneto UI overhaul (separate from the roadmap above)

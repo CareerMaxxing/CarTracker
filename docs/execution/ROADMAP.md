@@ -21,7 +21,7 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
 | 13 | AI/OCR | Explicitly deferred. Leave clean extension points only; no feature work. | ✅ Confirmed deferred — no AI/OCR code exists anywhere in the codebase (verified by grep); see PHASE_13.md |
 | 14 | V1 Hardening | Unit/integration/UI/migration/duplicate-operation/adapter-failure/backup-restore tests, error handling, accessibility, responsive validation, performance, security review. | 🟡 In progress — Increment 1 (security review): real static-file auth bypass + unrestricted upload fixed. Increment 2 (automated tests): xUnit + WebApplicationFactory project stood up, 10 passing tests. Increment 3 (accessibility): all 41 modals audited, aria-labelledby wired on 39, 2 real duplicate-id bugs found and fixed (PHASE_14.md). Icon buttons/keyboard-nav/labels/mobile/performance still open |
 | 15 | Remote Access & Persistent Hosting | Reach the existing app from the user's phone with the same live data as the PC, over a private Tailscale network — no new sync architecture, single server + existing SignalR live updates. Revisits CLAUDE.md's localhost-only/no-cloud-deployment decisions with the human owner's explicit sign-off. | ✅ Complete — Windows Service hosting readiness, publish+register bound to 127.0.0.1:5299 with real data carried over, Tailscale reachability (`https://legion.tail80af14.ts.net/`) verified from the phone over mobile data with wifi off, and a proper PWA install on the phone (Chrome "Install app", Samsung battery/VPN settings tuned for reliability) (PHASE_15.md). Auth enablement explicitly declined by the user — device-level protection + Tailscale's own device authorization judged sufficient; not re-raised unless the user brings it up again |
-| 16 | Sidebar App Shell & Dashboard Redesign | Restructure navigation from a top tab-strip + all-vehicles Garage-grid homepage to a persistent left sidebar with a single-current-vehicle-focused Dashboard, matching a mockup's editorial aesthetic (already close in spirit to the existing Zara + Magneto design system). Intentionally reverses UI_TRANSITION.md's explicit "keep Home/Vehicle nav separate" decision, with the user's sign-off. Visual/layout pass only this phase — new widgets use real existing data; Trips/fuel-gauge/month-over-month%/fleet-stats are flagged as candidate future phases, not built now. | 🟡 In progress — Increments 1-3b complete (nav port + vehicle switcher, verified against the real two-vehicle household). Increment 4 (landing page routes to the current vehicle's Dashboard instead of the Garage grid) structurally complete — caught and solved a real design trap before writing code (an unconditional redirect would have made the Garage grid unreachable forever), verified against 4 real scenarios including invalid-id fallback and preference-respecting redirects, not just the happy path (PHASE_16.md). This is a genuine UX shift, not just a markup port — real visual/UX review needed before continuing to the Dashboard widget increments |
+| 16 | Sidebar App Shell & Dashboard Redesign | Restructure navigation from a top tab-strip + all-vehicles Garage-grid homepage to a persistent left sidebar, matching a mockup's editorial aesthetic (already close in spirit to the existing Zara + Magneto design system). Intentionally reverses UI_TRANSITION.md's explicit "keep Home/Vehicle nav separate" decision, with the user's sign-off. Visual/layout pass only this phase — new widgets use real existing data; Trips/fuel-gauge/month-over-month%/fleet-stats are flagged as candidate future phases, not built now. | 🟡 In progress — Increments 1-3b complete (nav port + vehicle switcher). Increment 4 (auto-redirect landing page to the current vehicle's Dashboard) built, then **explicitly reverted per direct user feedback**: "open on the grid, but leave the option to transition to other cars in the corner" — the mockup's dashboard-as-landing idea is declined for this app; Garage grid stays the homepage, with a "Jump to Vehicle" quick-switcher now on both Home/Index and Vehicle/Index sidebars instead (PHASE_16.md) |
 
 ## Human review checkpoints
 
@@ -78,12 +78,19 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
   unconditional redirect would have made the Garage grid permanently unreachable, since every "back to
   Home" link would just bounce forward again. Solved with an explicit showGarage=true opt-out,
   grepping the whole wwwroot tree first to find every existing bare-/Home navigation (login.js,
-  vehicle.js's delete flow) and deliberately leaving those two unchanged, since landing on the new
-  dashboard-first experience is correct for both. Verified against 4 real scenarios (default redirect,
-  explicit garage bypass, respects a specific stored preference, invalid-id fallback), not just the
-  happy path. **Next: this is a genuine UX shift (what happens when you open the app), not just a
-  markup port like Increments 2-3b - needs real visual/UX review, not a rubber-stamp, before
-  continuing to the Dashboard widget increments (5-11).**
+  vehicle.js's delete flow) and deliberately leaving those two unchanged. Verified against 4 real
+  scenarios (default redirect, explicit garage bypass, respects a specific stored preference,
+  invalid-id fallback), not just the happy path. User's answer to the real-UX-review ask: **"open on
+  the grid, but leave the option to transition to other cars in the corner"** - a deliberate decision,
+  not a bug report. Reverted cleanly (Index() back to a bare return View(), returnToGarage() back to
+  plain /Home, the showGarage plumbing removed entirely rather than left dormant) and added the
+  Increment 3b vehicle switcher to Home/Index's sidebar too (labeled "Jump to Vehicle" there, no
+  "current" vehicle context to be "switching" relative to on the Garage page). CurrentVehicleId itself
+  and the switcher's set-and-navigate behavior were never part of what got reverted. **Next:
+  Increments 5-11, the actual Dashboard widgets (hero card, Quick Actions, Fuel Economy sparkline,
+  Total Spent, Planned Maintenance, Recent Activity, Magneto-motif promo tile) - these still apply to
+  the per-vehicle Dashboard/Report tab regardless of whether it's the landing page or reached via the
+  grid/switcher.**
 
 ## Core V1 acceptance scenario
 

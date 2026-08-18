@@ -40,15 +40,25 @@
 @section Nav {
     @{ ViewData["UserLanguage"] = userLanguage; }
     <div class="ct-sidebar hideOnPrint" id="appSidebar">
-        <div class="ct-sidebar-header ct-wordmark-wrap" style="cursor:pointer;" onclick="returnToGarage()">
-            @if (config.GetSmallLogoUrl() == StaticHelper.DefaultSmallLogoPath)
-            {
-                <span class="ct-wordmark">Car Tracker</span>
-            }
-            else
-            {
-                <img src="@config.GetSmallLogoUrl()" class="lubelogger-logo" />
-            }
+        <div class="ct-sidebar-header">
+            <div class="ct-wordmark-wrap" style="cursor:pointer;" onclick="returnToGarage()">
+                @if (config.GetSmallLogoUrl() == StaticHelper.DefaultSmallLogoPath)
+                {
+                    <span class="ct-wordmark">Car Tracker</span>
+                }
+                else
+                {
+                    <img src="@config.GetSmallLogoUrl()" class="lubelogger-logo" />
+                }
+            </div>
+            <div class="dropdown">
+                <button type="button" class="ct-sidebar-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" onclick="loadVehicleSwitcher()">
+                    <i class="bi bi-arrow-left-right"></i><span>@translator.Translate(userLanguage, "Jump to Vehicle")</span>
+                </button>
+                <ul class="dropdown-menu" id="vehicleSwitcherMenu">
+                    <li><span class="dropdown-item-text text-secondary">@translator.Translate(userLanguage, "Loading")...</span></li>
+                </ul>
+            </div>
         </div>
         <ul class="nav flex-column ct-sidebar-nav" id="homeTab" role="tablist">
             @await Html.PartialAsync("_SidebarNavList", homeNavTabs.Select(t => (t.Id, t.Target, t.Icon, t.Label, "", "", false)).ToList())
