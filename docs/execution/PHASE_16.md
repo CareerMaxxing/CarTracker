@@ -949,3 +949,82 @@ STOP CONDITION: Both the empty state (against real data) and the populated state
 Complete, with both the empty and populated states genuinely exercised against real rendering output -
 not just the common case, and not just assumed correct from reading the Razor/JS. **Not yet visually
 verified** - same standing caveat as every increment in this phase.
+
+## Increment 8: Total Spent widget
+
+### Task packet
+
+```
+TASK ID: PHASE-16-08
+TITLE: Add a Total Spent stat card to the Dashboard widget row, second of the mockup's row
+OBJECTIVE: Match the mockup's "number + bar trend" card pattern for total cost, reusing the exact
+  data source already computed for the existing full-size expenses chart - no new query.
+INPUTS: Views/Vehicle/Report/_GasCostByMonthReport.cshtml (the existing chart for this exact data -
+  studied for its empty-state condition and data shape before building anything new), ReportViewModel.
+  CostForVehicleByMonth (the monthly series) and ReportHeaderForVehicle.TotalCost (the headline value,
+  already computed), Helper/StaticHelper.cs's HideZeroCost (the existing currency-formatting/zero-
+  hiding helper already used by _ReportHeader.cshtml's own Total Cost stat - reused for the exact same
+  formatting convention rather than a fresh ToString("C2") call).
+ALLOWED SCOPE: One new partial (Report/_TotalSpentWidget.cshtml), one new column appended to
+  Increment 7's already-open-ended widget row - no new CSS needed (reuses .report-widget-* as-is).
+NON-SCOPE: Removing/replacing the existing full-size expenses-by-month chart lower on the page (kept,
+  same reasoning as Increment 7 - it has real interactivity this summary card doesn't attempt).
+IMPLEMENTATION REQUIREMENTS:
+  - Sparkline: type 'bar' this time (distinguishing it visually from Fuel Economy's line sparkline,
+    matching the mockup's own bar-vs-line distinction between these two specific cards), same hidden-
+    axes/no-legend/no-tooltip treatment as Increment 7's sparkline.
+  - Empty state: reused `_GasCostByMonthReport.cshtml`'s own condition
+    (`costData.Any(x => x.Cost > 0)`, dropped the `|| DistanceTraveled > 0` half since this card is
+    cost-only, not the combined cost+distance chart) rather than inventing a new one.
+  - Headline formatting: `StaticHelper.HideZeroCost(Model.ReportHeaderForVehicle.TotalCost.ToString("C2"), true)`
+    - the exact same call `_ReportHeader.cshtml`'s own "Total Cost" stat already uses, for currency-
+    symbol/zero-hiding consistency across the page rather than a fresh formatting decision.
+DELIVERABLES: A working Total Spent card, both states verified against real vehicle data (no
+  throwaway vehicle needed this time - vehicle 1 already has real cost history).
+ACCEPTANCE CRITERIA:
+  - dotnet build: 0 errors. dotnet test: 10/10 passing.
+  - Vehicle 1 (has known real cost history - a GBP260.00 total, visible in the screenshot the user
+    shared earlier this phase) renders the populated branch with the headline reading exactly
+    "£260.00" - matched against the known real value, not just "some currency string appeared."
+  - Vehicle 2 (no cost history) renders the "No Data" empty state correctly.
+  - No regression on either vehicle's full page or /css/site.css's brace balance (unchanged from
+    Increment 7 - no new CSS rules needed, confirming the reuse claim rather than assuming it).
+VALIDATION COMMANDS:
+  dotnet build
+  dotnet test Tests/CarCareTracker.Tests.csproj
+  dotnet run --urls http://localhost:5300 --no-build (background)
+  curl http://localhost:5300/Vehicle/GetReportPartialView?vehicleId=1   (populated - real data)
+  curl http://localhost:5300/Vehicle/GetReportPartialView?vehicleId=2   (empty - real data)
+  curl http://localhost:5300/Vehicle/Index?vehicleId=1
+  curl http://localhost:5300/Vehicle/Index?vehicleId=2
+  curl http://localhost:5300/css/site.css
+STOP CONDITION: Both states verified against real vehicle data specifically (this increment got
+  lucky - unlike Increment 7, no throwaway vehicle was needed since vehicle 1 already has real cost
+  history) - the headline number checked against the exact known value, not just presence.
+```
+
+### What was done
+
+1. Read `_GasCostByMonthReport.cshtml` (the existing chart for the same underlying `CostForVehicleByMonth`
+   data) before building anything new - reused its empty-state condition (dropping the
+   `DistanceTraveled` half, irrelevant to a cost-only card) and confirmed the data shape rather than
+   guessing.
+2. Built `Report/_TotalSpentWidget.cshtml`: headline via `StaticHelper.HideZeroCost(...)` - the exact
+   same formatting call `_ReportHeader.cshtml`'s own Total Cost stat already uses, for consistency -
+   and a bar-type sparkline (deliberately distinct from Fuel Economy's line type, matching the
+   mockup's own visual distinction between these two cards) fed by `CostForVehicleByMonth` directly.
+3. Appended it as a second column into Increment 7's already-open-ended widget row - no new CSS
+   needed, confirmed rather than assumed (checked the CSS brace count was unchanged after the build).
+4. Verified against real data directly - no throwaway vehicle needed this round, since vehicle 1
+   already has real cost history from earlier phase testing: confirmed the populated branch renders
+   with the headline reading exactly "£260.00," matching the exact value already visible in the
+   screenshot the user shared before this increment started (not just "a currency string appeared").
+   Confirmed vehicle 2 (no cost history) correctly renders the empty state.
+5. Regression pass: `dotnet build` (0 errors), `dotnet test` (10/10), both vehicles' pages still load,
+   `/css/site.css` still balanced at the same count as Increment 7 (436/436, confirming no new CSS was
+   actually needed rather than just assuming the reuse claim).
+
+### Result
+
+Complete, both states verified against real vehicle data with an exact-value match on the populated
+case. **Not yet visually verified** - same standing caveat as every increment in this phase.

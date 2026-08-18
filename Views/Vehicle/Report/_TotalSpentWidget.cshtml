@@ -1,0 +1,54 @@
+@using CarCareTracker.Helper
+@inject IConfigHelper config
+@inject ITranslationHelper translator
+@model ReportViewModel
+@{
+    var userConfig = config.GetUserConfig(User);
+    var userLanguage = userConfig.UserLanguage;
+    var costData = Model.CostForVehicleByMonth;
+}
+<div class="report-widget-card">
+    <span class="report-widget-label">@translator.Translate(userLanguage, "Total Spent")</span>
+    @if (costData.Any(x => x.Cost > 0))
+    {
+        <span class="report-widget-value">@StaticHelper.HideZeroCost(Model.ReportHeaderForVehicle.TotalCost.ToString("C2"), true)</span>
+        <canvas id="sparkline-cost" class="report-widget-sparkline"></canvas>
+        <script>
+            renderCostSparkline();
+            function renderCostSparkline() {
+                var sparkData = [];
+                @foreach (CostForVehicleByMonth monthCost in costData)
+                {
+                    @:sparkData.push(globalParseFloat('@monthCost.Cost'));
+                }
+                new Chart($("#sparkline-cost"), {
+                    type: 'bar',
+                    data: {
+                        labels: sparkData.map((x, i) => i),
+                        datasets: [{
+                            data: sparkData,
+                            backgroundColor: getChartTextColor()
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            title: { display: false },
+                            tooltip: { enabled: false }
+                        },
+                        scales: {
+                            x: { display: false },
+                            y: { display: false }
+                        }
+                    }
+                });
+            }
+        </script>
+    }
+    else
+    {
+        <span class="report-widget-value report-widget-value-empty">@translator.Translate(userLanguage, "No Data")</span>
+    }
+</div>

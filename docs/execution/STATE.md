@@ -5,57 +5,51 @@ conversation history.
 
 ```
 PROJECT STATUS
-Current phase:      Phase 16 — Sidebar App Shell & Dashboard Redesign (Increment 7 complete,
-                     Increment 8 next)
-Current task:       PHASE-16-07 (see docs/execution/PHASE_16.md) — Fuel Economy widget (real Chart.js
-                     sparkline) added to the Dashboard's new widget row. Both empty and populated
-                     states verified against real rendering output.
+Current phase:      Phase 16 — Sidebar App Shell & Dashboard Redesign (Increment 8 complete,
+                     Increment 9 next)
+Current task:       PHASE-16-08 (see docs/execution/PHASE_16.md) — Total Spent widget added to the
+                     Dashboard's widget row. Both states verified against real vehicle data - no
+                     throwaway vehicle needed this round.
 Status:             Full plan/decision history in git history + PHASE_16.md's intro, not re-summarized
-                     here (increments 1-6's full detail - the redirect-then-revert saga, the hero-band
-                     gap fix, the Quick Actions modal-shell bug - is fully preserved there). Increments
-                     1-6 committed (b669299, b50f3e1, b9ab158, 4a4df63, 72ba466, dda1d24, 0cc6271).
-                     Increment 7: added Report/_FuelEconomyWidget.cshtml (headline from the already-
-                     formatted ReportHeaderForVehicle.AverageMPG, a real line-chart sparkline fed by
-                     FuelMileageForVehicleByMonth.CostData - hidden axes/legend/tooltip, reusing the
-                     existing full-size MPG chart's own empty-state condition and getChartTextColor()
-                     helper rather than inventing new ones), in a new open-ended widget-row container
-                     in _Report.cshtml that Increments 8-10 will append their own cards into. While
-                     investigating the live Dashboard's "0 mpg" headline (visible in the screenshot the
-                     user shared before Increment 6), discovered NEITHER real vehicle has enough gas
-                     history for MPG to compute yet - so the empty state is the actually-exercised
-                     real-data path, not a hypothetical to skip. Verified BOTH states for real: both
-                     real vehicles correctly show "No Data"; a throwaway vehicle with two gas records a
-                     month apart (400mi/40gal, added via /api/vehicle/gasrecords/add) rendered the
-                     populated sparkline with the headline showing exactly 10.00 mpg (the precise
-                     expected value, not just "a number appeared") - then deleted, confirmed via
-                     /api/vehicles only the two real vehicles remain. Verified: dotnet build (0
-                     errors), dotnet test (10/10), both real vehicles' pages still load, /css/site.css
-                     still balanced (436/436). Not yet committed - pending alongside this STATE.md
-                     update.
+                     here (increments 1-7's full detail is fully preserved there). Increments 1-7
+                     committed (b669299, b50f3e1, b9ab158, 4a4df63, 72ba466, dda1d24, 0cc6271, 7d71eec).
+                     Increment 8: added Report/_TotalSpentWidget.cshtml (headline via
+                     StaticHelper.HideZeroCost - the exact same call the existing Total Cost stat
+                     panel already uses - a bar-type sparkline fed by CostForVehicleByMonth directly,
+                     deliberately distinct chart type from Fuel Economy's line sparkline), appended as
+                     the second column into Increment 7's open-ended widget row. No new CSS needed
+                     (confirmed via unchanged brace count, not assumed). Verified against real data
+                     directly - vehicle 1 already has real cost history from earlier phase testing, so
+                     no throwaway vehicle was needed this round: populated branch's headline read
+                     exactly "£260.00," matching the known real value visible in the screenshot the
+                     user shared before Increment 6 started. Vehicle 2 (no cost history) correctly
+                     showed the empty state. Verified: dotnet build (0 errors), dotnet test (10/10),
+                     both vehicles' pages still load, /css/site.css still balanced (436/436, unchanged
+                     from Increment 7). Not yet committed - pending alongside this STATE.md update.
 Last completed:      Phase 15 (Remote Access & Persistent Hosting) - all 5 increments resolved (4
                      explicitly declined by the user, not skipped). See docs/execution/PHASE_15.md.
                      Phase 14's remaining areas (icon-button labels, keyboard nav, form labels, alt
                      text, mobile/responsive validation, performance) are still open, not abandoned -
                      both Phase 15 and now Phase 16 were started because the user raised new,
                      higher-priority requests, not because Phase 14 finished.
-Next task:           Increment 8 (Total Spent card, reusing CostForVehicleByMonth + ReportHeader.
-                     TotalCost - a trimmed clone of the existing _GasCostByMonthReport.cshtml bar
-                     dataset, same widget-row pattern Increment 7 established), then 9-11 (Planned
-                     Maintenance reusing IReminderHelper's already-computed Urgency/DueDays/DueMileage
-                     output, Recent Activity extending GetVehicleHistory to include GasRecord, a
-                     Magneto-motif promo tile). See the approved plan / PHASE_16.md's intro for the
-                     full per-increment breakdown. Do not re-litigate the landing-page decision
-                     (Increment 4) - answered directly by the user. Real vehicle data in this dev
-                     environment: vehicleId=1 (BMW Z4), vehicleId=2 (Volvo S80) - both active, both
-                     with real photos, NEITHER with enough gas history for MPG yet (confirmed
-                     Increment 7) - check whether they have enough OTHER record history (service/tax/
-                     repair) for Increment 8's Total Spent chart before assuming it'll show populated
-                     data either; if not, that empty state needs the same real verification treatment
-                     Increment 7 gave its own. Before wiring any new "add record" trigger, learn from
-                     Increment 6's bug: verify empirically where the target modal's shell actually
-                     lives, don't assume from reading the markup alone. If a throwaway test vehicle is
-                     ever needed again, always delete it before finishing (see Increment 5/7's
-                     pattern).
+Next task:           Increment 9 (Planned Maintenance list, reusing IReminderHelper.
+                     GetReminderRecordViewModels' already-computed Urgency/DueDays/DueMileage output -
+                     sort by urgency then due-date, show top N, appended as a THIRD column into the
+                     same widget row - note this is a LIST not a stat-card-with-sparkline like
+                     Increments 7-8, so it may need a taller/differently-shaped card, check the
+                     mockup's actual layout before assuming the same .report-widget-card sizing
+                     fits), then 10-11 (Recent Activity extending GetVehicleHistory to include
+                     GasRecord, a Magneto-motif promo tile). See the approved plan / PHASE_16.md's
+                     intro for the full per-increment breakdown. Do not re-litigate the landing-page
+                     decision (Increment 4) - answered directly by the user. Real vehicle data:
+                     vehicleId=1 (BMW Z4, has real cost history but no MPG history), vehicleId=2
+                     (Volvo S80, no cost or MPG history yet) - check whether either has real reminder
+                     data before assuming Increment 9's list will show populated content; if not,
+                     that empty state needs the same real verification treatment Increments 7-8 gave
+                     theirs. Before wiring any new "add record" trigger, learn from Increment 6's bug:
+                     verify empirically where the target modal's shell actually lives, don't assume
+                     from reading the markup alone. If a throwaway test vehicle/record is ever needed
+                     again, always delete it before finishing (see Increment 5/7's pattern).
 Known blockers:      1. No browser/screenshot tool in this environment - Phase 14's remaining
                         accessibility work would still need static-code-audit + curl verification,
                         not live screen-reader/keyboard testing.
@@ -131,17 +125,16 @@ Do not:              Assume Phase 14 is "done" - three increments complete (secu
                      ran. dotnet run from the dev repo still works for development but now operates on
                      a separate, diverging dataset - be explicit with the user about which copy
                      they're looking at if this ever comes up.
-Last validation:     Phase 15 + Phase 16 Increments 1-6's full validation history lives in
-                     docs/execution/PHASE_15.md / PHASE_16.md. Phase 16 Increment 7 (current): dotnet
-                     build (0 errors); dotnet test (10/10 passing); dev instance on port 5300; both
-                     real vehicles confirmed showing the "No Data" empty state correctly; a throwaway
-                     vehicle with 2 gas records (400mi/40gal) confirmed the populated sparkline with
-                     the headline reading exactly "10.00 mpg" - the precise expected value - then
-                     deleted, /api/vehicles confirmed only vehicleId 1/2 remain; both real vehicles'
-                     Vehicle/Index pages still 200; /css/site.css still balanced (436/436) —
-                     2026-08-18.
-Last commit:         0cc6271 — "Phase 16 Increment 6: Quick Actions tile grid" — 2026-08-18. Increment
-                     7 (this entry) not yet committed - pending alongside this STATE.md update.
+Last validation:     Phase 15 + Phase 16 Increments 1-7's full validation history lives in
+                     docs/execution/PHASE_15.md / PHASE_16.md. Phase 16 Increment 8 (current): dotnet
+                     build (0 errors); dotnet test (10/10 passing); dev instance on port 5300; vehicle
+                     1 (real cost history) confirmed the populated card's headline reads exactly
+                     "£260.00" - matched against the known real value, no throwaway vehicle needed;
+                     vehicle 2 (no cost history) confirmed the "No Data" empty state; both vehicles'
+                     Vehicle/Index pages still 200; /css/site.css unchanged at 436/436 (confirming no
+                     new CSS was actually needed) — 2026-08-18.
+Last commit:         7d71eec — "Phase 16 Increment 7: Fuel Economy widget" — 2026-08-18. Increment 8
+                     (this entry) not yet committed - pending alongside this STATE.md update.
 ```
 
 ## Completed initiative: Zara + Magneto UI overhaul (separate from the roadmap above)
