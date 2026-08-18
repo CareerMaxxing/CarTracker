@@ -44,6 +44,7 @@
             ImportMode.NoteRecord
         };
         public ImportMode DefaultTab { get; set; } = ImportMode.Dashboard;
+        public int CurrentVehicleId { get; set; }
         public List<ImportMode> TabOrder { get; set; } = new List<ImportMode>() {
             ImportMode.Dashboard,
             ImportMode.PlanRecord,

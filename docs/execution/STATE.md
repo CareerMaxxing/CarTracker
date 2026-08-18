@@ -5,48 +5,56 @@ conversation history.
 
 ```
 PROJECT STATUS
-Current phase:      Phase 15 — Remote Access & Persistent Hosting — ✅ COMPLETE
-Current task:       None - phase finished. See docs/execution/PHASE_15.md for full detail on all 5
-                     increments.
-Status:             Complete. Summary: Increment 1 (code, committed ab97b66/7f99541) made the app
-                     safe to run as a Windows Service - found and fixed a real CWD-relative-path gap
-                     the original plan didn't anticipate, plus DataProtection key persistence.
-                     Increment 2 (docs-only, committed 8e7359d) published to C:\Services\CarTracker,
-                     carried over the user's real vehicle data, bound Kestrel to 127.0.0.1:5299 only,
-                     registered+started the Windows Service (elevated sc.exe, run by the user) -
-                     independently re-verified running with real data. Increment 3 (docs-only,
-                     committed f4ced47) confirmed both devices on the same tailnet, ran `tailscale
-                     serve --bg http://127.0.0.1:5299` (the plan's assumed CLI syntax was stale, the
-                     installed version printed the correct replacement itself), worked through a
-                     one-time account-level "enable Serve" gate, verified
-                     https://legion.tail80af14.ts.net/ loads the real app from the phone with wifi OFF
-                     (mobile data only). Increment 4 (turn on auth): presented to the user with the
-                     exact UI steps, **explicitly declined** - device-level protection on both
-                     devices + Tailscale's own device-authorization layer judged sufficient. This is a
-                     deliberate decision, not skipped by default - do not re-raise unprompted (see
-                     "Do not" below). Increment 5 (PWA install): user chose a full app install over a
-                     plain bookmark, installed via Chrome's "Install app" (using the manifest that
-                     already existed, no code needed), and - since the phone is a Samsung Galaxy S25
-                     Ultra - was walked through setting Tailscale's battery usage to "Unrestricted"
-                     and enabling "Always-on VPN" so the background connection doesn't get silently
-                     killed and break the shortcut. Confirmed working: home-screen icon opens the real
-                     app full-screen with real data. CLAUDE.md's "Locked project decisions" section
-                     updated (Runtime/Existing data/Mobile/Offline-sync bullets) to reflect all of the
-                     above - not yet committed, pending alongside this STATE.md update.
+Current phase:      Phase 16 — Sidebar App Shell & Dashboard Redesign (Increment 1 of 11 complete)
+Current task:       PHASE-16-01 (see docs/execution/PHASE_16.md) — complete: CurrentVehicleId
+                     plumbing, verified via a real curl round-trip, zero visual change yet
+Status:             User shared a dashboard mockup ("DriveLog") and asked to plan making the app's UI
+                     match it, same way as Phase 15's process (EnterPlanMode, Explore agents, a Plan
+                     agent, AskUserQuestion for the decisions only the user could make, a written plan
+                     file, ExitPlanMode). Two Explore agents ran in parallel: one on the existing
+                     "Zara + Magneto" design system (already close in aesthetic spirit - tokenized
+                     Fraunces/Work Sans, flat corners, warm paper/ink palette, docs/UI_SPEC.md), one
+                     on which mockup widgets map to real data vs. need new backend work (Trips, a
+                     fuel-tank/range gauge, month-over-month cost %, and fleet-wide all-time stats all
+                     confirmed as NOT existing anywhere in the data model). Asked 3 questions: (1) IA
+                     scope - user chose the FULL sidebar restructure over a smaller "just restyle the
+                     existing per-vehicle Dashboard" option, intentionally reversing
+                     UI_TRANSITION.md's explicit "keep Home/Vehicle nav separate" decision; (2)
+                     feature scope - user chose "visual pass first, real data only," deferring
+                     Trips/fuel-gauge/month-over-month%/fleet-stats to candidate future phases rather
+                     than building them now; (3) reference source - just the one screenshot, no
+                     Dribbble/Figma link. A Plan agent then worked out the two anchoring mechanisms:
+                     a shared dumb `_SidebarNavList.cshtml` partial (each view keeps building its own
+                     tab list exactly as today, just renders through one shared partial instead of
+                     hand-duplicating markup 3x) rather than forcing Home's and Vehicle's genuinely
+                     different nav-construction logic together, and `UserConfig.CurrentVehicleId`
+                     mirroring the existing `DefaultTab` pattern exactly for "which vehicle the
+                     Dashboard currently shows." 11 increments planned (4 foundation/structural, 7
+                     dashboard widgets, each reusing already-computed data - see PHASE_16.md and the
+                     approved plan for full detail). Increment 1 (CurrentVehicleId plumbing) done:
+                     added the field, the read-side line in ConfigHelper.GetUserConfig, and a new
+                     HomeController.SetCurrentVehicle endpoint - confirmed SaveUserConfig needed NO
+                     changes by reading it first (it already serializes whatever whole UserConfig
+                     object it's given) rather than assuming symmetry with the read side. Verified via
+                     a real HTTP round-trip against the dev instance on port 5300 (5299 is now the
+                     Phase-15 production Windows Service), not just code-reading: POST
+                     /Home/SetCurrentVehicle round-tripped both vehicleId=1 and vehicleId=0 correctly,
+                     and /Home/Garage still loads normally (no regression). Not yet committed - pending
+                     alongside this STATE.md update.
 Last completed:      Phase 15 (Remote Access & Persistent Hosting) - all 5 increments resolved (4
-                     explicitly declined by the user, not skipped). Before that: Phase 14 Increment 3
-                     (accessibility - modal aria-labelledby), see docs/execution/PHASE_14.md. Phase
-                     14's remaining areas (icon-button labels, keyboard nav, form labels, alt text,
-                     mobile/responsive validation, performance) are still open, not abandoned - Phase
-                     15 was started because the user raised a new, higher-priority request (phone
-                     access), not because Phase 14 finished.
-Next task:           None decided yet. Natural candidates: return to Phase 14's open areas (icon
-                     button labels, keyboard nav, form labels, alt text, mobile/responsive validation,
-                     performance - see DEFERRED.md for file pointers already gathered), or the AI/OCR
-                     invoice-scanning feature the user has flagged as a later addition (still fully
-                     deferred, no extension-point work done for it, per CLAUDE.md's Phase 13 decision
-                     - would need its own planning pass, likely its own phase). Ask the user rather
-                     than assume.
+                     explicitly declined by the user, not skipped). See docs/execution/PHASE_15.md.
+                     Phase 14's remaining areas (icon-button labels, keyboard nav, form labels, alt
+                     text, mobile/responsive validation, performance) are still open, not abandoned -
+                     both Phase 15 and now Phase 16 were started because the user raised new,
+                     higher-priority requests, not because Phase 14 finished.
+Next task:           Phase 16 Increment 2: build the shared sidebar shell
+                     (Views/Shared/_AppSidebar.cshtml + _SidebarNavList.cshtml, new .ct-app-shell/
+                     .ct-sidebar* CSS reusing existing tokens only) and port Home/Index onto it first
+                     (smaller nav list, lower risk than Vehicle/Index). This is the highest structural
+                     risk increment in this phase - needs the user's live browser review since no
+                     screenshot tool exists here, same as the original Zara + Magneto work. Do NOT
+                     attempt to also port Vehicle/Index in the same pass - that's Increment 3,
+                     deliberately sequenced after Home/Index is confirmed working.
 Known blockers:      1. No browser/screenshot tool in this environment - Phase 14's remaining
                         accessibility work would still need static-code-audit + curl verification,
                         not live screen-reader/keyboard testing.
@@ -122,21 +130,15 @@ Do not:              Assume Phase 14 is "done" - three increments complete (secu
                      ran. dotnet run from the dev repo still works for development but now operates on
                      a separate, diverging dataset - be explicit with the user about which copy
                      they're looking at if this ever comes up.
-Last validation:     dotnet build (0 errors, 0 new warnings - 224 pre-existing nullable warnings
-                     unchanged); dotnet test Tests/CarCareTracker.Tests.csproj (10/10 passing, no
-                     regression); dotnet run --urls http://localhost:5299 --no-build (background) +
-                     curl http://localhost:5299/health returned {"status":"pass",...}, and
-                     data/keys/key-<guid>.xml was created, confirming the DataProtection change works
-                     and the interactive dev workflow is unaffected — 2026-08-18.
-Last validation (Increment 2): sc.exe query CarTracker → STATE: 4 RUNNING; curl
-                     http://127.0.0.1:5299/health → {"status":"pass",...}; curl
-                     http://127.0.0.1:5299/api/vehicles → real BMW Z4 record (id 1), confirming the
-                     service is serving the carried-over real data, not a fresh database; netstat
-                     confirmed binding to 127.0.0.1:5299 only, no wildcard/non-loopback address —
+Last validation:     Phase 15's full validation history lives in docs/execution/PHASE_15.md (all 5
+                     increments). Phase 16 Increment 1 (current): dotnet build (0 errors); dotnet test
+                     Tests/CarCareTracker.Tests.csproj (10/10 passing, no regression); dev instance on
+                     port 5300 (5299 is now Phase 15's production service) - POST
+                     /Home/SetCurrentVehicle round-tripped vehicleId=1 and vehicleId=0 correctly into
+                     data/config/userConfig.json; GET /Home/Garage still 200 (no regression) —
                      2026-08-18.
-Last commit:         ab97b66/7f99541 — "Phase 15 Increment 1" (code) — 2026-08-18. Increment 2 (this
-                     entry) has no code changes, only docs - to be committed alongside this STATE.md
-                     update.
+Last commit:         f15bd5d — "Phase 15 complete" — 2026-08-18. Phase 16 Increment 1 (this entry) not
+                     yet committed - pending alongside this STATE.md update.
 ```
 
 ## Completed initiative: Zara + Magneto UI overhaul (separate from the roadmap above)

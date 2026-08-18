@@ -182,6 +182,14 @@ namespace CarCareTracker.Controllers
             var result = _config.SaveUserConfig(User, userConfig);
             return Json(result);
         }
+        [HttpPost]
+        public IActionResult SetCurrentVehicle(int vehicleId)
+        {
+            var existingConfig = _config.GetUserConfig(User);
+            existingConfig.CurrentVehicleId = vehicleId;
+            var result = _config.SaveUserConfig(User, existingConfig);
+            return Json(result);
+        }
         [Authorize(Roles = nameof(UserData.IsRootUser))]
         public IActionResult GetExtraFieldsModal(int importMode = 0)
         {

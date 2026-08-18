@@ -487,6 +487,7 @@ namespace CarCareTracker.Helper
                 TabOrder = _config.GetSection(nameof(UserConfig.TabOrder)).Get<List<ImportMode>>() ?? new UserConfig().TabOrder,
                 UserColumnPreferences = _config.GetSection(nameof(UserConfig.UserColumnPreferences)).Get<List<UserColumnPreference>>() ?? new List<UserColumnPreference>(),
                 DefaultTab = (ImportMode)int.Parse(CheckString(nameof(UserConfig.DefaultTab), "8")),
+                CurrentVehicleId = int.Parse(CheckString(nameof(UserConfig.CurrentVehicleId), "0")),
                 ShowVehicleThumbnail = CheckBool(CheckString(nameof(UserConfig.ShowVehicleThumbnail))),
                 ShowSearch = CheckBool(CheckString(nameof(UserConfig.ShowSearch))),
                 DisableAutoZoom = CheckBool(CheckString(nameof(UserConfig.DisableAutoZoom))),

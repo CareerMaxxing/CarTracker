@@ -21,6 +21,7 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
 | 13 | AI/OCR | Explicitly deferred. Leave clean extension points only; no feature work. | ✅ Confirmed deferred — no AI/OCR code exists anywhere in the codebase (verified by grep); see PHASE_13.md |
 | 14 | V1 Hardening | Unit/integration/UI/migration/duplicate-operation/adapter-failure/backup-restore tests, error handling, accessibility, responsive validation, performance, security review. | 🟡 In progress — Increment 1 (security review): real static-file auth bypass + unrestricted upload fixed. Increment 2 (automated tests): xUnit + WebApplicationFactory project stood up, 10 passing tests. Increment 3 (accessibility): all 41 modals audited, aria-labelledby wired on 39, 2 real duplicate-id bugs found and fixed (PHASE_14.md). Icon buttons/keyboard-nav/labels/mobile/performance still open |
 | 15 | Remote Access & Persistent Hosting | Reach the existing app from the user's phone with the same live data as the PC, over a private Tailscale network — no new sync architecture, single server + existing SignalR live updates. Revisits CLAUDE.md's localhost-only/no-cloud-deployment decisions with the human owner's explicit sign-off. | ✅ Complete — Windows Service hosting readiness, publish+register bound to 127.0.0.1:5299 with real data carried over, Tailscale reachability (`https://legion.tail80af14.ts.net/`) verified from the phone over mobile data with wifi off, and a proper PWA install on the phone (Chrome "Install app", Samsung battery/VPN settings tuned for reliability) (PHASE_15.md). Auth enablement explicitly declined by the user — device-level protection + Tailscale's own device authorization judged sufficient; not re-raised unless the user brings it up again |
+| 16 | Sidebar App Shell & Dashboard Redesign | Restructure navigation from a top tab-strip + all-vehicles Garage-grid homepage to a persistent left sidebar with a single-current-vehicle-focused Dashboard, matching a mockup's editorial aesthetic (already close in spirit to the existing Zara + Magneto design system). Intentionally reverses UI_TRANSITION.md's explicit "keep Home/Vehicle nav separate" decision, with the user's sign-off. Visual/layout pass only this phase — new widgets use real existing data; Trips/fuel-gauge/month-over-month%/fleet-stats are flagged as candidate future phases, not built now. | 🟡 In progress — Increment 1 (`CurrentVehicleId` plumbing) complete, verified via a real HTTP round-trip (PHASE_16.md). 10 more increments planned: shared sidebar shell (Home first, then Vehicle), landing-page routing, then the Dashboard hero card + Quick Actions + Fuel Economy/Total Spent/Planned Maintenance/Recent Activity widgets + a Magneto-motif promo tile — each needs the user's live browser review since no screenshot tool exists here |
 
 ## Human review checkpoints
 
@@ -52,6 +53,14 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
   Increment 5 (PWA install) complete — installed via Chrome's "Install app" flow, Samsung
   battery/VPN settings tuned so the always-running background connection doesn't get silently killed,
   user confirmed the home-screen icon opens the real app full-screen. **Phase 15 complete.**
+- Phase 16 (Sidebar App Shell & Dashboard Redesign): user shared a dashboard mockup and asked to plan
+  matching its editorial look. Explicitly chose the full sidebar/IA restructure (not just a Dashboard
+  reskin) and a "real data only" scope for new widgets (Trips/fuel-gauge/month-over-month%/fleet-stats
+  flagged as future-phase candidates, not built now) via AskUserQuestion. Increment 1
+  (CurrentVehicleId plumbing) complete, verified via a real curl round-trip, zero visual change yet.
+  **← next: Increment 2, the shared sidebar shell ported to Home/Index first — the highest structural
+  risk increment in this phase, needs the user's live browser review since no screenshot tool exists
+  here.**
 
 ## Core V1 acceptance scenario
 
