@@ -20,7 +20,7 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
 | 12 | Local Reliability / Offline Hardening | Reliable startup, DB integrity, attachment integrity, backup, restore, export/import, recovery from interrupted operations. | ✅ Complete — found and fixed two real data-loss/orphan bugs affecting Part/PartPurchase (missing from cleanup + vehicle-deletion cascade), added a broken-attachment-link diagnostic, backup/restore round-trip curl-verified (PHASE_12.md) |
 | 13 | AI/OCR | Explicitly deferred. Leave clean extension points only; no feature work. | ✅ Confirmed deferred — no AI/OCR code exists anywhere in the codebase (verified by grep); see PHASE_13.md |
 | 14 | V1 Hardening | Unit/integration/UI/migration/duplicate-operation/adapter-failure/backup-restore tests, error handling, accessibility, responsive validation, performance, security review. | 🟡 In progress — Increment 1 (security review): real static-file auth bypass + unrestricted upload fixed. Increment 2 (automated tests): xUnit + WebApplicationFactory project stood up, 10 passing tests. Increment 3 (accessibility): all 41 modals audited, aria-labelledby wired on 39, 2 real duplicate-id bugs found and fixed (PHASE_14.md). Icon buttons/keyboard-nav/labels/mobile/performance still open |
-| 15 | Remote Access & Persistent Hosting | Reach the existing app from the user's phone with the same live data as the PC, over a private Tailscale network — no new sync architecture, single server + existing SignalR live updates. Revisits CLAUDE.md's localhost-only/no-cloud-deployment decisions with the human owner's explicit sign-off. | 🟡 In progress — Increment 1 (Windows Service hosting readiness): CWD-relative data-path fix + DataProtection key persistence, build/tests/health-check all green. Increment 2 (publish + carry over real data + register as a Windows Service bound to 127.0.0.1:5299): complete, independently verified RUNNING with real data (PHASE_15.md). Increment 3 (Tailscale on PC + phone, verify remote reachability) needs the user present with their phone — not started. Auth enablement and PWA install verification also open |
+| 15 | Remote Access & Persistent Hosting | Reach the existing app from the user's phone with the same live data as the PC, over a private Tailscale network — no new sync architecture, single server + existing SignalR live updates. Revisits CLAUDE.md's localhost-only/no-cloud-deployment decisions with the human owner's explicit sign-off. | 🟡 In progress — Increments 1-3 complete: Windows Service hosting readiness, publish+register bound to 127.0.0.1:5299 with real data carried over, and Tailscale reachability (`https://legion.tail80af14.ts.net/`) verified from the phone over mobile data with wifi off (PHASE_15.md). Auth enablement (currently unauthenticated root access to anyone reaching the tailnet URL) and PWA install verification still open |
 
 ## Human review checkpoints
 
@@ -45,9 +45,10 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
   LAN-only or public-internet hosting. Increment 1 (Windows Service hosting readiness) complete,
   build/tests/health-check verified. Increment 2 (publish, carry over real data, register as a
   Windows Service bound to 127.0.0.1:5299) complete — service confirmed RUNNING with real vehicle
-  data, independently verified by the agent, not just the user's report. **← next: Increment 3 needs
-  the user present with their phone to install Tailscale on both devices and verify remote
-  reachability.**
+  data, independently verified by the agent, not just the user's report. Increment 3 (Tailscale)
+  complete — https://legion.tail80af14.ts.net/ verified reachable from the phone over mobile data
+  with home wifi off, proving genuine tailnet reachability. **← next: Increment 4 (turn on auth —
+  the tailnet URL currently grants full unauthenticated root access to anyone who can reach it).**
 
 ## Core V1 acceptance scenario
 

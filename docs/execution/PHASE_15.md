@@ -216,3 +216,90 @@ to `127.0.0.1:5299`, serving the user's real vehicle data. The dev repo at
 `D:\Personal\CarTracker\lubelog` is unaffected and can still be used for `dotnet run` development on a
 different port. Increment 3 (Tailscale on the PC and the user's phone, `tailscale serve` for HTTPS,
 verified reachable from the phone with home wifi off) is next.
+
+## Increment 3: Tailscale reachability
+
+### Task packet
+
+```
+TASK ID: PHASE-15-03
+TITLE: Reach the Windows Service from the phone over a private Tailscale network
+OBJECTIVE: Prove the phone can load the real app, with real data, over Tailscale specifically (not
+  home wifi/LAN), with HTTPS.
+INPUTS: The running CarTracker Windows Service bound to 127.0.0.1:5299 (Increment 2); user-installed
+  Tailscale on the PC and phone, signed into the same account/tailnet.
+ALLOWED SCOPE: Reading Tailscale's own status/DNS name from the CLI; running `tailscale serve` to
+  proxy the loopback-only Kestrel endpoint to the tailnet over HTTPS; verifying reachability from the
+  agent's own shell (curl) and asking the user to verify from the phone.
+NON-SCOPE: Any change to the app itself; Tailscale account/billing configuration beyond the one-time
+  "enable Serve" grant (an account-level permission only the user can grant, surfaced by the CLI
+  itself when needed).
+IMPLEMENTATION REQUIREMENTS:
+  - Locate the Tailscale CLI (not on PATH in the agent's shell - found at the standard Windows
+    install path, `C:\Program Files\Tailscale\tailscale.exe`) and confirm both devices are actually
+    on the same tailnet via `tailscale status` before doing anything else.
+  - Get this device's MagicDNS name via `tailscale status --json` (`legion.tail80af14.ts.net`) rather
+    than assuming a naming pattern.
+  - `tailscale serve --bg http://127.0.0.1:5299` - not the older `tailscale serve https / <target>`
+    syntax from the original plan, which the installed Tailscale version rejected (the CLI changed;
+    it printed the correct modern replacement itself). Also hit a real Git-Bash gotcha unrelated to
+    Tailscale: passing a bare `/` as an argument through Git Bash's MSYS layer gets silently rewritten
+    to a Windows path (`C:/Program Files/Git/`) - switched to the PowerShell tool for this command to
+    avoid the mangling.
+  - First `serve` attempt hung (backgrounded by the harness after a 120s timeout) because "Serve" is
+    an account-level feature that needs a one-time enable via a URL Tailscale itself prints
+    (`https://login.tailscale.com/f/serve?node=...`) - an account permission grant only the user can
+    complete, not something to work around. Stopped the hung task, had the user complete that step,
+    then re-ran the same command successfully.
+DELIVERABLES: A working `https://legion.tail80af14.ts.net/` endpoint, verified independently by the
+  agent (curl) and by the user from their phone.
+ACCEPTANCE CRITERIA:
+  - `curl https://legion.tail80af14.ts.net/health` (from the PC) returns `{"status":"pass",...}`.
+  - The phone, with **wifi off (mobile data only)** and Tailscale toggled on, loads the same URL and
+    shows the real app with real data - proving genuine tailnet reachability, not accidental
+    same-network access.
+VALIDATION COMMANDS:
+  tailscale status
+  tailscale status --json (for the DNS name)
+  tailscale serve --bg http://127.0.0.1:5299
+  curl -k https://legion.tail80af14.ts.net/health
+  (user, on phone, wifi off) open https://legion.tail80af14.ts.net/
+STOP CONDITION: Both the agent's own curl check and the user's phone-side confirmation (wifi off)
+  passed before considering this increment done.
+```
+
+### What was done
+
+1. `tailscale status` (via full path, since the CLI isn't on this shell's PATH) confirmed both
+   devices already on the same tailnet: `legion` (this PC, Windows) and `huzaifas-s25-ultra`
+   (the user's phone, Android), both under the same account.
+2. Pulled the PC's real MagicDNS name from `tailscale status --json` rather than guessing a pattern:
+   `legion.tail80af14.ts.net`.
+3. First `tailscale serve` attempt used the plan's originally-assumed syntax
+   (`tailscale serve https / http://127.0.0.1:5299`) and failed - the installed version's CLI has
+   since changed; it printed the correct modern replacement command itself. Retried with
+   `tailscale serve --bg http://127.0.0.1:5299`, run via the PowerShell tool instead of Bash after
+   noticing Git Bash's MSYS layer silently rewrites a bare `/` argument into a Windows path (harmless
+   here since the new syntax doesn't need one, but worth knowing for future commands).
+4. That attempt hung rather than erroring cleanly - the harness backgrounded it after 120s. Read the
+   task's output file directly rather than guessing why: "Serve is not enabled on your tailnet",
+   with a one-time enable URL tied to the user's account. Stopped the hung background task (`TaskStop`
+   - it would never complete on its own once printing that message) and asked the user to open the
+   link and approve it - an account-level permission grant, not something available to the agent.
+5. Re-ran the identical `serve` command after the user confirmed - succeeded immediately:
+   `https://legion.tail80af14.ts.net/` proxying to `http://127.0.0.1:5299`, running in the background
+   (persists across the Tailscale daemon's lifetime, no separate "make it permanent" step needed).
+6. Verified independently before asking the user to test anything: `curl -k
+   https://legion.tail80af14.ts.net/health` from the PC returned `{"status":"pass",...}`.
+7. Asked the user to test from the phone with wifi explicitly turned off (mobile data only) - the one
+   condition that actually proves tailnet reachability rather than coincidental same-network access.
+   Confirmed: the real app loaded with real data.
+
+### Result
+
+Complete. The app is now reachable from the phone from anywhere (verified over mobile data, not just
+home wifi), over HTTPS, via Tailscale's private network - never exposed to the public internet, no
+port forwarding, no firewall rule added or needed (Kestrel is still loopback-only; Tailscale's own
+daemon does the proxying). Increment 4 (turn on auth) is next - currently anyone who can reach the
+tailnet URL has full unauthenticated root access, which was acceptable for this verification step but
+should not stay that way now that the endpoint is reachable outside the PC itself.

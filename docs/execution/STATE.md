@@ -5,53 +5,42 @@ conversation history.
 
 ```
 PROJECT STATUS
-Current phase:      Phase 15 — Remote Access & Persistent Hosting (Increment 2 complete, Increment 3
-                     next)
-Current task:       PHASE-15-02 (see docs/execution/PHASE_15.md) — complete: publish + carry over
-                     real data + register as a Windows Service bound to 127.0.0.1:5299
-Status:             Increments 1-2 complete. User asked to plan phone access with live sync to the PC
-                     app; since this is a single-server architecture with SignalR already
-                     broadcasting live updates to every connected client, "sync" needs no new
-                     data-layer work - only reachability. User explicitly authorized revisiting
-                     CLAUDE.md's locked "localhost only/no cloud deployment" and "no cloud sync"
-                     decisions, and chose Tailscale (private WireGuard network) over LAN-only access
-                     or public-internet hosting via AskUserQuestion. Plan (4 increments: Windows
-                     Service hosting, Tailscale + Kestrel loopback binding, auth enablement, PWA
-                     install verification) was written via EnterPlanMode/ExitPlanMode and approved.
-                     Increment 1: added Microsoft.Extensions.Hosting.WindowsServices +
-                     UseWindowsService(); found and fixed a real gap not in the original plan - every
-                     data path in this app (StaticHelper.DbName/UserConfigPath/ServerConfigPath) is
-                     CWD-relative, and the Windows Service Control Manager defaults to a System32
-                     working directory, so a service deployment would have silently created data/
-                     under System32 without a WindowsServiceHelpers.IsWindowsService()-gated
-                     Directory.SetCurrentDirectory(AppContext.BaseDirectory) fix; also added
-                     DataProtection .PersistKeysToFileSystem("data/keys"). Committed as ab97b66/
-                     7f99541, pushed. Increment 2: published to C:\Services\CarTracker (user's choice
-                     of two offered install-path options), confirmed the dev repo's data/ contains
-                     real vehicle data (224KB db, not test fixtures - user confirmed) and copied it
-                     over once (user explicitly confirmed carrying it over as the live copy, dev
-                     repo's original left untouched as fallback), pre-wrote
-                     data/config/serverConfig.json's Kestrel section to bind 127.0.0.1:5299 only
-                     (verified via netstat before involving the user), then handed the user exact
-                     sc.exe commands to run in an elevated PowerShell (agent's shell confirmed
-                     non-admin via WindowsPrincipal check first, didn't attempt and fail). User ran
-                     them (screenshot showed CreateService SUCCESS + START_PENDING); agent
-                     independently re-verified (not just trusted the screenshot) via sc.exe query
-                     (STATE: 4 RUNNING), curl /health, and curl /api/vehicles (real BMW Z4 record
-                     confirmed, not an empty db). Not yet committed to git (no code changes in this
-                     increment, only external install/service-registration + docs updates pending).
+Current phase:      Phase 15 — Remote Access & Persistent Hosting (Increments 1-3 complete, Increment
+                     4 next)
+Current task:       PHASE-15-03 (see docs/execution/PHASE_15.md) — complete: Tailscale reachability
+Status:             Increments 1-3 complete, full detail in docs/execution/PHASE_15.md. Summary:
+                     Increment 1 (code, committed ab97b66/7f99541) made the app safe to run as a
+                     Windows Service - found and fixed a real CWD-relative-path gap the original plan
+                     didn't anticipate, plus DataProtection key persistence. Increment 2 (docs-only,
+                     committed 8e7359d) published to C:\Services\CarTracker, carried over the user's
+                     real vehicle data (confirmed non-trivial, user approved the carryover), bound
+                     Kestrel to 127.0.0.1:5299 only, and got the user through the elevated sc.exe
+                     steps to register+start the Windows Service - independently re-verified running
+                     with real data, not just trusted from the user's screenshot. Increment 3
+                     (Tailscale) confirmed both devices already on the same tailnet
+                     (legion=PC, huzaifas-s25-ultra=phone), ran `tailscale serve --bg
+                     http://127.0.0.1:5299` (the plan's assumed CLI syntax was stale - the installed
+                     version rejected it and printed the correct replacement itself), hit a one-time
+                     account-level "enable Serve" gate that only the user could grant, then verified
+                     both from the PC (curl) and from the user's phone with wifi OFF (mobile data
+                     only) that https://legion.tail80af14.ts.net/ loads the real app. Not yet
+                     committed - Increment 3 was docs-only like Increment 2, commit pending alongside
+                     this STATE.md update.
 Last completed:      Phase 14 Increment 3 (accessibility - modal aria-labelledby), see prior entries
                      in docs/execution/PHASE_14.md. Phase 14's remaining areas (icon-button labels,
                      keyboard nav, form labels, alt text, mobile/responsive validation, performance)
                      are still open, not abandoned - Phase 15 was started because the user raised a
                      new, higher-priority request (phone access), not because Phase 14 finished.
-Next task:           Phase 15 Increment 3: install Tailscale on the PC and the user's phone (same
-                     tailnet), run `tailscale serve https / http://127.0.0.1:5299` on the PC, and
-                     verify reachability from the phone with home wifi OFF (mobile data only, to
-                     prove it's actually tailnet reachability, not accidental LAN access). Needs the
-                     user physically present with their phone - NOT something to attempt unattended.
-                     After that: Increment 4 (turn on auth via Settings UI) and Increment 5 (confirm
-                     PWA "Add to Home Screen" install from the tailnet URL).
+Next task:           Phase 15 Increment 4: turn on auth via the existing Settings UI ("Enable
+                     Authentication" → root-account form → POST /Login/CreateLoginCreds). Important:
+                     do this through the UI only, never by hand-editing EnableAuth in userConfig.json
+                     (would lock everyone out - see the "Do not" note below). The tailnet URL
+                     currently grants full unauthenticated root access to anyone who can reach it, so
+                     this should happen soon, not be left open-ended. After that: Increment 5 (confirm
+                     PWA "Add to Home Screen" install from the tailnet URL on the phone) and the two
+                     DEFERRED.md entries flagged in the original plan (no login rate-limiting/lockout,
+                     unsalted SHA-256 password hashing) - not blocking, per the plan's reasoning, but
+                     should get recorded once auth is actually on.
 Known blockers:      1. No browser/screenshot tool in this environment - Phase 14's remaining
                         accessibility work would still need static-code-audit + curl verification,
                         not live screen-reader/keyboard testing.
