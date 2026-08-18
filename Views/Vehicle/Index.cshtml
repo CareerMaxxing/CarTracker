@@ -55,77 +55,62 @@
     };
 }
 @section Nav{
-    <div class="container-fluid lubelogger-navbar-container frosted hideOnPrint">
+    @{
+        ViewData["UserLanguage"] = userLanguage;
+        var sidebarTabs = vehicleNavTabs.Select(tab => (
+            tab.Id, tab.Target, tab.Icon, tab.Label,
+            StaticHelper.DefaultActiveTab(userConfig, tab.Mode),
+            $"order: {userConfig.TabOrder.FindIndex(x => x == tab.Mode)}",
+            tab.Mode == ImportMode.ReminderRecord
+        )).ToList();
+        sidebarTabs.Add(("parts-tab", "parts-tab-pane", "bi-box-seam", "Parts", "", $"order: {userConfig.TabOrder.Count}", false));
+        sidebarTabs.Add(("documents-tab", "documents-tab-pane", "bi-folder2-open", "Documents", "", $"order: {userConfig.TabOrder.Count + 1}", false));
+    }
+    <div class="ct-sidebar hideOnPrint" id="appSidebar">
+        <div class="ct-sidebar-header ct-wordmark-wrap" style="cursor:pointer;" onclick="returnToGarage()">
+            @if (userConfig.ShowVehicleThumbnail)
+            {
+                <img src="@Model.ImageLocation" class="lubelogger-vehicle-logo @(string.IsNullOrWhiteSpace(Model.SoldDate) ? "" : "sold")" />
+            }
+            else if (config.GetSmallLogoUrl() == StaticHelper.DefaultSmallLogoPath)
+            {
+                <span class="ct-wordmark">Car Tracker</span>
+            }
+            else
+            {
+                <img src="@config.GetSmallLogoUrl()" class="lubelogger-logo" />
+            }
+            <div class="lubelogger-vehicle-title text-truncate">@Model.Year @Model.Make @Model.Model</div>
+        </div>
+        <ul class="nav flex-column ct-sidebar-nav" id="vehicleTab" role="tablist">
+            @await Html.PartialAsync("_SidebarNavList", sidebarTabs)
+            <li class="nav-item" role="presentation" style="order: @(userConfig.TabOrder.Count + 2)">
+                <button class="nav-link ct-sidebar-link" type="button" role="tab" aria-selected="false" id="search-tab" onclick="showGlobalSearch()"><i class="bi bi-search"></i><span>@translator.Translate(userLanguage, "Search")</span></button>
+            </li>
+        </ul>
+        <div class="ct-sidebar-footer">
+            <button type="button" class="ct-sidebar-link" style="cursor:pointer;" onclick="editVehicle(@Model.Id)"><i class="bi bi-pencil-square"></i><span>@translator.Translate(userLanguage, "Edit Vehicle")</span></button>
+        </div>
+    </div>
+    <!-- Mobile-only top bar (<576px): unchanged trigger for the existing full-screen .lubelogger-mobile-nav drawer below - same pattern as Home/Index (Phase 16 Increment 2). -->
+    <div class="container-fluid lubelogger-navbar-container frosted hideOnPrint ct-mobile-topbar">
         <div class="row mt-2">
-            <div class="d-flex lubelogger-navbar">
-                <div class="me-2 ct-wordmark-wrap" style="cursor:pointer;" onclick="returnToGarage()">
-                    @if(userConfig.ShowVehicleThumbnail) {
-                        <img src="@Model.ImageLocation" class="lubelogger-vehicle-logo @(string.IsNullOrWhiteSpace(Model.SoldDate) ? "" : "sold")" />
-                    } else if (config.GetSmallLogoUrl() == StaticHelper.DefaultSmallLogoPath) {
-                        <span class="ct-wordmark">Car Tracker</span>
-                    } else {
-                        <img src="@config.GetSmallLogoUrl()" class="lubelogger-logo" />
-                    }
-                </div>
-                <div class="lubelogger-vehicle-title d-none d-sm-block text-truncate me-3" style="cursor:pointer;" onclick="returnToGarage()">@Model.Year @Model.Make @Model.Model</div>
-                <ul class="nav nav-tabs lubelogger-tab flex-grow-1" id="vehicleTab" role="tablist">
-                    @foreach (var tab in vehicleNavTabs)
+            <div class="d-flex lubelogger-navbar justify-content-between">
+                <div class="ct-wordmark-wrap text-truncate" style="cursor:pointer;" onclick="returnToGarage()">
+                    @if (userConfig.ShowVehicleThumbnail)
                     {
-                        <li class="nav-item" role="presentation" style="order: @userConfig.TabOrder.FindIndex(x => x == tab.Mode)">
-                            <button class="nav-link resizable-nav-link @StaticHelper.DefaultActiveTab(userConfig, tab.Mode)" id="@tab.Id" data-bs-toggle="tab" data-bs-target="#@tab.Target" type="button" role="tab" aria-selected="@(tab.AriaSelected ? "true" : "false")">
-                                @if (tab.Mode == ImportMode.ReminderRecord)
-                                {
-                                    <div class="reminderBellDiv" style="display:inline-flex;"><i class="reminderBell bi bi-bell"></i></div>
-                                }
-                                else
-                                {
-                                    <i class="bi @tab.Icon"></i>
-                                }
-                                <span class="ms-2">@translator.Translate(userLanguage, tab.Label)</span>
-                            </button>
-                        </li>
+                        <img src="@Model.ImageLocation" class="lubelogger-vehicle-logo @(string.IsNullOrWhiteSpace(Model.SoldDate) ? "" : "sold")" />
                     }
-                    <li class="nav-item" role="presentation" style="order: @(userConfig.TabOrder.Count)">
-                        <button class="nav-link resizable-nav-link" id="parts-tab" data-bs-toggle="tab" data-bs-target="#parts-tab-pane" type="button" role="tab" aria-selected="false"><i class="bi bi-box-seam"></i><span class="ms-2">@translator.Translate(userLanguage, "Parts")</span></button>
-                    </li>
-                    <li class="nav-item" role="presentation" style="order: @(userConfig.TabOrder.Count + 1)">
-                        <button class="nav-link resizable-nav-link" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents-tab-pane" type="button" role="tab" aria-selected="false"><i class="bi bi-folder2-open"></i><span class="ms-2">@translator.Translate(userLanguage, "Documents")</span></button>
-                    </li>
-                    <li class="nav-item" role="presentation" style="order: @(userConfig.TabOrder.Count + 2)">
-                        <button class="nav-link resizable-nav-link" type="button" role="tab" aria-selected="false" id="search-tab" onclick="showGlobalSearch()"><i class="bi bi-search"></i><span class="ms-2">@translator.Translate(userLanguage, "Search")</span></button>
-                    </li>
-                    <li class="nav-item dropdown nav-item-persist nav-item-more me-5" role="presentation" style="display:none; order: @(userConfig.TabOrder.Count + 3)">
-                        <a class="nav-link resizable-nav-link" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false"><i class="bi bi-three-dots"></i></a>
-                        <ul class="dropdown-menu">
-                            @foreach (var tab in vehicleNavTabs)
-                            {
-                                <li class="nav-item text-truncate" role="presentation" style="order: @userConfig.TabOrder.FindIndex(x => x == tab.Mode)">
-                                    <button class="nav-link resizable-nav-link @StaticHelper.DefaultActiveTab(userConfig, tab.Mode)" id="@tab.Id" data-bs-toggle="tab" data-bs-target="#@tab.Target" type="button" role="tab" aria-selected="@(tab.AriaSelected ? "true" : "false")">
-                                        @if (tab.Mode == ImportMode.ReminderRecord)
-                                        {
-                                            <div class="reminderBellDiv" style="display:inline-flex;"><i class="reminderBell bi bi-bell"></i></div>
-                                        }
-                                        else
-                                        {
-                                            <i class="bi @tab.Icon"></i>
-                                        }
-                                        <span class="ms-2">@translator.Translate(userLanguage, tab.Label)</span>
-                                    </button>
-                                </li>
-                            }
-                            <li class="nav-item text-truncate" role="presentation" style="order: @(userConfig.TabOrder.Count)">
-                                <button class="nav-link resizable-nav-link" id="parts-tab" data-bs-toggle="tab" data-bs-target="#parts-tab-pane" type="button" role="tab" aria-selected="false"><i class="bi bi-box-seam"></i><span class="ms-2">@translator.Translate(userLanguage, "Parts")</span></button>
-                            </li>
-                            <li class="nav-item text-truncate" role="presentation" style="order: @(userConfig.TabOrder.Count + 1)">
-                                <button class="nav-link resizable-nav-link" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents-tab-pane" type="button" role="tab" aria-selected="false"><i class="bi bi-folder2-open"></i><span class="ms-2">@translator.Translate(userLanguage, "Documents")</span></button>
-                            </li>
-                            <li class="nav-item text-truncate" role="presentation" style="order: @(userConfig.TabOrder.Count + 2)">
-                                <button class="nav-link resizable-nav-link" type="button" role="tab" aria-selected="false" id="search-tab" onclick="showGlobalSearch()"><i class="bi bi-search"></i><span class="ms-2">@translator.Translate(userLanguage, "Search")</span></button>
-                            </li>
-                        </ul>
-                    </li>
-                </ul>
-                <a class="link-body-emphasis lubelogger-tab" style="cursor:pointer; font-size:1.2rem;" onclick="editVehicle(@Model.Id)" title="@translator.Translate(userLanguage, "Edit Vehicle")"><i class="bi bi-pencil-square"></i></a>
+                    else if (config.GetLogoUrl() == StaticHelper.DefaultLogoPath)
+                    {
+                        <span class="ct-wordmark">Car Tracker</span>
+                    }
+                    else
+                    {
+                        <img src="@config.GetLogoUrl()" class="lubelogger-logo" />
+                    }
+                    <span class="ms-2">@Model.Year @Model.Make @Model.Model</span>
+                </div>
                 <div class="lubelogger-navbar-button">
                     <button type="button" class="btn btn-adaptive" onclick="showMobileNav()"><i class="bi bi-list lubelogger-menu-icon"></i></button>
                 </div>
@@ -260,5 +245,4 @@
     }
     bindWindowResize();
     checkRecurringTaxes();
-    bindNavBarResize();
 </script>

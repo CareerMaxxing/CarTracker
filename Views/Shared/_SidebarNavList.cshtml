@@ -1,4 +1,4 @@
-@model List<(string Id, string Target, string Icon, string Label)>
+@model List<(string Id, string Target, string Icon, string Label, string CssClass, string Style, bool IsReminderBell)>
 @using CarCareTracker.Helper
 @inject ITranslationHelper translator
 @{
@@ -6,9 +6,17 @@
 }
 @foreach (var tab in Model)
 {
-    <li class="nav-item" role="presentation">
+    <li class="nav-item @tab.CssClass" role="presentation" style="@tab.Style">
         <button class="nav-link ct-sidebar-link" id="@tab.Id" data-bs-toggle="tab" data-bs-target="#@tab.Target" type="button" role="tab" aria-selected="false">
-            <i class="bi @tab.Icon"></i><span>@translator.Translate(userLanguage, tab.Label)</span>
+            @if (tab.IsReminderBell)
+            {
+                <div class="reminderBellDiv" style="display:inline-flex;"><i class="reminderBell bi bi-bell"></i></div>
+            }
+            else
+            {
+                <i class="bi @tab.Icon"></i>
+            }
+            <span>@translator.Translate(userLanguage, tab.Label)</span>
         </button>
     </li>
 }

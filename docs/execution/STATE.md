@@ -5,51 +5,50 @@ conversation history.
 
 ```
 PROJECT STATUS
-Current phase:      Phase 16 — Sidebar App Shell & Dashboard Redesign (Increment 2 of 11 structurally
-                     complete, awaiting the user's live visual review)
-Current task:       PHASE-16-02 (see docs/execution/PHASE_16.md) — shared sidebar shell built, ported
-                     to Home/Index only. Structurally verified (build/tests/curl); NOT yet visually
-                     verified - no browser tool exists here, this is a real checkpoint not a formality.
-Status:             Full plan/decision history for how this phase was scoped (mockup shared, IA-scope
-                     and feature-scope questions asked via AskUserQuestion, Plan-agent-derived
-                     mechanisms) is in the git history and PHASE_16.md's intro - not re-summarized here
-                     to keep this entry scannable. Increment 1 (CurrentVehicleId plumbing, committed
-                     b669299): done, verified via curl round-trip. Increment 2 (shared sidebar shell):
-                     built Views/Shared/_SidebarNavList.cshtml (dumb partial, zero change to how
-                     Bootstrap tabs/garage.js find panes - every tab-pane id unchanged) and rebuilt
-                     Home/Index.cshtml's Nav section around a new fixed-left .ct-sidebar (desktop) +
-                     minimal .ct-mobile-topbar (<576px, mobile drawer itself untouched). Used
-                     `body:has(.ct-sidebar) .lubelogger-body-container { padding-left: ... }` instead
-                     of touching _Layout.cshtml, so Login/Kiosk/Admin/not-yet-ported Vehicle/Index are
-                     provably unaffected. Caught a real bug by reading shared.js before assuming old
-                     JS still applied: bindNavBarResize()/checkNavBarOverflow() would have spun in an
-                     infinite 500ms setTimeout retry loop on Home/Index (no .lubelogger-tab children
-                     left to measure meant its exit condition could never be satisfied) - fixed by
-                     removing just Home/Index's call to it, leaving the function and Vehicle/Index's
-                     identical call untouched since Vehicle/Index still needs it until Increment 3.
-                     One design choice made without asking and flagged for review: active-nav
-                     indicator is a left border accent bar, not the mockup's dot bullet, reasoned from
-                     the app's flat/sharp-corner design language rather than guessed silently. Verified
-                     structurally: dotnet build (0 errors), dotnet test (10/10), curl-inspected
-                     rendered HTML (.ct-sidebar present, all tab-pane ids unchanged, zero leftover
-                     .nav-item-more, zero leaked Razor errors) and site.css (balanced braces, new rules
-                     present). Not yet committed - pending alongside this STATE.md update.
+Current phase:      Phase 16 — Sidebar App Shell & Dashboard Redesign (Increment 3 of ~12 structurally
+                     complete, awaiting the user's live visual review of Vehicle/Index)
+Current task:       PHASE-16-03 (see docs/execution/PHASE_16.md) — Vehicle/Index ported onto the
+                     shared sidebar shell. Structurally verified against real vehicle data (build/
+                     tests/curl); NOT yet visually verified - no browser tool exists here.
+Status:             Full plan/decision history in git history + PHASE_16.md's intro, not re-summarized
+                     here. Increment 1 (CurrentVehicleId, b669299) and Increment 2 (Home/Index sidebar,
+                     b50f3e1) both done - user reviewed Increment 2 live and said "better, carry on"
+                     (read as approval, no specific changes requested). Increment 3: ported
+                     Vehicle/Index onto the same shell - the harder of the two views, since it has 13
+                     tabs (not Home's 4), drag-and-drop TabOrder, per-tab VisibleTabs gating (a fresh
+                     vehicle defaults to only Dashboard visible - this MUST keep working), and a live
+                     JS-driven reminder-bell icon. Widened _SidebarNavList.cshtml from 4 to 7 tuple
+                     fields (CssClass/Style/IsReminderBell added) rather than forking a second partial,
+                     keeping "one shared dumb partial" intact; updated Home/Index's two existing calls
+                     to match. Split the plan's original Increment 3 (which bundled a vehicle-switcher
+                     feature in with the nav port) into 3 (this entry) and 3b (switcher, next) - the
+                     nav port alone was already the riskiest single change in the phase, and bundling a
+                     second new feature would have made it harder to verify/roll back independently.
+                     Removed Vehicle/Index's own bindNavBarResize() call (same infinite-retry-loop risk
+                     Increment 2 found for Home/Index, same fix). Verified structurally against the
+                     REAL vehicle (id=1, actual BMW Z4, not synthetic data): all 15 sidebar nav-link
+                     ids present in correct TabOrder sequence, all 15 tab-pane ids unchanged, reminder-
+                     bell wrapper present exactly once, search-tab intact, zero d-none items (this
+                     vehicle's VisibleTabs includes everything - confirms the gating logic actually
+                     evaluates, not just that the field exists), zero leftover .nav-item-more, zero
+                     leaked Razor errors, /Home/Garage still loads (no regression from the shared
+                     partial's widened model). Not yet committed - pending alongside this STATE.md
+                     update.
 Last completed:      Phase 15 (Remote Access & Persistent Hosting) - all 5 increments resolved (4
                      explicitly declined by the user, not skipped). See docs/execution/PHASE_15.md.
                      Phase 14's remaining areas (icon-button labels, keyboard nav, form labels, alt
                      text, mobile/responsive validation, performance) are still open, not abandoned -
                      both Phase 15 and now Phase 16 were started because the user raised new,
                      higher-priority requests, not because Phase 14 finished.
-Next task:           STOP before writing more code: the user needs to actually load /Home live
-                     (desktop width and mobile/phone) and confirm the sidebar looks/works correctly -
-                     this agent has only verified markup/CSS presence, never rendered pixels. Ask
-                     specifically about the left-border active-indicator choice (vs the mockup's dot).
-                     Only after that sign-off does Increment 3 start: port Vehicle/Index onto the same
-                     shell (13-item nav list ordered by TabOrder, the reminder-bell branch, and a new
-                     vehicle-switcher in the sidebar header using Increment 1's CurrentVehicleId
-                     endpoint). Do NOT skip ahead to Increment 3 without that visual sign-off - a
-                     structural mistake in the shared partial would then be baked into two views
-                     instead of one.
+Next task:           STOP before writing more code: user needs to load a real vehicle page live
+                     (desktop + mobile) and confirm the sidebar looks/works correctly, same checkpoint
+                     discipline as Increment 2 - this agent has verified markup/CSS presence only,
+                     never rendered pixels. After that sign-off: Increment 3b (vehicle-switcher in the
+                     sidebar header, using Increment 1's SetCurrentVehicle endpoint - not built yet),
+                     then Increment 4 (landing page routes to the current vehicle's Dashboard instead
+                     of the Garage grid; "Vehicles" becomes its own sidebar item). Do NOT skip ahead
+                     without the visual sign-off - two views now share the widened partial, so a
+                     structural mistake would be baked into both.
 Known blockers:      1. No browser/screenshot tool in this environment - Phase 14's remaining
                         accessibility work would still need static-code-audit + curl verification,
                         not live screen-reader/keyboard testing.
@@ -126,13 +125,14 @@ Do not:              Assume Phase 14 is "done" - three increments complete (secu
                      a separate, diverging dataset - be explicit with the user about which copy
                      they're looking at if this ever comes up.
 Last validation:     Phase 15's full validation history lives in docs/execution/PHASE_15.md. Phase 16
-                     Increment 2 (current, structural only - NOT visual): dotnet build (0 errors);
-                     dotnet test (10/10 passing); dev instance on port 5300; curl / Home shows
-                     .ct-sidebar/.ct-sidebar-header present, all four original *-tab-pane ids
-                     unchanged, zero .nav-item-more leftover, zero leaked Razor errors; curl
-                     /css/site.css shows balanced braces (424/424) with the new .ct-sidebar* rules
-                     present — 2026-08-18. Real visual rendering has NOT been checked by this agent.
-Last commit:         b669299 — "Phase 16 Increment 1" — 2026-08-18. Increment 2 (this entry) not yet
+                     Increment 3 (current, structural only - NOT visual): dotnet build (0 errors);
+                     dotnet test (10/10 passing); dev instance on port 5300; curl
+                     /Vehicle/Index?vehicleId=1 (real vehicle) shows all 15 sidebar nav-link ids in
+                     correct TabOrder sequence, all 15 tab-pane ids unchanged, reminder-bell wrapper
+                     present exactly once, search-tab intact, zero d-none items, zero .nav-item-more
+                     leftover, zero leaked Razor errors; /Home/Garage still 200 (no regression) —
+                     2026-08-18. Real visual rendering has NOT been checked by this agent.
+Last commit:         b50f3e1 — "Phase 16 Increment 2" — 2026-08-18. Increment 3 (this entry) not yet
                      committed - pending alongside this STATE.md update.
 ```
 

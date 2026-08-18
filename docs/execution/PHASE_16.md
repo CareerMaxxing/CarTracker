@@ -230,3 +230,127 @@ Structurally complete and verified as far as this environment allows (build, tes
 markup/CSS). **Not yet visually verified** - no browser/screenshot tool exists here. The user needs to
 load the app live (desktop and mobile) before Increment 3 (porting `Vehicle/Index` onto the same
 shell) starts.
+
+User reviewed live, said "better, carry on" - read as approval to proceed, not a request for specific
+changes (none were named). Moved on to Increment 3.
+
+## Increment 3: Port Vehicle/Index onto the same shell
+
+Split from the original plan's Increment 3, which bundled the nav port together with a new
+vehicle-switcher feature. Given `Vehicle/Index`'s nav is meaningfully more complex than `Home/Index`'s
+(13 tabs, drag-and-drop `TabOrder`, a live-JS reminder-bell icon, per-tab visibility via
+`VisibleTabs`), the port alone was already a full increment's worth of risk - bundling a second new
+feature (the switcher, which needs its own new controller endpoint + dropdown UI) would have made one
+already-complex change harder to verify and roll back independently. Re-sequenced as 3 (this entry, nav
+port only) and 3b (vehicle switcher, next) rather than expanding scope - not a new decision needing the
+user's sign-off, just safer ordering within already-approved work.
+
+### Task packet
+
+```
+TASK ID: PHASE-16-03
+TITLE: Port Vehicle/Index onto the shared sidebar shell, preserving TabOrder/VisibleTabs/reminder-bell
+OBJECTIVE: Replace Vehicle/Index's horizontal top tab-strip with the same .ct-sidebar pattern
+  Increment 2 built for Home/Index, without losing any of its richer per-item behavior.
+INPUTS: Views/Vehicle/Index.cshtml (vehicleNavTabs list, TabOrder-driven CSS order, DefaultActiveTab
+  visibility gating, the reminder-bell special icon, Parts/Documents/Search extra items),
+  Views/Shared/_SidebarNavList.cshtml (Increment 2's partial - too simple as-is for this view's needs),
+  wwwroot/js/vehicle.js (getVehicleHaveImportantReminders - confirms .reminderBell/.reminderBellDiv
+  are unscoped jQuery class hooks, not id-scoped, so they just need to exist somewhere in the DOM).
+ALLOWED SCOPE: Widening _SidebarNavList.cshtml's model to carry three more per-item values
+  (CssClass, Style, IsReminderBell) so ONE partial still serves both views, rather than forking a
+  second near-duplicate partial; Vehicle/Index.cshtml's Nav section rebuilt around it; Home/Index's
+  two existing partial calls updated to the new tuple shape (empty string/false for the fields it
+  doesn't need); removing Vehicle/Index's own now-dead bindNavBarResize() call.
+NON-SCOPE: The vehicle-switcher (split out as 3b); mobile drawer redesign (kept exactly as today,
+  same as Increment 2's approach for Home/Index).
+IMPLEMENTATION REQUIREMENTS:
+  - _SidebarNavList.cshtml's model becomes List<(string Id, string Target, string Icon, string Label,
+    string CssClass, string Style, bool IsReminderBell)>. CssClass carries StaticHelper.
+    DefaultActiveTab(userConfig, tab.Mode)'s result directly - despite its name this returns "d-none"
+    when the tab isn't in the user's VisibleTabs, not an "active" indicator; a fresh vehicle defaults
+    to only Dashboard visible (see STATE.md's standing note), so this MUST be preserved exactly, not
+    dropped as dead code. Style carries `order: N` (TabOrder.FindIndex), which works identically for
+    flexbox column direction as it did for the old row direction - no logic change, just re-verified
+    it still applies in a vertical list. IsReminderBell swaps the plain `<i class="bi @tab.Icon">` for
+    the `<div class="reminderBellDiv"><i class="reminderBell bi bi-bell">` wrapper the live urgency-
+    polling JS targets - confirmed via vehicle.js that these are unscoped jQuery selectors, so exactly
+    one instance existing in the visible sidebar is sufficient (was 3 duplicate-id copies before across
+    desktop/dropdown/mobile; now 2 - sidebar + mobile drawer - an incidental reduction, not a targeted
+    fix).
+  - The Search item has no data-bs-toggle/target at all (calls showGlobalSearch() directly) so it
+    can't go through the tab-triggering partial - kept as a standalone <li> outside the loop, same
+    pattern Increment 2 used for Home's Settings-tab special positioning.
+  - "Edit Vehicle" (previously a top-bar pencil icon) moved into a new .ct-sidebar-footer button,
+    reusing Increment 2's footer class rather than inventing a new position for it.
+  - Home/Index.cshtml's two _SidebarNavList calls updated for the new 7-field tuple (LINQ projection
+    adding "", "", false per item) - the only change needed there since its own list stayed simple.
+DELIVERABLES: A working sidebar on Vehicle/Index with all 15 tabs (13 + Parts + Documents) plus a
+  separate Search item, verified structurally.
+ACCEPTANCE CRITERIA:
+  - dotnet build: 0 errors. dotnet test: 10/10 passing.
+  - GET /Vehicle/Index?vehicleId=1 (the real vehicle) returns all 15 sidebar nav-link ids in
+    TabOrder-derived sequence, all 15 original tab-pane ids unchanged, the reminder-bell wrapper
+    present exactly once, search-tab present with its onclick handler intact, zero d-none items (this
+    real vehicle has every tab visible - confirms VisibleTabs gating still evaluates correctly, not
+    just that the CssClass field exists), zero leftover .nav-item-more, zero leaked Razor errors.
+  - /css/site.css still parses with balanced braces after Increment 2's rules are joined by nothing
+    new (this increment added no new CSS - the existing .ct-sidebar* rules already cover both views).
+  - Home/Index (GET /Home/Garage) still loads normally - confirms the tuple-shape widening didn't
+    regress the already-shipped Increment 2 page.
+VALIDATION COMMANDS:
+  dotnet build
+  dotnet test Tests/CarCareTracker.Tests.csproj
+  dotnet run --urls http://localhost:5300 --no-build (background)
+  curl "http://localhost:5300/Vehicle/Index?vehicleId=1" | grep -o 'ct-sidebar-link" id="[a-z-]*"'
+  curl "http://localhost:5300/Vehicle/Index?vehicleId=1" | grep -o 'id="[a-z]*-tab-pane"' | sort -u | wc -l
+  curl "http://localhost:5300/Vehicle/Index?vehicleId=1" | grep -o 'reminderBellDiv[^<]*<i class="reminderBell bi bi-bell">'
+  curl http://localhost:5300/Home/Garage
+STOP CONDITION: All structural checks green against the real vehicle's data, not a synthetic/empty
+  one. User visual review still required before 3b (vehicle switcher) and Increment 4 start.
+```
+
+### What was done
+
+1. Read `wwwroot/js/vehicle.js`'s `getVehicleHaveImportantReminders` before assuming anything about
+   the reminder-bell markup's requirements - confirmed `.reminderBell`/`.reminderBellDiv` are plain,
+   unscoped jQuery class selectors (not tied to any specific parent id), so the wrapper just needs to
+   exist once in whichever nav list is actually visible - not something requiring special per-context
+   duplication logic.
+2. Read `Helper/StaticHelper.cs`'s `DefaultActiveTab` before treating it as an "active tab" concept (as
+   its name suggested) - it actually returns `"d-none"` when a tab isn't in the user's `VisibleTabs`,
+   a real per-vehicle customization (a fresh vehicle defaults to only Dashboard visible, per this
+   project's own standing STATE.md note) that would have silently broken if dropped as apparent
+   dead weight.
+3. Widened `_SidebarNavList.cshtml`'s model from 4 to 7 tuple fields (`CssClass`, `Style`,
+   `IsReminderBell` added) rather than forking a second near-duplicate partial for Vehicle/Index -
+   keeps the "one shared dumb partial" plan intent intact even though Vehicle's per-item data is
+   richer than Home's.
+4. Updated `Home/Index.cshtml`'s two existing partial calls (from Increment 2) to the new tuple shape
+   via a LINQ projection - the only change needed on that already-shipped page.
+5. Rebuilt `Vehicle/Index.cshtml`'s `@section Nav`: a `.ct-sidebar` header showing the vehicle
+   thumbnail/wordmark plus the vehicle's year/make/model title, the 15-item nav list via the widened
+   partial (13 original tabs + Parts + Documents, each carrying its real `DefaultActiveTab`/`order`/
+   reminder-bell values), a standalone Search item outside the partial (no tab target to toggle), and
+   "Edit Vehicle" moved into the sidebar footer. Mobile keeps its own separate minimal top bar
+   (mirroring Increment 2's `.ct-mobile-topbar` pattern) triggering the completely untouched
+   `.lubelogger-mobile-nav` drawer.
+6. Removed `bindNavBarResize();` from Vehicle/Index's own bottom script block - the same infinite-
+   retry-loop risk Increment 2 found and fixed for Home/Index applies here too, for the identical
+   reason (no `.lubelogger-tab` children left in the desktop `.lubelogger-navbar` for it to measure).
+7. Verified structurally against the real vehicle (id=1, the actual BMW Z4, not a synthetic test
+   record): `dotnet build` (0 errors), `dotnet test` (10/10 passing), curled
+   `/Vehicle/Index?vehicleId=1` and confirmed all 15 sidebar nav-link ids present in the correct
+   TabOrder-derived sequence, all 15 original tab-pane ids unchanged, the reminder-bell wrapper present
+   exactly once, `search-tab` present with its `onclick` intact, zero `d-none` items (this real
+   vehicle's `VisibleTabs` includes everything, confirming the gating logic still evaluates - not just
+   that the field exists structurally), zero leftover `.nav-item-more`, zero leaked Razor errors, and
+   the vehicle title rendering correctly as "2004 BMW Z4". Also re-confirmed `/Home/Garage` (Increment
+   2's page) still loads normally after the shared partial's model change, and `/css/site.css` still
+   parses with balanced braces.
+
+### Result
+
+Structurally complete and verified against real data, same caveat as Increment 2: **not yet visually
+verified**. 3b (vehicle-switcher) and Increment 4 (landing page routing to the current vehicle's
+Dashboard) both need this port confirmed working live first.

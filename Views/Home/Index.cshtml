@@ -51,8 +51,8 @@
             }
         </div>
         <ul class="nav flex-column ct-sidebar-nav" id="homeTab" role="tablist">
-            @await Html.PartialAsync("_SidebarNavList", homeNavTabs)
-            @await Html.PartialAsync("_SidebarNavList", new List<(string, string, string, string)> { homeSettingsTab })
+            @await Html.PartialAsync("_SidebarNavList", homeNavTabs.Select(t => (t.Id, t.Target, t.Icon, t.Label, "", "", false)).ToList())
+            @await Html.PartialAsync("_SidebarNavList", new List<(string, string, string, string, string, string, bool)> { (homeSettingsTab.Id, homeSettingsTab.Target, homeSettingsTab.Icon, homeSettingsTab.Label, "", "", false) })
         </ul>
         @if (User.IsInRole("CookieAuth") || User.IsInRole("APIAuth"))
         {
