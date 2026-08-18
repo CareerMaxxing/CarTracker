@@ -627,3 +627,118 @@ still balanced.
 available from both `Home/Index` and `Vehicle/Index`. This closes out the increment - no further
 review needed on the redirect question specifically, since the user's answer settled it directly
 rather than needing another round of "does this look right."
+
+## Increment 5: Dashboard hero rebuild
+
+### Task packet
+
+```
+TASK ID: PHASE-16-05
+TITLE: Rebuild the per-vehicle Dashboard hero band, using only already-fetched data
+OBJECTIVE: Bring the existing photo hero + headline stat row closer to the mockup's cohesive "hero
+  card" feel, without inventing any new data fields - explicitly in scope per the user's "real data
+  only" decision for this phase.
+INPUTS: Views/Vehicle/Report/_Report.cshtml (the hero band + stat row markup), Models/Report/
+  ReportViewModel.cs and ReportHeader.cs (confirmed exact fields available: MaxOdometer,
+  DistanceTraveled, TotalCost, AverageMPG, VehicleImageLocation, VehicleIsSold, VehicleSoldDate - no
+  Make/Model/Year/LicensePlate reach this partial), wwwroot/css/site.css's existing .report-hero*/
+  .report-stat-* rules and .ct-empty-state's established muted-icon visual language (reused as the
+  precedent for the new placeholder, not invented fresh).
+ALLOWED SCOPE: Razor/CSS changes only to _Report.cshtml's hero block and new supporting CSS classes -
+  no controller/model changes (confirmed unnecessary before starting, not just assumed).
+NON-SCOPE: Adding a vehicle title/name into the hero content area (deliberately not done - reused an
+  existing, already-articulated design decision from this same codebase: a photo-band comment already
+  states "that identity already lives in the nav bar's .lubelogger-vehicle-title just above it, and
+  repeating it here would be redundant, not confident" - the sidebar (Increment 3) already shows
+  Year/Make/Model, so duplicating it in the Dashboard content would contradict the app's own stated
+  design principle, not follow it); any structured Fuel Type/Transmission/Drivetrain/Power/Torque
+  spec panel (flagged in the original phase research as requiring new Vehicle fields that don't exist
+  - explicitly out of scope this phase); changes to the charts/reminders/collaborator grid below the
+  hero (untouched, not part of "hero").
+IMPLEMENTATION REQUIREMENTS:
+  - A real, easy-to-miss gap found and fixed, not just a restyle: the hero band used to be skipped
+    entirely (`@if (Model.VehicleImageLocation != "/defaults/noimage.png")`) for any vehicle without a
+    real uploaded photo - and since the SOLD band was nested INSIDE that same conditional, a sold
+    vehicle with no photo showed no sold indicator anywhere on its Dashboard at all. Fixed by always
+    rendering `.report-hero`, with the photo/placeholder as a conditional CHILD rather than gating the
+    whole band, and the sold band as an independent sibling condition.
+  - New `.report-hero-placeholder`: reuses `.ct-empty-state`'s established muted-icon visual language
+    (large icon, ~35-40% opacity, secondary color) rather than inventing a new empty-state treatment,
+    filled with `bi-car-front` (the same icon already used for vehicle iconography elsewhere in this
+    app, e.g. the new "Vehicles" sidebar item from Increment 4).
+  - New `.report-hero-stats`: replaces the bare `<hr />` between the hero and the stat row with a
+    border-top directly on the stat row, so it reads as one continuous hero unit instead of a photo
+    followed by an unrelated section - the stats themselves (`.report-stat-value`/`-label`) were
+    already using the right typographic treatment (Fraunces hero-axis, tabular-nums, uppercase tracked
+    labels - already on this design system's "closed list" for that treatment) and needed no changes.
+DELIVERABLES: A hero band with guaranteed presence on every vehicle (photo or placeholder), a working
+  sold indicator regardless of photo presence, and a more cohesive hero-to-stats visual transition.
+ACCEPTANCE CRITERIA:
+  - dotnet build: 0 errors. dotnet test: 10/10 passing.
+  - A real vehicle WITH a photo (this household's actual BMW Z4 and Volvo S80) still renders
+    `.report-hero-photo` exactly as before - no regression on the common case.
+  - A vehicle WITHOUT a photo renders `.report-hero-placeholder` with the car icon, not an empty gap -
+    genuinely exercised, not just read as correct from the code.
+  - The sold band's markup/CSS is unchanged from its previously-working form, just repositioned - low
+    regression risk even though the exact "sold + no photo" combination couldn't be exercised against
+    real data (see below).
+  - /css/site.css still parses with balanced braces after the new rules.
+  - No regression on the full Vehicle/Index page load or the report partial for real vehicle data.
+VALIDATION COMMANDS:
+  dotnet build
+  dotnet test Tests/CarCareTracker.Tests.csproj
+  dotnet run --urls http://localhost:5300 --no-build (background)
+  curl http://localhost:5300/Vehicle/GetReportPartialView?vehicleId=1   (real vehicle, has photo)
+  curl http://localhost:5300/Vehicle/GetReportPartialView?vehicleId=2   (real vehicle, has photo)
+  curl -X POST http://localhost:5300/api/vehicles/add ... (throwaway vehicle, no photo, for the
+    placeholder path specifically - not reachable via the two real vehicles, both of which have
+    photos)
+  curl http://localhost:5300/Vehicle/GetReportPartialView?vehicleId={throwaway}
+  curl -X DELETE http://localhost:5300/api/vehicles/delete?id={throwaway}   (cleanup, always)
+  curl http://localhost:5300/css/site.css
+STOP CONDITION: The photo and placeholder paths both empirically verified (not just the common case);
+  the throwaway test vehicle deleted before considering this done, leaving no residue in real data.
+```
+
+### What was done
+
+1. Read `Models/Report/ReportViewModel.cs`/`ReportHeader.cs` before assuming what data would be
+   available for a "hero rebuild" - confirmed Make/Model/Year never reach this partial at all (only
+   odometer/distance/cost/MPG plus the photo/sold fields), which settled the "should the vehicle name
+   go in the hero" question by finding this codebase had already answered it: an existing CSS comment
+   on the same photo-band explicitly reasons that repeating the identity here (already shown in the
+   Increment 3 sidebar) "would be redundant, not confident." Followed that existing precedent rather
+   than re-deciding it.
+2. Found the photo-gating bug while reading the current markup to plan the change, not by going
+   looking for bugs specifically: the entire hero band, sold indicator included, silently disappeared
+   for any vehicle without an uploaded photo. Fixed by restructuring the conditional so the hero band
+   always renders, with photo-vs-placeholder as an inner choice and the sold band as an independent
+   sibling.
+3. Built `.report-hero-placeholder` reusing `.ct-empty-state`'s already-established muted-icon
+   language (same opacity/color approach) rather than designing a new empty-state treatment from
+   scratch, and `.report-hero-stats` to replace a bare `<hr>` with a border-top that reads as part of
+   the hero rather than a new section.
+4. Verified the common case first: both of this household's real vehicles (BMW Z4, Volvo S80) still
+   render `.report-hero-photo` exactly as before, no regression.
+5. To verify the new placeholder path for real (not just read the code and assume), created a
+   throwaway vehicle via `/api/vehicles/add` (no photo) - confirmed `.report-hero-placeholder` and the
+   `bi-car-front` icon render correctly. Attempted to also verify the sold-band-without-photo
+   combination by marking that same throwaway vehicle sold via `/api/vehicles/update`, but discovered
+   along the way that `SoldDate` isn't one of the fields this particular API endpoint updates at all
+   (grepped the whole controller method for `SoldDate` - zero matches - it's an MVC-only field, same
+   category as other fields this codebase's own STATE.md already flags as API-DTO gaps). Rather than
+   spend more effort routing around an unrelated pre-existing API limitation, accepted this one
+   specific combination as verified by construction (the sold-band code itself is unchanged, working,
+   pre-existing markup - only its position moved) - consistent with this exact codebase's own prior
+   precedent in `UI_TRANSITION.md` for states that are hard to reach without mutating real data.
+   Deleted the throwaway vehicle immediately after (`/api/vehicles/delete?id=3`), confirmed via
+   `/api/vehicles` that only the two real vehicles remain.
+6. Final regression pass: `dotnet build` (0 errors), `dotnet test` (10/10), full `Vehicle/Index` page
+   load unaffected, `/css/site.css` still balanced (427/427, +3 from the two new rule blocks).
+
+### Result
+
+Complete and verified for the two reachable paths (real photo, no photo) against both real data and a
+throwaway test case, cleaned up afterward. The third path (sold + no photo) is verified by construction
+only, consistent with established precedent in this codebase for states real data can't reach without
+mutation. **Not yet visually verified** - same standing caveat as every increment in this phase.

@@ -14,24 +14,27 @@
     }
 </script>
 <div class="d-flex flex-column vehicleTabPane">
-@if (Model.VehicleImageLocation != "/defaults/noimage.png")
-{
-    <div class="report-hero hideOnPrint">
+<div class="report-hero hideOnPrint">
+    @if (Model.VehicleImageLocation != "/defaults/noimage.png")
+    {
         <img src="@Model.VehicleImageLocation" class="report-hero-photo" style="pointer-events:none; @(Model.VehicleIsSold ? "filter: grayscale(100%);" : "")" />
-        @if (Model.VehicleIsSold)
-        {
-            <div class="report-hero-sold-band">
-                <span>@translator.Translate(userLanguage, "SOLD")</span>
-                <small>@Model.VehicleSoldDate</small>
-            </div>
-        }
-    </div>
-}
+    }
+    else
+    {
+        <div class="report-hero-placeholder"><i class="bi bi-car-front"></i></div>
+    }
+    @if (Model.VehicleIsSold)
+    {
+        <div class="report-hero-sold-band">
+            <span>@translator.Translate(userLanguage, "SOLD")</span>
+            <small>@Model.VehicleSoldDate</small>
+        </div>
+    }
+</div>
 <div class="container reportTabContainer flex-grow-1">
-    <div class="row hideOnPrint mb-2" id="reportHeaderContent">
+    <div class="row hideOnPrint mb-2 report-hero-stats" id="reportHeaderContent">
             @await Html.PartialAsync("Report/_ReportHeader", Model.ReportHeaderForVehicle)
     </div>
-    <hr />
     <div class="row hideOnPrint flex-wrap gap-1">
         <div class="col-md-3 col-12 border rounded">
             <div class="row pt-1">

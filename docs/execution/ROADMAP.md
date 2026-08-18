@@ -21,7 +21,7 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
 | 13 | AI/OCR | Explicitly deferred. Leave clean extension points only; no feature work. | ✅ Confirmed deferred — no AI/OCR code exists anywhere in the codebase (verified by grep); see PHASE_13.md |
 | 14 | V1 Hardening | Unit/integration/UI/migration/duplicate-operation/adapter-failure/backup-restore tests, error handling, accessibility, responsive validation, performance, security review. | 🟡 In progress — Increment 1 (security review): real static-file auth bypass + unrestricted upload fixed. Increment 2 (automated tests): xUnit + WebApplicationFactory project stood up, 10 passing tests. Increment 3 (accessibility): all 41 modals audited, aria-labelledby wired on 39, 2 real duplicate-id bugs found and fixed (PHASE_14.md). Icon buttons/keyboard-nav/labels/mobile/performance still open |
 | 15 | Remote Access & Persistent Hosting | Reach the existing app from the user's phone with the same live data as the PC, over a private Tailscale network — no new sync architecture, single server + existing SignalR live updates. Revisits CLAUDE.md's localhost-only/no-cloud-deployment decisions with the human owner's explicit sign-off. | ✅ Complete — Windows Service hosting readiness, publish+register bound to 127.0.0.1:5299 with real data carried over, Tailscale reachability (`https://legion.tail80af14.ts.net/`) verified from the phone over mobile data with wifi off, and a proper PWA install on the phone (Chrome "Install app", Samsung battery/VPN settings tuned for reliability) (PHASE_15.md). Auth enablement explicitly declined by the user — device-level protection + Tailscale's own device authorization judged sufficient; not re-raised unless the user brings it up again |
-| 16 | Sidebar App Shell & Dashboard Redesign | Restructure navigation from a top tab-strip + all-vehicles Garage-grid homepage to a persistent left sidebar, matching a mockup's editorial aesthetic (already close in spirit to the existing Zara + Magneto design system). Intentionally reverses UI_TRANSITION.md's explicit "keep Home/Vehicle nav separate" decision, with the user's sign-off. Visual/layout pass only this phase — new widgets use real existing data; Trips/fuel-gauge/month-over-month%/fleet-stats are flagged as candidate future phases, not built now. | 🟡 In progress — Increments 1-3b complete (nav port + vehicle switcher). Increment 4 (auto-redirect landing page to the current vehicle's Dashboard) built, then **explicitly reverted per direct user feedback**: "open on the grid, but leave the option to transition to other cars in the corner" — the mockup's dashboard-as-landing idea is declined for this app; Garage grid stays the homepage, with a "Jump to Vehicle" quick-switcher now on both Home/Index and Vehicle/Index sidebars instead (PHASE_16.md) |
+| 16 | Sidebar App Shell & Dashboard Redesign | Restructure navigation from a top tab-strip + all-vehicles Garage-grid homepage to a persistent left sidebar, matching a mockup's editorial aesthetic (already close in spirit to the existing Zara + Magneto design system). Intentionally reverses UI_TRANSITION.md's explicit "keep Home/Vehicle nav separate" decision, with the user's sign-off. Visual/layout pass only this phase — new widgets use real existing data; Trips/fuel-gauge/month-over-month%/fleet-stats are flagged as candidate future phases, not built now. | 🟡 In progress — Increments 1-3b complete (nav port + vehicle switcher). Increment 4 (auto-redirect landing page) built, then **explicitly reverted per direct user feedback** — Garage grid stays the homepage, with a "Jump to Vehicle" quick-switcher on both sidebars instead. Increment 5 (Dashboard hero rebuild) complete — found and fixed a real pre-existing gap (vehicles without a photo showed no hero band AND no sold indicator at all), verified against real vehicle data plus a throwaway test vehicle, cleaned up afterward (PHASE_16.md). Increments 6-11 (Quick Actions, Fuel Economy/Total Spent/Planned Maintenance/Recent Activity widgets, promo tile) still open |
 
 ## Human review checkpoints
 
@@ -86,11 +86,17 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
   plain /Home, the showGarage plumbing removed entirely rather than left dormant) and added the
   Increment 3b vehicle switcher to Home/Index's sidebar too (labeled "Jump to Vehicle" there, no
   "current" vehicle context to be "switching" relative to on the Garage page). CurrentVehicleId itself
-  and the switcher's set-and-navigate behavior were never part of what got reverted. **Next:
-  Increments 5-11, the actual Dashboard widgets (hero card, Quick Actions, Fuel Economy sparkline,
-  Total Spent, Planned Maintenance, Recent Activity, Magneto-motif promo tile) - these still apply to
-  the per-vehicle Dashboard/Report tab regardless of whether it's the landing page or reached via the
-  grid/switcher.**
+  and the switcher's set-and-navigate behavior were never part of what got reverted. Increment 5
+  (Dashboard hero rebuild): reused an existing design decision already articulated elsewhere in this
+  codebase (a CSS comment on the same photo band already reasoned that repeating the vehicle's
+  identity in the hero would be "redundant, not confident" since the sidebar already shows it) rather
+  than re-deciding whether to add a title. Found a real gap while reading the code to plan the change:
+  vehicles without a photo showed no hero band AND no sold indicator at all (the sold band was nested
+  inside the photo-only conditional). Fixed with a placeholder reusing .ct-empty-state's established
+  muted-icon language, verified against a throwaway test vehicle (not just the two real ones, which
+  both happen to have photos), cleaned up afterward. **Next: Increments 6-11 - Quick Actions, Fuel
+  Economy sparkline, Total Spent, Planned Maintenance, Recent Activity, and a Magneto-motif promo
+  tile.**
 
 ## Core V1 acceptance scenario
 
