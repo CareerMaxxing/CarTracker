@@ -354,3 +354,116 @@ STOP CONDITION: All structural checks green against the real vehicle's data, not
 Structurally complete and verified against real data, same caveat as Increment 2: **not yet visually
 verified**. 3b (vehicle-switcher) and Increment 4 (landing page routing to the current vehicle's
 Dashboard) both need this port confirmed working live first.
+
+User reviewed live, said "bang on, continue" - clear approval. Moved on to 3b.
+
+## Increment 3b: Vehicle switcher
+
+### Task packet
+
+```
+TASK ID: PHASE-16-03B
+TITLE: Add a vehicle-switcher dropdown to Vehicle/Index's sidebar header
+OBJECTIVE: Let a multi-vehicle household switch which vehicle they're viewing directly from the
+  sidebar, using Increment 1's CurrentVehicleId endpoint, without duplicating vehicle-list-fetching
+  logic that already exists elsewhere in this codebase.
+INPUTS: Controllers/HomeController.cs's existing GetVehicleSelector action (the "duplicate to other
+  vehicle" feature - same GetVehicles + FilterUserVehicles + HideSoldVehicles filtering pattern
+  needed here, but for a different UX: single-select navigation, not multi-select checkboxes) and its
+  Views/Home/_VehicleSelector.cshtml partial (studied as the pattern to follow, not reused directly -
+  its checkbox-list UI doesn't fit a single-select switcher).
+ALLOWED SCOPE: One new HomeController action (GetVehicleSwitcherList) reusing the exact same
+  filtering as GetVehicleSelector minus its vehicleId-exclusion and ShopSupplies special-casing
+  (both specific to the duplicate-record use case, not relevant here); one new partial
+  (_VehicleSwitcherList.cshtml); two new shared.js functions (loadVehicleSwitcher - lazy AJAX fetch on
+  first dropdown open, switchToVehicle - POSTs Increment 1's SetCurrentVehicle then navigates);
+  Vehicle/Index.cshtml's sidebar header restructured to separate the existing "click wordmark to
+  return to Garage" area from the new switcher dropdown (they can't share one onclick handler).
+NON-SCOPE: Adding the switcher to Home/Index (Home isn't vehicle-scoped yet - that's Increment 4's
+  job); any change to the existing GetVehicleSelector/duplicate-to-vehicle feature.
+IMPLEMENTATION REQUIREMENTS:
+  - GetVehicleSwitcherList: _dataAccess.GetVehicles() -> FilterUserVehicles (non-root users only) ->
+    HideSoldVehicles removal if set - identical filtering to GetVehicleSelector, deliberately not
+    excluding the current vehicle (a switcher should show where you are, not just where you could go).
+  - _VehicleSwitcherList.cshtml: one <button class="dropdown-item" onclick="switchToVehicle(id)">
+    per vehicle, labeled the same way the existing selector already does (Year Make Model
+    (Identifier), via StaticHelper.GetVehicleIdentifier) for label consistency with the rest of the
+    app rather than inventing new formatting.
+  - loadVehicleSwitcher(): guarded by a module-level `vehicleSwitcherLoaded` flag so opening the
+    dropdown twice doesn't re-fetch: fetches once, populates #vehicleSwitcherMenu, done. Triggered by
+    the toggle button's own onclick (fires before Bootstrap's dropdown show, both attached to the same
+    click) rather than a show.bs.dropdown listener, since it's simpler for a single call site.
+  - switchToVehicle(vehicleId): POST to /Home/SetCurrentVehicle, then on success navigate to
+    /Vehicle/Index?vehicleId={id} - the endpoint call and the navigation are sequenced (navigate only
+    in the POST's success callback) so the stored CurrentVehicleId is guaranteed to be updated before
+    the page that will eventually read it (Increment 4) ever loads.
+  - Vehicle/Index.cshtml's header split into two siblings under .ct-sidebar-header: the existing
+    .ct-wordmark-wrap (thumbnail/wordmark + vehicle title, onclick="returnToGarage()", unchanged
+    behavior) and a new sibling .dropdown containing the switcher toggle + menu - avoids stacking two
+    conflicting onclick handlers on one element.
+DELIVERABLES: A working vehicle switcher, verified against the real household's actual vehicle list
+  (not a single-vehicle or synthetic test case).
+ACCEPTANCE CRITERIA:
+  - dotnet build: 0 errors. dotnet test: 10/10 passing.
+  - GET /Home/GetVehicleSwitcherList returns real vehicle labels for every vehicle in the account, not
+    an empty/placeholder list.
+  - GET /Vehicle/Index?vehicleId=1 contains the switcher's toggle button and an initially-empty
+    #vehicleSwitcherMenu (populated client-side on open, not server-rendered - consistent with this
+    codebase's dominant AJAX-loaded-dropdown pattern).
+  - POST /Home/SetCurrentVehicle still round-trips correctly (regression check - confirms the
+    Increment 1 endpoint this feature depends on wasn't disturbed).
+  - /Home/Garage still loads normally (regression check on the unrelated Home page).
+  - /css/site.css still parses with balanced braces (no new CSS was needed this increment - the
+    existing .ct-sidebar-link class already covers the switcher toggle's styling).
+VALIDATION COMMANDS:
+  dotnet build
+  dotnet test Tests/CarCareTracker.Tests.csproj
+  dotnet run --urls http://localhost:5300 --no-build (background)
+  curl http://localhost:5300/Home/GetVehicleSwitcherList
+  curl "http://localhost:5300/Vehicle/Index?vehicleId=1" | grep -o 'id="vehicleSwitcherMenu"'
+  curl -X POST http://localhost:5300/Home/SetCurrentVehicle -d "vehicleId=1"
+  curl http://localhost:5300/Home/Garage
+STOP CONDITION: All structural checks green, the switcher's own AJAX endpoint confirmed returning the
+  real household's actual vehicles (discovered along the way: there are two - a BMW Z4 and a Volvo
+  S80 - the first real multi-vehicle test case this phase has had). User visual review (does opening
+  the dropdown and clicking a different vehicle actually switch pages correctly) still required before
+  Increment 4.
+```
+
+### What was done
+
+1. Read the existing `GetVehicleSelector` action and `_VehicleSelector.cshtml` first, since this
+   feature ("pick a vehicle") already exists in the app for a different purpose (bulk-duplicating a
+   record to other vehicles) - confirmed its checkbox-list UI didn't fit a single-select switcher, but
+   its filtering logic (`GetVehicles` → `FilterUserVehicles` for non-root users → `HideSoldVehicles`
+   removal) was exactly right to reuse, rather than re-deriving vehicle-access rules from scratch.
+2. Added `HomeController.GetVehicleSwitcherList()`, same filtering, deliberately not excluding the
+   current vehicle (unlike the duplicate-to-vehicle feature, which excludes the source vehicle since
+   duplicating a record to itself is meaningless - a switcher needs the opposite: show where you
+   currently are too).
+3. Added `Views/Home/_VehicleSwitcherList.cshtml`, reusing `StaticHelper.GetVehicleIdentifier`'s
+   "Year Make Model (Identifier)" label format for consistency with the existing selector rather than
+   inventing new formatting.
+4. Added `loadVehicleSwitcher()`/`switchToVehicle()` to `shared.js` (available to both views, though
+   only wired into Vehicle/Index this round) - the switch function sequences the `SetCurrentVehicle`
+   POST and the page navigation deliberately (navigate only in the success callback) so Increment 4's
+   later read of `CurrentVehicleId` can never race against an in-flight save.
+5. Restructured `Vehicle/Index.cshtml`'s sidebar header into two siblings (existing wordmark/title
+   click-to-Garage area, new switcher dropdown) rather than trying to attach two different onclick
+   behaviors to one element.
+6. Verified structurally: `dotnet build` (0 errors), `dotnet test` (10/10 passing), curled
+   `/Home/GetVehicleSwitcherList` directly and got back real data - this household actually has two
+   vehicles (a BMW Z4 and a Volvo S80), the first genuine multi-vehicle case this phase has exercised,
+   not just inferred from account structure; confirmed the switcher markup renders on
+   `/Vehicle/Index?vehicleId=1`; re-confirmed `SetCurrentVehicle` still round-trips (this increment
+   depends on Increment 1's endpoint, worth re-checking it wasn't disturbed); confirmed `/Home/Garage`
+   unaffected; confirmed `/css/site.css` still balanced (no new CSS needed - the switcher toggle reuses
+   `.ct-sidebar-link` as-is).
+
+### Result
+
+Structurally complete, verified against the real household's actual two-vehicle list. **Not yet
+visually verified** - specifically, whether clicking a different vehicle in the dropdown actually
+navigates and lands on the right page has not been exercised end-to-end by this agent (curl confirms
+the pieces work independently, not the full click-through). User review needed before Increment 4
+(landing page routing to the current vehicle's Dashboard).

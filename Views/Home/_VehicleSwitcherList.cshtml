@@ -1,0 +1,20 @@
+@inject ITranslationHelper translator
+@inject IConfigHelper config
+@using CarCareTracker.Helper
+@model List<Vehicle>
+@{
+    var userLanguage = config.GetUserConfig(User).UserLanguage;
+}
+@if (Model.Any())
+{
+    @foreach (Vehicle vehicle in Model)
+    {
+        <li>
+            <button type="button" class="dropdown-item text-truncate" onclick="switchToVehicle(@vehicle.Id)">@($"{vehicle.Year} {vehicle.Make} {vehicle.Model} ({StaticHelper.GetVehicleIdentifier(vehicle)})")</button>
+        </li>
+    }
+}
+else
+{
+    <li><span class="dropdown-item-text text-secondary">@translator.Translate(userLanguage, "No Vehicles Available")</span></li>
+}

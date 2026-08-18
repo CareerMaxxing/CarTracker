@@ -8,6 +8,21 @@ var eventHubConn = undefined;
 function returnToGarage() {
     window.location.href = '/Home';
 }
+var vehicleSwitcherLoaded = false;
+function loadVehicleSwitcher() {
+    if (vehicleSwitcherLoaded) {
+        return;
+    }
+    vehicleSwitcherLoaded = true;
+    $.get('/Home/GetVehicleSwitcherList', function (data) {
+        $('#vehicleSwitcherMenu').html(data);
+    });
+}
+function switchToVehicle(vehicleId) {
+    $.post('/Home/SetCurrentVehicle', { vehicleId: vehicleId }, function () {
+        window.location.href = `/Vehicle/Index?vehicleId=${vehicleId}`;
+    });
+}
 function confirmDelete(message, callBack) {
     Swal.fire({
         title: "Confirm Deletion?",

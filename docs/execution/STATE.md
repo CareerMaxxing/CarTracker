@@ -5,50 +5,46 @@ conversation history.
 
 ```
 PROJECT STATUS
-Current phase:      Phase 16 — Sidebar App Shell & Dashboard Redesign (Increment 3 of ~12 structurally
-                     complete, awaiting the user's live visual review of Vehicle/Index)
-Current task:       PHASE-16-03 (see docs/execution/PHASE_16.md) — Vehicle/Index ported onto the
-                     shared sidebar shell. Structurally verified against real vehicle data (build/
-                     tests/curl); NOT yet visually verified - no browser tool exists here.
+Current phase:      Phase 16 — Sidebar App Shell & Dashboard Redesign (Increment 3b structurally
+                     complete, awaiting the user's live click-through review)
+Current task:       PHASE-16-03B (see docs/execution/PHASE_16.md) — vehicle switcher built in
+                     Vehicle/Index's sidebar header. Structurally verified (build/tests/curl,
+                     including the switcher's own endpoint returning this household's real two-vehicle
+                     list); NOT yet click-tested live - curl confirms the pieces work independently,
+                     not that clicking a vehicle actually navigates correctly end-to-end.
 Status:             Full plan/decision history in git history + PHASE_16.md's intro, not re-summarized
-                     here. Increment 1 (CurrentVehicleId, b669299) and Increment 2 (Home/Index sidebar,
-                     b50f3e1) both done - user reviewed Increment 2 live and said "better, carry on"
-                     (read as approval, no specific changes requested). Increment 3: ported
-                     Vehicle/Index onto the same shell - the harder of the two views, since it has 13
-                     tabs (not Home's 4), drag-and-drop TabOrder, per-tab VisibleTabs gating (a fresh
-                     vehicle defaults to only Dashboard visible - this MUST keep working), and a live
-                     JS-driven reminder-bell icon. Widened _SidebarNavList.cshtml from 4 to 7 tuple
-                     fields (CssClass/Style/IsReminderBell added) rather than forking a second partial,
-                     keeping "one shared dumb partial" intact; updated Home/Index's two existing calls
-                     to match. Split the plan's original Increment 3 (which bundled a vehicle-switcher
-                     feature in with the nav port) into 3 (this entry) and 3b (switcher, next) - the
-                     nav port alone was already the riskiest single change in the phase, and bundling a
-                     second new feature would have made it harder to verify/roll back independently.
-                     Removed Vehicle/Index's own bindNavBarResize() call (same infinite-retry-loop risk
-                     Increment 2 found for Home/Index, same fix). Verified structurally against the
-                     REAL vehicle (id=1, actual BMW Z4, not synthetic data): all 15 sidebar nav-link
-                     ids present in correct TabOrder sequence, all 15 tab-pane ids unchanged, reminder-
-                     bell wrapper present exactly once, search-tab intact, zero d-none items (this
-                     vehicle's VisibleTabs includes everything - confirms the gating logic actually
-                     evaluates, not just that the field exists), zero leftover .nav-item-more, zero
-                     leaked Razor errors, /Home/Garage still loads (no regression from the shared
-                     partial's widened model). Not yet committed - pending alongside this STATE.md
-                     update.
+                     here. Increments 1-3 done (b669299, b50f3e1, b9ab158) - user reviewed each live
+                     ("better, carry on" after 2, "bang on, continue" after 3). Increment 3b: added
+                     HomeController.GetVehicleSwitcherList (reused the existing GetVehicleSelector
+                     filtering pattern - built originally for an unrelated "duplicate record to
+                     another vehicle" feature - rather than re-deriving vehicle-access rules from
+                     scratch), a new _VehicleSwitcherList.cshtml partial, and
+                     loadVehicleSwitcher()/switchToVehicle() in shared.js (the latter sequences the
+                     SetCurrentVehicle POST and the page navigation deliberately, success-callback-
+                     only, so Increment 4's later read of CurrentVehicleId can't race an in-flight
+                     save). Restructured Vehicle/Index's sidebar header into two siblings (existing
+                     wordmark-click-to-Garage area, new switcher dropdown) since they can't share one
+                     onclick. Discovered along the way, not assumed: this household actually has TWO
+                     real vehicles (BMW Z4 + Volvo S80) - the first genuine multi-vehicle case this
+                     phase has exercised, confirmed by curling the switcher's own endpoint and getting
+                     real data back, not an empty/single-item list. Verified structurally: dotnet build
+                     (0 errors), dotnet test (10/10), curl-confirmed the switcher markup/endpoint/
+                     SetCurrentVehicle-regression/Garage-regression/CSS-balance all green. Not yet
+                     committed - pending alongside this STATE.md update.
 Last completed:      Phase 15 (Remote Access & Persistent Hosting) - all 5 increments resolved (4
                      explicitly declined by the user, not skipped). See docs/execution/PHASE_15.md.
                      Phase 14's remaining areas (icon-button labels, keyboard nav, form labels, alt
                      text, mobile/responsive validation, performance) are still open, not abandoned -
                      both Phase 15 and now Phase 16 were started because the user raised new,
                      higher-priority requests, not because Phase 14 finished.
-Next task:           STOP before writing more code: user needs to load a real vehicle page live
-                     (desktop + mobile) and confirm the sidebar looks/works correctly, same checkpoint
-                     discipline as Increment 2 - this agent has verified markup/CSS presence only,
-                     never rendered pixels. After that sign-off: Increment 3b (vehicle-switcher in the
-                     sidebar header, using Increment 1's SetCurrentVehicle endpoint - not built yet),
-                     then Increment 4 (landing page routes to the current vehicle's Dashboard instead
-                     of the Garage grid; "Vehicles" becomes its own sidebar item). Do NOT skip ahead
-                     without the visual sign-off - two views now share the widened partial, so a
-                     structural mistake would be baked into both.
+Next task:           STOP before writing more code: user needs to actually open the switcher dropdown
+                     and click the OTHER vehicle (this household has two - BMW Z4 id=1, Volvo S80
+                     id=2) and confirm it navigates to the right vehicle's page - this agent has only
+                     verified the pieces independently via curl, never exercised the actual click-
+                     through. After that sign-off: Increment 4 (landing page routes to the current
+                     vehicle's Dashboard instead of the Garage grid; "Vehicles" becomes its own sidebar
+                     item) - the first increment that actually CONSUMES CurrentVehicleId rather than
+                     just plumbing it, so get this one right rather than rushing it.
 Known blockers:      1. No browser/screenshot tool in this environment - Phase 14's remaining
                         accessibility work would still need static-code-audit + curl verification,
                         not live screen-reader/keyboard testing.
@@ -125,14 +121,16 @@ Do not:              Assume Phase 14 is "done" - three increments complete (secu
                      a separate, diverging dataset - be explicit with the user about which copy
                      they're looking at if this ever comes up.
 Last validation:     Phase 15's full validation history lives in docs/execution/PHASE_15.md. Phase 16
-                     Increment 3 (current, structural only - NOT visual): dotnet build (0 errors);
-                     dotnet test (10/10 passing); dev instance on port 5300; curl
-                     /Vehicle/Index?vehicleId=1 (real vehicle) shows all 15 sidebar nav-link ids in
-                     correct TabOrder sequence, all 15 tab-pane ids unchanged, reminder-bell wrapper
-                     present exactly once, search-tab intact, zero d-none items, zero .nav-item-more
-                     leftover, zero leaked Razor errors; /Home/Garage still 200 (no regression) —
-                     2026-08-18. Real visual rendering has NOT been checked by this agent.
-Last commit:         b50f3e1 — "Phase 16 Increment 2" — 2026-08-18. Increment 3 (this entry) not yet
+                     Increment 3b (current, structural only - NOT click-tested): dotnet build (0
+                     errors); dotnet test (10/10 passing); dev instance on port 5300; curl
+                     /Home/GetVehicleSwitcherList returned real data for both actual vehicles (BMW Z4
+                     id=1, Volvo S80 id=2); curl /Vehicle/Index?vehicleId=1 shows the switcher toggle +
+                     empty #vehicleSwitcherMenu; POST /Home/SetCurrentVehicle still round-trips
+                     (regression check on Increment 1); /Home/Garage still 200; /css/site.css still
+                     balanced (no new CSS needed) — 2026-08-18. The actual click-through (open
+                     dropdown, click other vehicle, land on its page) has NOT been exercised by this
+                     agent.
+Last commit:         b9ab158 — "Phase 16 Increment 3" — 2026-08-18. Increment 3b (this entry) not yet
                      committed - pending alongside this STATE.md update.
 ```
 

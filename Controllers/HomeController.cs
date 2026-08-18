@@ -551,6 +551,20 @@ namespace CarCareTracker.Controllers
                 return Json(OperationResponse.Failed());
             }
         }
+        public IActionResult GetVehicleSwitcherList()
+        {
+            var vehiclesStored = _dataAccess.GetVehicles();
+            if (!User.IsInRole(nameof(UserData.IsRootUser)))
+            {
+                vehiclesStored = _userLogic.FilterUserVehicles(vehiclesStored, GetUserID());
+            }
+            var userConfig = _config.GetUserConfig(User);
+            if (userConfig.HideSoldVehicles)
+            {
+                vehiclesStored.RemoveAll(x => !string.IsNullOrWhiteSpace(x.SoldDate));
+            }
+            return PartialView("_VehicleSwitcherList", vehiclesStored);
+        }
         public IActionResult GetVehicleSelector(int vehicleId, ImportMode importMode)
         {
             var vehiclesStored = _dataAccess.GetVehicles();
