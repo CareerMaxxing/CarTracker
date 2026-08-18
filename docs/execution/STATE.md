@@ -118,8 +118,9 @@ Last validation:     dotnet build (0 errors, 0 new warnings - 224 pre-existing n
                      curl http://localhost:5299/health returned {"status":"pass",...}, and
                      data/keys/key-<guid>.xml was created, confirming the DataProtection change works
                      and the interactive dev workflow is unaffected — 2026-08-18.
-Last commit:         (pending - Phase 15 Increment 1 changes not yet committed as of this STATE.md
-                     update; see git status for CarCareTracker.csproj/Program.cs/docs changes).
+Last commit:         ab97b66 — "Phase 15 Increment 1: Windows Service hosting readiness" —
+                     2026-08-18, awaiting user confirmation before Increment 2 (which needs the user
+                     physically present for admin elevation and their phone).
 ```
 
 ## Completed initiative: Zara + Magneto UI overhaul (separate from the roadmap above)
