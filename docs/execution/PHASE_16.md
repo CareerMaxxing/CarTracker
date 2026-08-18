@@ -1233,3 +1233,83 @@ Complete. The last data widget in this phase, verified with a real cross-widget 
 (matching Increment 8's total exactly) rather than just confirming content appeared. **Not yet visually
 verified** - same standing caveat as every increment in this phase. Increment 11 (Magneto-motif promo
 tile) is the last increment - purely cosmetic, no data.
+
+## Increment 11: Magneto-motif promo tile (last increment)
+
+### Task packet
+
+```
+TASK ID: PHASE-16-11
+TITLE: Add a promo tile to the Dashboard using the existing chapter-divider ink-band motif
+OBJECTIVE: Close out the mockup's layout with its magazine-ad-style banner, using this app's own
+  already-established editorial visual language - honestly, not by inventing fake magazine content.
+INPUTS: wwwroot/css/site.css's .report-hero-sold-band (the existing "chapter-divider" ink-band pattern
+  - full-bleed solid colour, bold Fraunces hero-axis typography - studied as the pattern to extend,
+  not duplicate), the Documents sidebar tab (id="documents-tab", already wired via Increment 3).
+ALLOWED SCOPE: New markup in _Report.cshtml (a single promo tile, positioned after the widget row),
+  new .report-promo-tile* CSS reusing the sold-band's existing color/typography tokens.
+NON-SCOPE: Any new data, any fabricated "article" content, any change to the Documents tab itself.
+IMPLEMENTATION REQUIREMENTS:
+  - A real content decision, not a technical one: the mockup's actual promo tile advertised a specific
+    (real, from an actual magazine) article - "E46 M3 - A modern classic." This app has no equivalent
+    real content to promote, and inventing a fake article/headline would mean shipping fabricated
+    content in a real user-facing product - not acceptable. The honest translation is to keep the
+    VISUAL motif (the ink-band + bold serif headline this app already uses for its "chapter closed"
+    sold-vehicle moment) while pointing it at something real: the vehicle's own Documents tab.
+  - Click target: `bootstrap.Tab.getOrCreateInstance(document.getElementById('documents-tab')).show()`
+    - the real Bootstrap 5 JS Tab API (this app already loads bootstrap.bundle.min.js, confirmed
+    globally available), which triggers the exact same `show.bs.tab` handler that correctly lazy-loads
+    the Documents tab's content (the same mechanism Increment 6 had to learn about the hard way) -
+    reused correctly this time, not re-discovered as a bug.
+  - CSS reuses `.report-hero-sold-band`'s exact color tokens (`--bs-primary` background, `--bs-body-bg`
+    text) and Fraunces hero-axis font-variation-settings for the headline, rather than introducing new
+    color values for what is visually the same "chapter-divider" family of element.
+DELIVERABLES: A working promo tile, the final piece of Phase 16's Dashboard widget work.
+ACCEPTANCE CRITERIA:
+  - dotnet build: 0 errors. dotnet test: 10/10 passing.
+  - Tile renders on both real vehicles' Dashboard, correctly targeting the real documents-tab id.
+  - No regression on either vehicle's full page, Home/Garage, or /css/site.css's brace balance.
+VALIDATION COMMANDS:
+  dotnet build
+  dotnet test Tests/CarCareTracker.Tests.csproj
+  dotnet run --urls http://localhost:5300 --no-build (background)
+  curl http://localhost:5300/Vehicle/GetReportPartialView?vehicleId=1
+  curl http://localhost:5300/Vehicle/GetReportPartialView?vehicleId=2
+  curl http://localhost:5300/Vehicle/Index?vehicleId=1
+  curl http://localhost:5300/Vehicle/Index?vehicleId=2
+  curl http://localhost:5300/Home/Garage
+  curl http://localhost:5300/css/site.css
+STOP CONDITION: Structural verification green across both vehicles and a full-app regression sweep
+  (Home/Garage included, not just the two Vehicle pages this phase has focused on) - this closes out
+  the whole phase, so the regression check widened accordingly.
+```
+
+### What was done
+
+1. Faced a real content decision before writing any code: the mockup's actual promo tile advertised a
+   specific real magazine article. Rather than inventing a fake headline/article to visually match it
+   - which would mean shipping fabricated content dressed up as real - kept the motif (this app's
+   existing ink-band "chapter-divider" pattern, already used for the sold-vehicle indicator) and
+   pointed it at something genuinely real: the vehicle's own Documents tab.
+2. Wired the click target using the real Bootstrap 5 `bootstrap.Tab` JS API rather than a bare
+   `.click()` simulation, triggering the exact `show.bs.tab` lazy-load handler Increment 6 had to
+   learn about the hard way - applied correctly here from the start, not rediscovered as a bug.
+3. Built `.report-promo-tile*` CSS reusing `.report-hero-sold-band`'s exact existing color tokens and
+   Fraunces hero-axis typography treatment, rather than introducing new values for what is visually
+   the same design-system "family" of element.
+4. Verified structurally across both real vehicles, plus a full-app regression sweep since this closes
+   out the whole phase (not just the two Vehicle Dashboard pages this phase has focused on):
+   `dotnet build` (0 errors), `dotnet test` (10/10), both vehicles' Dashboard tiles render correctly
+   targeting the real `documents-tab` id, `Home/Garage` unaffected, `/css/site.css` still balanced
+   (446/446).
+
+### Result
+
+Complete. This closes Phase 16's planned 11 increments. **The whole phase still needs a real, live
+visual review from the user** - every increment from 1 through 11 has been verified structurally
+(build, tests, curl-inspected markup/CSS, and where real data existed, cross-checked against known
+values) but never actually seen rendered by this agent, since no browser/screenshot tool exists in
+this environment. The user has done spot-checks along the way ("better, carry on" / "bang on, continue"
+/ the landing-page decision / "where are the differences" question) but a full end-to-end look at the
+finished Dashboard, on both desktop and the phone's installed PWA (Phase 15), is the natural next step
+before considering this phase truly done.

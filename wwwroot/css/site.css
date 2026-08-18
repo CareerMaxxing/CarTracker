@@ -2246,6 +2246,50 @@ td[data-column="description"] {
     opacity: 0.75;
 }
 
+/* Phase 16, Increment 11 — same chapter-divider ink-band family as .report-hero-sold-band above,
+   applied to the Dashboard's promo tile (the mockup's magazine-ad-style banner). Links to a real
+   destination (the Documents tab) rather than a fabricated article, since this app has no actual
+   magazine content to promote - the honest translation of the motif is the visual language, not the
+   specific content it originally advertised. */
+.report-promo-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--ct-space-1);
+    width: 100%;
+    margin-bottom: var(--ct-space-4);
+    padding: var(--ct-space-5) var(--ct-space-4);
+    background-color: var(--bs-primary);
+    color: var(--bs-body-bg);
+    cursor: pointer;
+    border: none;
+}
+
+.report-promo-tile-eyebrow {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.75;
+}
+
+.report-promo-tile-headline {
+    font-family: var(--ct-heading-font-family);
+    font-weight: 600;
+    font-variation-settings: "opsz" 144, "WONK" 1, "SOFT" 25;
+    font-size: 1.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.report-promo-tile-link {
+    margin-top: var(--ct-space-2);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
 @media (max-width: 767px) {
     .report-hero {
         height: 220px;

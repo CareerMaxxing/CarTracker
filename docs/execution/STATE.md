@@ -5,56 +5,54 @@ conversation history.
 
 ```
 PROJECT STATUS
-Current phase:      Phase 16 — Sidebar App Shell & Dashboard Redesign (Increment 10 complete,
-                     Increment 11 - the LAST increment - next)
-Current task:       PHASE-16-10 (see docs/execution/PHASE_16.md) — Recent Activity feed added to the
-                     Dashboard's widget row. Verified against real data with an unusually strong
-                     cross-widget check (matches Increment 8's total exactly).
+Current phase:      Phase 16 — Sidebar App Shell & Dashboard Redesign — ALL 11 INCREMENTS COMPLETE,
+                     awaiting the user's full live visual review before this phase can be called done
+Current task:       PHASE-16-11 (see docs/execution/PHASE_16.md) — Magneto-motif promo tile added,
+                     the last planned increment. Structurally verified across both vehicles + a
+                     full-app regression sweep (Home/Garage included).
 Status:             Full plan/decision history in git history + PHASE_16.md's intro, not re-summarized
-                     here (increments 1-9's full detail is fully preserved there). Increments 1-9
-                     committed (b669299, b50f3e1, b9ab158, 4a4df63, 72ba466, dda1d24, 0cc6271, 7d71eec,
-                     ac74289, b0e5aeb). Increment 10: read GetVehicleHistory in full before assuming it
-                     could be reused - confirmed it's a heavier, differently-purposed report generator
-                     (tag/date-range filters, depreciation calc, feeds the "Vehicle Maintenance Report"
-                     export), so built the Recent Activity projection directly into the already-
-                     existing GetReportPartialView action instead (zero new queries - every source list
-                     was already fetched there), reusing only GenericReportModel's shape and adding
-                     GasRecord (which GetVehicleHistory's own projection omits). Found
-                     `_translationHelper` isn't injected in ReportController when trying to label gas
-                     records "Fuel" - moved that decision into the widget partial instead, which
-                     already has the translator via the standard pattern every widget partial uses.
-                     Icon-per-type mapping reuses the exact sidebar icons from Increment 3 for
-                     consistency. Verified against real data with an unusually strong check: vehicle
-                     1's 3 real activity items ("Initial service after purchase" £40, "Radio replaced"
-                     £20, "ECU Repaired for CHECKSUM RAM Failure" £200) rendered correctly sorted
-                     newest-first with correct icons, and the three costs sum to EXACTLY £260.00 -
-                     matching Increment 8's Total Spent figure precisely, an independent cross-widget
-                     consistency check across two different widgets built in two different increments.
-                     Vehicle 2 (no history) correctly showed the empty state. Verified: dotnet build (0
-                     errors), dotnet test (10/10), both vehicles' pages still load, /css/site.css still
-                     balanced (442/442). Not yet committed - pending alongside this STATE.md update.
+                     here (all 11 increments' full detail - the redirect-then-revert saga, the hero gap
+                     fix, the Quick Actions modal-shell bug, the widget-row build-out - is fully
+                     preserved there). Increments 1-10 committed (b669299, b50f3e1, b9ab158, 4a4df63,
+                     72ba466, dda1d24, 0cc6271, 7d71eec, ac74289, b0e5aeb, 8e2c5a6). Increment 11: the
+                     mockup's own promo tile advertised a real magazine article - rather than fabricate
+                     fake content to visually match it (shipping fabricated content dressed up as real
+                     is not acceptable), kept this app's existing ink-band "chapter-divider" motif
+                     (already used for the sold-vehicle indicator) and pointed it at something real,
+                     the Documents tab - using the actual Bootstrap 5 `bootstrap.Tab` JS API so the
+                     same lazy-load mechanism Increment 6 discovered fires correctly (applied
+                     correctly from the start this time, not rediscovered as a bug). CSS reuses
+                     .report-hero-sold-band's exact color tokens and Fraunces treatment rather than
+                     introducing new values. Verified: dotnet build (0 errors), dotnet test (10/10),
+                     both vehicles' Dashboard tiles render correctly targeting the real documents-tab
+                     id, and - since this closes the whole phase - a wider regression sweep than usual
+                     including Home/Garage (not just the two Vehicle pages this phase focused on),
+                     /css/site.css still balanced (446/446). Not yet committed - pending alongside this
+                     STATE.md update.
 Last completed:      Phase 15 (Remote Access & Persistent Hosting) - all 5 increments resolved (4
                      explicitly declined by the user, not skipped). See docs/execution/PHASE_15.md.
                      Phase 14's remaining areas (icon-button labels, keyboard nav, form labels, alt
                      text, mobile/responsive validation, performance) are still open, not abandoned -
                      both Phase 15 and now Phase 16 were started because the user raised new,
                      higher-priority requests, not because Phase 14 finished.
-Next task:           Increment 11 - THE LAST increment in Phase 16: a Magneto-motif promo tile, purely
-                     cosmetic, no new data (reuses existing editorial primitives - Fraunces display
-                     type, the hairline/ink-band motif already used for the sold-vehicle chapter-
-                     divider - per the original plan). Once this ships, Phase 16 is structurally
-                     complete end-to-end and the whole phase needs a real live visual review from the
-                     user - every increment so far has only been curl/structurally verified, never
-                     actually seen rendered by this agent. After Increment 11: consider whether to
-                     circle back to Phase 14's open areas (icon-button labels, keyboard nav, form
-                     labels, alt text, mobile/responsive validation, performance) or the user's next
-                     priority - ask, don't assume. Do not re-litigate the landing-page decision
-                     (Increment 4) - answered directly by the user. Real vehicle data: vehicleId=1
-                     (BMW Z4 - has cost/activity history, no MPG history), vehicleId=2 (Volvo S80 - no
-                     history yet). Before wiring any new "add record" trigger, learn from Increment 6's
-                     bug: verify empirically where the target modal's shell actually lives. If a
-                     throwaway test vehicle/record is ever needed again, always delete it before
-                     finishing (see Increment 5/7/9's pattern).
+Next task:           Phase 16's 11 increments are all built and structurally verified, but the phase
+                     is NOT done yet - it needs a real, full live visual review from the user (desktop
+                     AND the phone's installed PWA from Phase 15). Every increment in this phase has
+                     only ever been verified via build/test/curl and, where real data existed,
+                     cross-checked against known values (e.g. Increment 10's £260.00 match) - never
+                     actually seen rendered, since no browser tool exists in this environment. Do not
+                     mark this phase ROADMAP.md status as "complete" until the user explicitly confirms
+                     the whole thing looks/works right, not just individual increments along the way.
+                     After that sign-off: ask the user what's next (Phase 14's remaining hardening
+                     areas - icon-button labels, keyboard nav, form labels, alt text, mobile/responsive
+                     validation, performance - or a new priority) rather than assuming. Do not
+                     re-litigate the landing-page decision (Increment 4) - answered directly by the
+                     user. Real vehicle data: vehicleId=1 (BMW Z4 - cost/activity history, no MPG/
+                     reminder history), vehicleId=2 (Volvo S80 - no history yet). Before wiring any new
+                     "add record" trigger in future work, learn from Increment 6's bug: verify
+                     empirically where the target modal's shell actually lives, don't assume from
+                     markup alone. If a throwaway test vehicle/record is ever needed again, always
+                     delete it before finishing (see Increments 5/7/9's pattern).
 Known blockers:      1. No browser/screenshot tool in this environment - Phase 14's remaining
                         accessibility work would still need static-code-audit + curl verification,
                         not live screen-reader/keyboard testing.
@@ -130,17 +128,15 @@ Do not:              Assume Phase 14 is "done" - three increments complete (secu
                      ran. dotnet run from the dev repo still works for development but now operates on
                      a separate, diverging dataset - be explicit with the user about which copy
                      they're looking at if this ever comes up.
-Last validation:     Phase 15 + Phase 16 Increments 1-9's full validation history lives in
-                     docs/execution/PHASE_15.md / PHASE_16.md. Phase 16 Increment 10 (current): dotnet
-                     build (0 errors); dotnet test (10/10 passing); dev instance on port 5300; vehicle
-                     1 rendered 3 real activity items sorted newest-first with correct icons, costs
-                     summing to exactly £260.00 (matching Increment 8's Total Spent figure precisely -
-                     an independent cross-widget check, not just "some rows appeared"); vehicle 2 (no
-                     history) confirmed "No Data"; both vehicles' Vehicle/Index pages still 200;
-                     /css/site.css balanced (442/442) — 2026-08-18.
-Last commit:         b0e5aeb — "Phase 16 Increment 9: Planned Maintenance widget" — 2026-08-18.
-                     Increment 10 (this entry) not yet committed - pending alongside this STATE.md
-                     update.
+Last validation:     Phase 15 + Phase 16 Increments 1-10's full validation history lives in
+                     docs/execution/PHASE_15.md / PHASE_16.md. Phase 16 Increment 11 (current, LAST
+                     increment): dotnet build (0 errors); dotnet test (10/10 passing); dev instance on
+                     port 5300; promo tile confirmed rendering on both vehicles with the correct real
+                     documents-tab click target; wider-than-usual regression sweep since this closes
+                     the phase - both Vehicle/Index pages AND Home/Garage all still 200; /css/site.css
+                     balanced (446/446) — 2026-08-18.
+Last commit:         8e2c5a6 — "Phase 16 Increment 10: Recent Activity widget" — 2026-08-18. Increment
+                     11 (this entry) not yet committed - pending alongside this STATE.md update.
 ```
 
 ## Completed initiative: Zara + Magneto UI overhaul (separate from the roadmap above)

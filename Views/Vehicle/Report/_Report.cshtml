@@ -64,6 +64,11 @@
             @await Html.PartialAsync("Report/_RecentActivityWidget", Model.RecentActivity)
         </div>
     </div>
+    <div class="report-promo-tile hideOnPrint" role="button" tabindex="0" onclick="bootstrap.Tab.getOrCreateInstance(document.getElementById('documents-tab')).show()">
+        <span class="report-promo-tile-eyebrow">@translator.Translate(userLanguage, "Your Vehicle's Story")</span>
+        <span class="report-promo-tile-headline">@translator.Translate(userLanguage, "Every Record, One Place")</span>
+        <span class="report-promo-tile-link">@translator.Translate(userLanguage, "View Documents") &rarr;</span>
+    </div>
     <div class="row hideOnPrint flex-wrap gap-1">
         <div class="col-md-3 col-12 border rounded">
             <div class="row pt-1">
