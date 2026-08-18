@@ -16,12 +16,28 @@ project follows (see `docs/execution/ROADMAP.md` for the phase list derived from
 ## Locked project decisions (do not revisit without explicit human sign-off)
 
 - **Repository**: private GitHub repo `CareerMaxxing/CarTracker` (this repo's `origin`).
-- **Runtime**: local PC / localhost only. No cloud deployment.
-- **Existing data**: none — treat as a fresh install, do not design migrations around
-  pre-existing user data.
-- **Mobile**: responsive web only for now. Native mobile is deferred.
-- **Offline/sync**: local-first, no cloud sync / PocketBase-style architecture unless a later
-  requirement explicitly demands it.
+- **Runtime**: the app itself only ever runs on the local PC — as of Phase 15, as a persistent
+  Windows Service (`C:\Services\CarTracker`, auto-start, `start=auto`), not the old manual
+  `dotnet run` workflow. No cloud deployment/hosting of the app exists or is planned. It is
+  additionally reachable over a private Tailscale network (`https://legion.tail80af14.ts.net/`,
+  loopback-only Kestrel binding, Tailscale's own daemon does the proxying) — never the public
+  internet, no port forwarding, no domain. Revisited with the human owner's explicit sign-off in
+  conversation (Phase 15) after this bullet was originally locked in Phase 0/1.
+- **Existing data**: no longer none. As of Phase 15, `C:\Services\CarTracker\data` holds the user's
+  real, actively-used vehicle data (confirmed non-trivial - a real vehicle, real records), carried
+  over from the dev repo's `data/` (which still exists at `D:\Personal\CarTracker\lubelog\data` as an
+  untouched fallback/dev sandbox, now a separate, non-authoritative copy). Do not treat this as a
+  fresh install or design around "no pre-existing data" - the original Phase 0/1 assumption is stale.
+  Treat the service's `data/` directory as real user data requiring the same care as any production
+  database (see "Executing actions with care" in the base operating instructions).
+- **Mobile**: responsive web only - confirmed sufficient. As of Phase 15, the phone runs the same
+  server-rendered web app as an installed PWA (using the manifest/meta tags that already existed),
+  not a native app. Native mobile remains deferred, and nothing about Phase 15 changes that.
+- **Offline/sync**: still local-first - Phase 15 did not introduce a new sync architecture, cloud
+  database, or PocketBase-style system. Phone access works because this was already a single-server
+  app (one LiteDB file, SignalR already broadcasting live updates to every connected client) - the
+  phone is just another client of the same one server on the home PC, reachable via Tailscale. No
+  data layer changed. Revisited with the human owner's explicit sign-off in conversation (Phase 15).
 - **AI/OCR**: deferred. Do not implement in V1.
 - **Government data (DVLA/DVSA)**: mocked adapters only until explicitly told to integrate real
   credentials.

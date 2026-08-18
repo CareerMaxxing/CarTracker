@@ -5,42 +5,48 @@ conversation history.
 
 ```
 PROJECT STATUS
-Current phase:      Phase 15 — Remote Access & Persistent Hosting (Increments 1-3 complete, Increment
-                     4 next)
-Current task:       PHASE-15-03 (see docs/execution/PHASE_15.md) — complete: Tailscale reachability
-Status:             Increments 1-3 complete, full detail in docs/execution/PHASE_15.md. Summary:
-                     Increment 1 (code, committed ab97b66/7f99541) made the app safe to run as a
-                     Windows Service - found and fixed a real CWD-relative-path gap the original plan
-                     didn't anticipate, plus DataProtection key persistence. Increment 2 (docs-only,
-                     committed 8e7359d) published to C:\Services\CarTracker, carried over the user's
-                     real vehicle data (confirmed non-trivial, user approved the carryover), bound
-                     Kestrel to 127.0.0.1:5299 only, and got the user through the elevated sc.exe
-                     steps to register+start the Windows Service - independently re-verified running
-                     with real data, not just trusted from the user's screenshot. Increment 3
-                     (Tailscale) confirmed both devices already on the same tailnet
-                     (legion=PC, huzaifas-s25-ultra=phone), ran `tailscale serve --bg
-                     http://127.0.0.1:5299` (the plan's assumed CLI syntax was stale - the installed
-                     version rejected it and printed the correct replacement itself), hit a one-time
-                     account-level "enable Serve" gate that only the user could grant, then verified
-                     both from the PC (curl) and from the user's phone with wifi OFF (mobile data
-                     only) that https://legion.tail80af14.ts.net/ loads the real app. Not yet
-                     committed - Increment 3 was docs-only like Increment 2, commit pending alongside
-                     this STATE.md update.
-Last completed:      Phase 14 Increment 3 (accessibility - modal aria-labelledby), see prior entries
-                     in docs/execution/PHASE_14.md. Phase 14's remaining areas (icon-button labels,
-                     keyboard nav, form labels, alt text, mobile/responsive validation, performance)
-                     are still open, not abandoned - Phase 15 was started because the user raised a
-                     new, higher-priority request (phone access), not because Phase 14 finished.
-Next task:           Phase 15 Increment 4: turn on auth via the existing Settings UI ("Enable
-                     Authentication" → root-account form → POST /Login/CreateLoginCreds). Important:
-                     do this through the UI only, never by hand-editing EnableAuth in userConfig.json
-                     (would lock everyone out - see the "Do not" note below). The tailnet URL
-                     currently grants full unauthenticated root access to anyone who can reach it, so
-                     this should happen soon, not be left open-ended. After that: Increment 5 (confirm
-                     PWA "Add to Home Screen" install from the tailnet URL on the phone) and the two
-                     DEFERRED.md entries flagged in the original plan (no login rate-limiting/lockout,
-                     unsalted SHA-256 password hashing) - not blocking, per the plan's reasoning, but
-                     should get recorded once auth is actually on.
+Current phase:      Phase 15 — Remote Access & Persistent Hosting — ✅ COMPLETE
+Current task:       None - phase finished. See docs/execution/PHASE_15.md for full detail on all 5
+                     increments.
+Status:             Complete. Summary: Increment 1 (code, committed ab97b66/7f99541) made the app
+                     safe to run as a Windows Service - found and fixed a real CWD-relative-path gap
+                     the original plan didn't anticipate, plus DataProtection key persistence.
+                     Increment 2 (docs-only, committed 8e7359d) published to C:\Services\CarTracker,
+                     carried over the user's real vehicle data, bound Kestrel to 127.0.0.1:5299 only,
+                     registered+started the Windows Service (elevated sc.exe, run by the user) -
+                     independently re-verified running with real data. Increment 3 (docs-only,
+                     committed f4ced47) confirmed both devices on the same tailnet, ran `tailscale
+                     serve --bg http://127.0.0.1:5299` (the plan's assumed CLI syntax was stale, the
+                     installed version printed the correct replacement itself), worked through a
+                     one-time account-level "enable Serve" gate, verified
+                     https://legion.tail80af14.ts.net/ loads the real app from the phone with wifi OFF
+                     (mobile data only). Increment 4 (turn on auth): presented to the user with the
+                     exact UI steps, **explicitly declined** - device-level protection on both
+                     devices + Tailscale's own device-authorization layer judged sufficient. This is a
+                     deliberate decision, not skipped by default - do not re-raise unprompted (see
+                     "Do not" below). Increment 5 (PWA install): user chose a full app install over a
+                     plain bookmark, installed via Chrome's "Install app" (using the manifest that
+                     already existed, no code needed), and - since the phone is a Samsung Galaxy S25
+                     Ultra - was walked through setting Tailscale's battery usage to "Unrestricted"
+                     and enabling "Always-on VPN" so the background connection doesn't get silently
+                     killed and break the shortcut. Confirmed working: home-screen icon opens the real
+                     app full-screen with real data. CLAUDE.md's "Locked project decisions" section
+                     updated (Runtime/Existing data/Mobile/Offline-sync bullets) to reflect all of the
+                     above - not yet committed, pending alongside this STATE.md update.
+Last completed:      Phase 15 (Remote Access & Persistent Hosting) - all 5 increments resolved (4
+                     explicitly declined by the user, not skipped). Before that: Phase 14 Increment 3
+                     (accessibility - modal aria-labelledby), see docs/execution/PHASE_14.md. Phase
+                     14's remaining areas (icon-button labels, keyboard nav, form labels, alt text,
+                     mobile/responsive validation, performance) are still open, not abandoned - Phase
+                     15 was started because the user raised a new, higher-priority request (phone
+                     access), not because Phase 14 finished.
+Next task:           None decided yet. Natural candidates: return to Phase 14's open areas (icon
+                     button labels, keyboard nav, form labels, alt text, mobile/responsive validation,
+                     performance - see DEFERRED.md for file pointers already gathered), or the AI/OCR
+                     invoice-scanning feature the user has flagged as a later addition (still fully
+                     deferred, no extension-point work done for it, per CLAUDE.md's Phase 13 decision
+                     - would need its own planning pass, likely its own phase). Ask the user rather
+                     than assume.
 Known blockers:      1. No browser/screenshot tool in this environment - Phase 14's remaining
                         accessibility work would still need static-code-audit + curl verification,
                         not live screen-reader/keyboard testing.
@@ -105,7 +111,17 @@ Do not:              Assume Phase 14 is "done" - three increments complete (secu
                      credentials already set via the Settings "Enable Authentication" UI flow first
                      (POST /Login/CreateLoginCreds) - it will lock everyone out; the UI flow sets
                      EnableAuth and the credential hashes atomically. If ever locked out: stop the
-                     process/service, hand-edit EnableAuth:false back, restart.
+                     process/service, hand-edit EnableAuth:false back, restart. Do not re-raise
+                     "should we enable auth" unprompted - the user explicitly declined it in Phase 15
+                     (device-level protection + Tailscale's own device authorization judged
+                     sufficient); if they raise it themselves later, the UI steps are already
+                     documented in PHASE_15.md's Increment 4. The Windows Service at
+                     C:\Services\CarTracker is now the live/production copy of the app - do not treat
+                     the dev repo's data/ folder as authoritative or assume it reflects current real
+                     vehicle data; it's a frozen fallback copy from the moment Phase 15 Increment 2
+                     ran. dotnet run from the dev repo still works for development but now operates on
+                     a separate, diverging dataset - be explicit with the user about which copy
+                     they're looking at if this ever comes up.
 Last validation:     dotnet build (0 errors, 0 new warnings - 224 pre-existing nullable warnings
                      unchanged); dotnet test Tests/CarCareTracker.Tests.csproj (10/10 passing, no
                      regression); dotnet run --urls http://localhost:5299 --no-build (background) +

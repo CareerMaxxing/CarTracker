@@ -300,6 +300,51 @@ STOP CONDITION: Both the agent's own curl check and the user's phone-side confir
 Complete. The app is now reachable from the phone from anywhere (verified over mobile data, not just
 home wifi), over HTTPS, via Tailscale's private network - never exposed to the public internet, no
 port forwarding, no firewall rule added or needed (Kestrel is still loopback-only; Tailscale's own
-daemon does the proxying). Increment 4 (turn on auth) is next - currently anyone who can reach the
-tailnet URL has full unauthenticated root access, which was acceptable for this verification step but
-should not stay that way now that the endpoint is reachable outside the PC itself.
+daemon does the proxying).
+
+## Increment 4: Auth enablement — explicitly declined by the user
+
+The plan's original Increment 4 was to turn on the app's login system, since without it anyone
+reaching the tailnet URL gets full unauthenticated root access. Presented to the user with exact
+Settings UI steps (`Enable Authentication` switch → root-credential popup → `POST
+/Login/CreateLoginCreds`). **User explicitly declined**: both the laptop and phone are already
+protected at the device level, and reaching the tailnet URL at all already requires being an
+authorized device on this specific private tailnet (Tailscale's own device-authorization layer - see
+Increment 3). This is a deliberate, informed decision, not an oversight or something skipped by
+default - do not re-raise it unprompted in a future session; if the user raises it themselves later,
+the exact UI path is already documented above and nothing else blocks it. `EnableAuth` remains `false`
+in the deployed service's `data/config/userConfig.json`.
+
+## Increment 5: PWA install on the phone
+
+The manifest/meta-tag work was already complete before this phase started (confirmed during initial
+planning research - `wwwroot/manifest.json`, full icon set, `display: standalone`, viewport/theme-
+color/apple-touch meta tags all already in `Views/Shared/_Layout.cshtml`). This increment was just
+confirming the install flow actually works once the app is reachable.
+
+### What was done
+
+1. Asked the user which shortcut type they wanted: a full PWA install (uses the existing manifest -
+   proper name/icon, opens standalone with no browser chrome) vs. a plain browser bookmark. User chose
+   the PWA install, matching the phase's original framing ("the exact same app... on my phone").
+2. Walked through the install path (Chrome → ⋮ menu → "Install app", from
+   `https://legion.tail80af14.ts.net/` with Tailscale connected).
+3. Flagged a real reliability risk specific to the user's phone model (Samsung Galaxy S25 Ultra,
+   confirmed from the `tailscale status` device name `huzaifas-s25-ultra` in Increment 3): Samsung's
+   battery management is known to aggressively kill backgrounded VPN connections, which would make the
+   installed shortcut silently fail to load (Tailscale disconnected) even though nothing is actually
+   broken. Recommended two settings, not just one, to avoid a shortcut that "sometimes doesn't work":
+   Tailscale's battery usage set to "Unrestricted" (not "Optimized"), and "Always-on VPN" enabled for
+   Tailscale in Android's VPN settings - explicitly recommended against also enabling "Block
+   connections without VPN" in that same screen, since that would cut off all internet whenever
+   Tailscale drops, a worse trade-off than the problem it's meant to prevent for a phone used for
+   things other than this app.
+4. User confirmed: installed, both settings applied, tapping the home-screen icon opens the app
+   full-screen with real data, no browser chrome.
+
+### Result
+
+Complete. The phone has a proper installed "Car Tracker" app icon (not a bookmark), backed by the same
+manifest the app already shipped with - no code changes needed. Combined with Tailscale's always-on
+VPN setting, this closes the loop the user originally asked for: "the exact same app... on my phone
+and synced" - there is one server, one database, and both devices are just clients of it.
