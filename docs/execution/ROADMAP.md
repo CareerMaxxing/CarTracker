@@ -21,7 +21,7 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
 | 13 | AI/OCR | Explicitly deferred. Leave clean extension points only; no feature work. | ✅ Confirmed deferred — no AI/OCR code exists anywhere in the codebase (verified by grep); see PHASE_13.md |
 | 14 | V1 Hardening | Unit/integration/UI/migration/duplicate-operation/adapter-failure/backup-restore tests, error handling, accessibility, responsive validation, performance, security review. | 🟡 In progress — Increment 1 (security review): real static-file auth bypass + unrestricted upload fixed. Increment 2 (automated tests): xUnit + WebApplicationFactory project stood up, 10 passing tests. Increment 3 (accessibility): all 41 modals audited, aria-labelledby wired on 39, 2 real duplicate-id bugs found and fixed (PHASE_14.md). Icon buttons/keyboard-nav/labels/mobile/performance still open |
 | 15 | Remote Access & Persistent Hosting | Reach the existing app from the user's phone with the same live data as the PC, over a private Tailscale network — no new sync architecture, single server + existing SignalR live updates. Revisits CLAUDE.md's localhost-only/no-cloud-deployment decisions with the human owner's explicit sign-off. | ✅ Complete — Windows Service hosting readiness, publish+register bound to 127.0.0.1:5299 with real data carried over, Tailscale reachability (`https://legion.tail80af14.ts.net/`) verified from the phone over mobile data with wifi off, and a proper PWA install on the phone (Chrome "Install app", Samsung battery/VPN settings tuned for reliability) (PHASE_15.md). Auth enablement explicitly declined by the user — device-level protection + Tailscale's own device authorization judged sufficient; not re-raised unless the user brings it up again |
-| 16 | Sidebar App Shell & Dashboard Redesign | Restructure navigation from a top tab-strip + all-vehicles Garage-grid homepage to a persistent left sidebar, matching a mockup's editorial aesthetic (already close in spirit to the existing Zara + Magneto design system). Intentionally reverses UI_TRANSITION.md's explicit "keep Home/Vehicle nav separate" decision, with the user's sign-off. Visual/layout pass only this phase — new widgets use real existing data; Trips/fuel-gauge/month-over-month%/fleet-stats are flagged as candidate future phases, not built now. | 🟡 In progress — Increments 1-3b complete (nav port + vehicle switcher). Increment 4 (auto-redirect landing page) built, then **explicitly reverted per direct user feedback** — Garage grid stays the homepage, with a "Jump to Vehicle" quick-switcher on both sidebars instead. Increment 5 (Dashboard hero rebuild) complete — found and fixed a real pre-existing gap (vehicles without a photo showed no hero band AND no sold indicator at all), verified against real vehicle data plus a throwaway test vehicle, cleaned up afterward (PHASE_16.md). Increments 6-11 (Quick Actions, Fuel Economy/Total Spent/Planned Maintenance/Recent Activity widgets, promo tile) still open |
+| 16 | Sidebar App Shell & Dashboard Redesign | Restructure navigation from a top tab-strip + all-vehicles Garage-grid homepage to a persistent left sidebar, matching a mockup's editorial aesthetic (already close in spirit to the existing Zara + Magneto design system). Intentionally reverses UI_TRANSITION.md's explicit "keep Home/Vehicle nav separate" decision, with the user's sign-off. Visual/layout pass only this phase — new widgets use real existing data; Trips/fuel-gauge/month-over-month%/fleet-stats are flagged as candidate future phases, not built now. | 🟡 In progress — Increments 1-3b complete (nav port + vehicle switcher). Increment 4 (auto-redirect landing page) built, then **explicitly reverted per direct user feedback** — Garage grid stays the homepage, with a "Jump to Vehicle" quick-switcher on both sidebars instead. Increment 5 (Dashboard hero rebuild) complete — found and fixed a real gap (photo-less vehicles showed no hero/sold-indicator at all). Increment 6 (Quick Actions tile grid) complete — found and fixed a real bug before shipping: 3 of 4 planned tiles would have silently done nothing on first page load, since their target modals live inside lazily-loaded tab partials never visited yet (PHASE_16.md). Increments 7-11 (Fuel Economy/Total Spent/Planned Maintenance/Recent Activity widgets, promo tile) still open |
 
 ## Human review checkpoints
 
@@ -94,9 +94,20 @@ packets for that phase once it starts. Do not start a phase early — see `CLAUD
   vehicles without a photo showed no hero band AND no sold indicator at all (the sold band was nested
   inside the photo-only conditional). Fixed with a placeholder reusing .ct-empty-state's established
   muted-icon language, verified against a throwaway test vehicle (not just the two real ones, which
-  both happen to have photos), cleaned up afterward. **Next: Increments 6-11 - Quick Actions, Fuel
-  Economy sparkline, Total Spent, Planned Maintenance, Recent Activity, and a Magneto-motif promo
-  tile.**
+  both happen to have photos), cleaned up afterward. User looked at the live result and asked "where
+  are the differences I should be seeing?" - fair question, since Increment 5's fix doesn't apply to
+  either real vehicle (both have photos). Answered directly: most of what's visible so far is
+  Increments 1-4 (the sidebar); confirmed via AskUserQuestion to continue into the increments that
+  actually change the Dashboard's content. Increment 6 (Quick Actions tile grid): found and fixed a
+  real bug before it shipped, not after - 3 of the 4 planned tiles (Add Fuel/Service/Planned Work)
+  would have silently done nothing on a fresh page load, because their target "add" modals live inside
+  each record type's own lazily-loaded tab partial (never visited yet, since Dashboard is the default
+  tab), not in Vehicle/Index.cshtml itself - only the Reminder tile's modal happens to live there
+  directly. Fixed with an optional callback param on the existing tab-loader functions (fetch the
+  target tab's content first, which populates its modal shell, then open the modal) rather than
+  duplicating fetch logic or switching the visible tab. Verified against real endpoint responses, not
+  just re-read the markup. **Next: Increments 7-11 - Fuel Economy sparkline, Total Spent, Planned
+  Maintenance, Recent Activity, and a Magneto-motif promo tile.**
 
 ## Core V1 acceptance scenario
 

@@ -742,3 +742,113 @@ Complete and verified for the two reachable paths (real photo, no photo) against
 throwaway test case, cleaned up afterward. The third path (sold + no photo) is verified by construction
 only, consistent with established precedent in this codebase for states real data can't reach without
 mutation. **Not yet visually verified** - same standing caveat as every increment in this phase.
+
+User looked at the live result and asked a fair question - "where are the differences I should be
+seeing?" - since Increment 5's fix doesn't apply to either of this household's real vehicles (both have
+photos). Answered directly: most of what's visible is Increments 1-4 (the sidebar); the mockup-matching
+visual transformation is still ahead in Increments 6-11. Confirmed via AskUserQuestion to continue.
+
+## Increment 6: Quick Actions tile grid
+
+### Task packet
+
+```
+TASK ID: PHASE-16-06
+TITLE: Add a 2x2 Quick Actions tile grid to the Dashboard, wired to real existing add-record modals
+OBJECTIVE: Give the Dashboard one-click access to the most common "add a record" actions, matching
+  the mockup's Quick Actions tiles - reusing existing modal-opening JS, not building new forms.
+INPUTS: wwwroot/js/{gasrecord,servicerecord,planrecord,vehicle}.js (the four showAddXModal() functions
+  - all confirmed callable with zero arguments before wiring anything up, not assumed), Views/Vehicle/
+  Index.cshtml's existing modal shells (confirmed reminderRecordModal lives there directly; gas/
+  service/plan modal shells do NOT - see the real bug found below).
+ALLOWED SCOPE: New markup in _Report.cshtml, new CSS classes, a small optional-callback-parameter
+  addition to 4 existing tab-loader functions in vehicle.js (getVehicleGasRecords/
+  ServiceRecords/Reminders/PlanRecords) - backward compatible, no existing call site needed to change.
+NON-SCOPE: Any new modal/form (all four reused as-is); a "Log a Trip" tile (Trips don't exist -
+  explicitly out of scope this phase, per the user's "real data only" decision).
+IMPLEMENTATION REQUIREMENTS:
+  - A real bug found and fixed BEFORE it shipped, not discovered by luck: each record type's "add"
+    modal shell (e.g. #gasRecordModal) is defined inside that record type's OWN tab partial (_Gas.cshtml,
+    _ServiceRecords.cshtml, _PlanRecords.cshtml - confirmed by grep, not assumed), not in Vehicle/
+    Index.cshtml itself. Tab panes lazy-load on first activation (wwwroot/js/vehicle.js's show.bs.tab
+    handler) and get CLEARED when you navigate away "to help with performance" - so on a fresh page
+    load landing on the Dashboard (the default tab), the Gas/Service/Plan tabs have never been visited
+    and their modal shells don't exist in the DOM at all yet. A Quick Action tile calling
+    showAddGasRecordModal() directly from the Dashboard would have silently done nothing (AJAX fires,
+    $("#gasRecordModalContent").html(data) targets an empty jQuery selection, modal never shows) for 3
+    of the 4 tiles - the reminder one alone would have worked, since its shell lives directly in
+    Vehicle/Index.cshtml, not per-tab.
+  - Fixed by adding an optional `onLoaded` callback parameter to the four getVehicleX() loader
+    functions (invoked after the existing `.html(data)` injection succeeds), rather than duplicating
+    each modal's fetch-and-show logic in a new set of wrapper functions, or switching the visible tab
+    (which would work but changes what the user sees more than necessary - the modal overlays
+    correctly regardless of which tab is nominally active underneath). Each Quick Action tile's onclick
+    is `getVehicleX(GetVehicleId().vehicleId, showAddXModal)` - fetch that tab's content (populating
+    its modal shell) first, then open the modal, both reusing existing, already-correct functions.
+  - Icons reused from elsewhere in this app's own iconography (bi-fuel-pump/bi-card-checklist/
+    bi-bell/bi-bar-chart-steps already used for these exact record types in the sidebar), not invented.
+DELIVERABLES: Four working Quick Action tiles, each verified to actually open its modal - not just
+  that the markup renders.
+ACCEPTANCE CRITERIA:
+  - dotnet build: 0 errors. dotnet test: 10/10 passing.
+  - All four tiles render with correct onclick handlers referencing the real loader/modal function
+    pairs.
+  - Each target tab's AJAX response (GetGasRecordsByVehicleId etc.) confirmed to actually contain its
+    modal shell - the premise the whole fix depends on, verified directly rather than assumed from
+    reading the .cshtml files alone.
+  - Each add-record partial (GetAddGasRecordPartialView etc.) confirmed to return real, error-free
+    content.
+  - No regression on the full Vehicle/Index page for either real vehicle, or on /css/site.css's brace
+    balance.
+VALIDATION COMMANDS:
+  dotnet build
+  dotnet test Tests/CarCareTracker.Tests.csproj
+  dotnet run --urls http://localhost:5300 --no-build (background)
+  curl http://localhost:5300/Vehicle/GetReportPartialView?vehicleId=1 | grep -o 'onclick="getVehicle[A-Za-z]*(GetVehicleId'
+  curl http://localhost:5300/Vehicle/GetGasRecordsByVehicleId?vehicleId=1 | grep -o 'id="gasRecordModal"'
+  curl http://localhost:5300/Vehicle/GetAddGasRecordPartialView?vehicleId=1   (repeat pattern for service/plan/reminder)
+  curl http://localhost:5300/Vehicle/Index?vehicleId=1
+  curl http://localhost:5300/Vehicle/Index?vehicleId=2
+  curl http://localhost:5300/css/site.css
+STOP CONDITION: The lazy-load premise verified empirically for all 4 tiles (endpoint responses
+  actually contain the modal shell / real form content), not inferred from reading the partials alone -
+  this is exactly the kind of bug that reads as "obviously fine" from the Razor markup and only shows
+  up when you trace the actual runtime DOM lifecycle.
+```
+
+### What was done
+
+1. Confirmed all four `showAddXModal()` functions are callable with zero arguments before wiring
+   anything to them - read each one rather than assuming from its name.
+2. While confirming where each modal's SHELL lives (not just its content-providing endpoint), found
+   the real bug: `#gasRecordModal`/`#serviceRecordModal`/`#planRecordModal` are defined inside their
+   own tab's lazily-loaded partial, not in `Vehicle/Index.cshtml`. Combined with `vehicle.js`'s
+   existing "clear the tab you're leaving, for performance" behavior, this meant 3 of the 4 planned
+   Quick Action tiles would have silently done nothing on a fresh page load (the Dashboard tab is the
+   default, so Gas/Service/Plan would never have been visited yet that session) - only the Reminder
+   tile, whose modal shell happens to live directly in `Vehicle/Index.cshtml`, would have worked.
+3. Fixed by adding an optional `onLoaded` callback to the four `getVehicleX()` loader functions in
+   `vehicle.js` - each Quick Action tile now fetches its target tab's content first (which populates
+   the modal shell as a side effect, being the same partial that also contains the data grid), then
+   opens the add-modal in the callback. Chose this over switching the visible tab (works, but changes
+   more of what the user sees than necessary) or duplicating each modal's fetch logic into new
+   functions (would diverge from the already-correct existing loaders over time).
+4. Built the 2x2 tile grid in `_Report.cshtml` (Add Fuel/Add Service/Add Reminder/Add Planned Work),
+   reusing icons already used for these exact record types elsewhere in this app (sidebar nav), and
+   `.report-quick-action` CSS matching the existing flat/bordered tile language.
+5. Verified the fix's actual premise empirically, not just re-read the code and trusted it: curled
+   `GetGasRecordsByVehicleId`/`GetServiceRecordsByVehicleId`/`GetPlanRecordsByVehicleId` and confirmed
+   each response really does contain its modal shell id; curled each `GetAddXRecordPartialView`
+   endpoint and confirmed real, error-free form content comes back; confirmed the reminder tab's
+   response does NOT contain a `reminderRecordModal` id (its shell truly is only in `Vehicle/
+   Index.cshtml`, exactly as suspected) - a harmless one-extra-fetch for that specific tile, not a bug.
+6. Regression pass: `dotnet build` (0 errors), `dotnet test` (10/10), both real vehicles' full
+   `Vehicle/Index` pages still load, `/css/site.css` still balanced (431/431).
+
+### Result
+
+Complete, and the one genuinely risky part (would the modals actually open) verified against real
+endpoint responses rather than assumed from the markup. **Not yet visually verified** - same standing
+caveat as every increment in this phase; specifically, whether *clicking* a tile in a live browser
+actually opens the modal (not just that the underlying AJAX chain is provably correct) hasn't been
+exercised by this agent.

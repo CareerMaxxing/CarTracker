@@ -5,58 +5,66 @@ conversation history.
 
 ```
 PROJECT STATUS
-Current phase:      Phase 16 — Sidebar App Shell & Dashboard Redesign (Increment 5 complete, Increment
-                     6 next)
-Current task:       PHASE-16-05 (see docs/execution/PHASE_16.md) — Dashboard hero band rebuilt.
-                     Verified against real vehicle data (both paths that matter: with-photo, the common
-                     case) plus a throwaway test vehicle (photo-less placeholder path) - build/tests/
-                     curl all green.
+Current phase:      Phase 16 — Sidebar App Shell & Dashboard Redesign (Increment 6 complete,
+                     Increment 7 next)
+Current task:       PHASE-16-06 (see docs/execution/PHASE_16.md) — Quick Actions tile grid added to
+                     the Dashboard. A real bug was found and fixed before shipping (see below) -
+                     verified against real endpoint responses, not just re-read markup.
 Status:             Full plan/decision history in git history + PHASE_16.md's intro, not re-summarized
-                     here (increments 1-4's redirect-then-revert saga is fully preserved there).
-                     Increments 1-4 committed (b669299, b50f3e1, b9ab158, 4a4df63, 72ba466 - the last
-                     being the revert). Increment 5: rebuilt Views/Vehicle/Report/_Report.cshtml's hero
-                     band. Confirmed first (not assumed) that Make/Model/Year never reach this partial's
-                     model - only odometer/distance/cost/MPG plus photo/sold fields - which settled
-                     "should the vehicle name go in the hero" by finding this codebase had ALREADY
-                     answered that exact question in an existing CSS comment (repeating the identity
-                     here "would be redundant, not confident" since the sidebar already shows it).
-                     Found a real pre-existing gap while reading the code to plan the change: the whole
-                     hero band (sold indicator included) was skipped entirely for any vehicle without an
-                     uploaded photo, because the sold band was nested inside the photo-only conditional.
-                     Fixed by always rendering the hero, with a new .report-hero-placeholder (reusing
-                     .ct-empty-state's established muted-icon language, not inventing a new one) as the
-                     photo fallback, and the sold band as an independent sibling condition. Verified the
-                     placeholder path empirically (not just read as correct): created a throwaway
-                     vehicle via /api/vehicles/add (this household's two real vehicles both have real
-                     photos, so neither exercises that path), confirmed the placeholder renders, then
-                     discovered along the way that the sold-band-without-photo combination specifically
-                     can't be tested via the API (SoldDate isn't one of the fields /api/vehicles/update
-                     touches - grepped the whole method, zero matches, an existing MVC-only-field gap
-                     unrelated to this change) - accepted that one combination as verified by
-                     construction only (the sold-band code itself is unchanged, working, pre-existing
-                     markup, just repositioned), consistent with this codebase's own established
-                     precedent for states real data can't reach without mutation. Deleted the throwaway
-                     vehicle immediately after, confirmed via /api/vehicles only the two real vehicles
-                     remain. Verified: dotnet build (0 errors), dotnet test (10/10), /css/site.css still
-                     balanced (427/427). Not yet committed - pending alongside this STATE.md update.
+                     here (increments 1-5's full detail, including the redirect-then-revert saga and
+                     the hero-band gap fix, is fully preserved there). Increments 1-5 committed
+                     (b669299, b50f3e1, b9ab158, 4a4df63, 72ba466, dda1d24). User looked at the live
+                     Increment 5 result and asked "where are the differences I should be seeing?" -
+                     fair question, since neither real vehicle triggers Increment 5's fix (both have
+                     photos). Answered directly (most visible change so far is the Increments 1-4
+                     sidebar), confirmed via AskUserQuestion to continue. Increment 6: added a 2x2
+                     Quick Actions tile grid (Add Fuel/Service/Reminder/Planned Work) to the Dashboard.
+                     Found a real bug while verifying WHERE each target modal's shell actually lives
+                     (not assumed from the .cshtml files): #gasRecordModal/#serviceRecordModal/
+                     #planRecordModal are defined inside their own record type's lazily-loaded tab
+                     partial, not in Vehicle/Index.cshtml - and vehicle.js's existing show.bs.tab
+                     handler CLEARS a tab's content when you navigate away "for performance." Since
+                     Dashboard is the default tab, 3 of the 4 planned tiles would have silently done
+                     nothing on a fresh page load (AJAX fires, .html(data) targets an empty jQuery
+                     selection, modal never shows) - only Reminder's modal (which lives directly in
+                     Vehicle/Index.cshtml) would have worked. Fixed with an optional `onLoaded`
+                     callback param added to the 4 relevant getVehicleX() loader functions in
+                     vehicle.js (backward compatible, no existing call site changed) - each tile now
+                     fetches its target tab's content first (populating the modal shell), then opens
+                     the modal in the callback, reusing existing correct loaders rather than
+                     duplicating fetch logic or switching the visible tab. Verified the fix's actual
+                     premise empirically: curled GetGasRecordsByVehicleId/GetServiceRecordsByVehicleId/
+                     GetPlanRecordsByVehicleId and confirmed each response really contains its modal
+                     shell id; curled each GetAddXRecordPartialView and confirmed real, error-free
+                     content; confirmed the reminder tab's response does NOT contain a
+                     reminderRecordModal id (as expected - harmless one extra fetch for that tile, not
+                     a bug). Verified: dotnet build (0 errors), dotnet test (10/10), both real
+                     vehicles' Vehicle/Index pages still load, /css/site.css still balanced (431/431).
+                     Not yet committed - pending alongside this STATE.md update.
 Last completed:      Phase 15 (Remote Access & Persistent Hosting) - all 5 increments resolved (4
                      explicitly declined by the user, not skipped). See docs/execution/PHASE_15.md.
                      Phase 14's remaining areas (icon-button labels, keyboard nav, form labels, alt
                      text, mobile/responsive validation, performance) are still open, not abandoned -
                      both Phase 15 and now Phase 16 were started because the user raised new,
                      higher-priority requests, not because Phase 14 finished.
-Next task:           Increment 6 (Quick Actions 2x2 tile grid - static tiles calling the add-record
-                     modal functions the vehicle tabs already wire up), then Increments 7-11 (Fuel
-                     Economy sparkline reusing FuelMileageForVehicleByMonth, Total Spent reusing
-                     CostForVehicleByMonth, Planned Maintenance reusing IReminderHelper's already-
-                     computed Urgency/DueDays/DueMileage output, Recent Activity extending
-                     GetVehicleHistory to include GasRecord, Magneto-motif promo tile). See the approved
-                     plan / PHASE_16.md's intro for the full per-increment breakdown. Do not re-litigate
-                     the landing-page decision (Increment 4) - it was answered directly by the user, not
-                     left ambiguous. Real vehicle data in this dev environment: vehicleId=1 (BMW Z4),
-                     vehicleId=2 (Volvo S80) - both active, both with real photos; use these for
-                     verification, and if a throwaway test vehicle is ever needed again, always delete
-                     it before finishing (see Increment 5's pattern).
+Next task:           Increment 7 (Fuel Economy card - real Chart.js sparkline fed by
+                     FuelMileageForVehicleByMonth.CostData, already computed server-side; headline
+                     number from the already-computed AverageMPG), then Increments 8-11 (Total Spent
+                     reusing CostForVehicleByMonth, Planned Maintenance reusing IReminderHelper's
+                     already-computed Urgency/DueDays/DueMileage output, Recent Activity extending
+                     GetVehicleHistory to include GasRecord, Magneto-motif promo tile). See the
+                     approved plan / PHASE_16.md's intro for the full per-increment breakdown. Do not
+                     re-litigate the landing-page decision (Increment 4) - answered directly by the
+                     user. Real vehicle data in this dev environment: vehicleId=1 (BMW Z4), vehicleId=2
+                     (Volvo S80) - both active, both with real photos; note from Increment 5's
+                     investigation that vehicle 1's MPG-by-month chart showed "No data found" despite
+                     a non-zero Total Cost, so Increment 7's sparkline may need to handle a
+                     sparse/empty data case gracefully - check this before assuming the chart will have
+                     visible content. Before wiring any new "add record" trigger, learn from Increment
+                     6's bug: verify empirically where the target modal's shell actually lives (it may
+                     be inside a lazily-loaded tab partial, not always present in the DOM), don't
+                     assume from reading the markup alone. If a throwaway test vehicle is ever needed
+                     again, always delete it before finishing (see Increment 5's pattern).
 Known blockers:      1. No browser/screenshot tool in this environment - Phase 14's remaining
                         accessibility work would still need static-code-audit + curl verification,
                         not live screen-reader/keyboard testing.
@@ -132,18 +140,18 @@ Do not:              Assume Phase 14 is "done" - three increments complete (secu
                      ran. dotnet run from the dev repo still works for development but now operates on
                      a separate, diverging dataset - be explicit with the user about which copy
                      they're looking at if this ever comes up.
-Last validation:     Phase 15's full validation history lives in docs/execution/PHASE_15.md. Increment
-                     4's redirect-then-revert saga fully verified at each step (see git history /
-                     PHASE_16.md). Phase 16 Increment 5 (current): dotnet build (0 errors); dotnet test
-                     (10/10 passing); dev instance on port 5300; curl confirmed both real vehicles
-                     (id=1 BMW Z4, id=2 Volvo S80) still render .report-hero-photo unchanged; a
-                     throwaway vehicle (created via /api/vehicles/add, deleted via
-                     /api/vehicles/delete afterward) confirmed .report-hero-placeholder + bi-car-front
-                     render correctly for the photo-less path; /css/site.css still balanced (427/427)
-                     — 2026-08-18.
-Last commit:         72ba466 — "Phase 16 Increment 4 (amended): revert auto-redirect" — 2026-08-18.
-                     Increment 5 (this entry) not yet committed - pending alongside this
-                     STATE.md update.
+Last validation:     Phase 15 + Phase 16 Increments 1-5's full validation history lives in
+                     docs/execution/PHASE_15.md / PHASE_16.md. Phase 16 Increment 6 (current): dotnet
+                     build (0 errors); dotnet test (10/10 passing); dev instance on port 5300; curl
+                     confirmed all 4 Quick Action tiles render with correct onclick handlers; curl
+                     confirmed GetGasRecordsByVehicleId/GetServiceRecordsByVehicleId/
+                     GetPlanRecordsByVehicleId responses actually contain their modal shell ids (the
+                     fix's core premise, verified not assumed); curl confirmed each
+                     GetAddXRecordPartialView returns real error-free content; both real vehicles'
+                     Vehicle/Index pages still 200; /css/site.css still balanced (431/431) —
+                     2026-08-18.
+Last commit:         dda1d24 — "Phase 16 Increment 5: Dashboard hero rebuild" — 2026-08-18. Increment 6
+                     (this entry) not yet committed - pending alongside this STATE.md update.
 ```
 
 ## Completed initiative: Zara + Magneto UI overhaul (separate from the roadmap above)

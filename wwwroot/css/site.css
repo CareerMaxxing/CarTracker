@@ -2097,6 +2097,37 @@ td[data-column="description"] {
     border-top: 1px solid var(--bs-border-color);
 }
 
+/* Phase 16, Increment 6 — Quick Actions tile grid. Each tile fetches its target record type's tab
+   content first (the modal it opens lives inside that tab's own lazily-loaded partial, per
+   wwwroot/js/vehicle.js's show.bs.tab handler - it wouldn't exist in the DOM yet on a fresh page load
+   if that tab has never been visited this session) and only then opens the add-record modal, via the
+   onLoaded callback param added to the relevant getVehicleX() loader functions. Deliberately doesn't
+   switch the visible tab - the modal overlays regardless of which tab is nominally active underneath. */
+.report-quick-action {
+    display: flex;
+    align-items: center;
+    gap: var(--ct-space-3);
+    width: 100%;
+    padding: var(--ct-space-3) var(--ct-space-4);
+    border: 1px solid var(--bs-border-color);
+    background-color: var(--bs-body-bg);
+    text-align: left;
+}
+
+    .report-quick-action:hover {
+        background-color: var(--bs-tertiary-bg);
+    }
+
+    .report-quick-action .bi {
+        font-size: 1.4rem;
+        color: var(--bs-secondary-color);
+    }
+
+    .report-quick-action span {
+        font-family: var(--ct-heading-font-family);
+        font-weight: 500;
+    }
+
 /* Phase 5 — the chapter-divider pattern (Senna feature, p.66 etc: full-bleed solid colour band,
    bold two-tone name typography) doesn't map cleanly onto most of this app - Car Tracker doesn't
    have sub-narratives within one feature the way a magazine profile interviews multiple people

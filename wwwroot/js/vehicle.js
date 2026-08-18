@@ -121,21 +121,23 @@ function getVehicleNotes(vehicleId) {
         }
     });
 }
-function getVehicleServiceRecords(vehicleId) {
+function getVehicleServiceRecords(vehicleId, onLoaded) {
     $.get(`/Vehicle/GetServiceRecordsByVehicleId?vehicleId=${vehicleId}`, function (data) {
         if (data) {
             $("#servicerecord-tab-pane").html(data);
             restoreScrollPosition();
             getVehicleHaveImportantReminders(vehicleId);
+            if (onLoaded) { onLoaded(); }
         }
     });
 }
-function getVehiclePlanRecords(vehicleId) {
+function getVehiclePlanRecords(vehicleId, onLoaded) {
     $.get(`/Vehicle/GetPlanRecordsByVehicleId?vehicleId=${vehicleId}`, function (data) {
         if (data) {
             $("#plan-tab-pane").html(data);
             restoreScrollPosition();
             getVehicleHaveImportantReminders(vehicleId);
+            if (onLoaded) { onLoaded(); }
         }
     });
 }
@@ -166,12 +168,13 @@ function getVehicleUpgradeRecords(vehicleId) {
         }
     });
 }
-function getVehicleGasRecords(vehicleId) {
+function getVehicleGasRecords(vehicleId, onLoaded) {
     $.get(`/Vehicle/GetGasRecordsByVehicleId?vehicleId=${vehicleId}`, function (data) {
         if (data) {
             $("#gas-tab-pane").html(data);
             restoreScrollPosition();
             getVehicleHaveImportantReminders(vehicleId);
+            if (onLoaded) { onLoaded(); }
         }
     });
 }
@@ -193,12 +196,13 @@ function getVehicleTaxRecords(vehicleId) {
         }
     });
 }
-function getVehicleReminders(vehicleId) {
+function getVehicleReminders(vehicleId, onLoaded) {
     $.get(`/Vehicle/GetReminderRecordsByVehicleId?vehicleId=${vehicleId}`, function (data) {
         if (data) {
             $("#reminder-tab-pane").html(data);
             restoreScrollPosition();
             getVehicleHaveImportantReminders(vehicleId);
+            if (onLoaded) { onLoaded(); }
         }
     });
 }

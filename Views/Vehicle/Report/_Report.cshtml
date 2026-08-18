@@ -35,6 +35,20 @@
     <div class="row hideOnPrint mb-2 report-hero-stats" id="reportHeaderContent">
             @await Html.PartialAsync("Report/_ReportHeader", Model.ReportHeaderForVehicle)
     </div>
+    <div class="row hideOnPrint mb-2 report-quick-actions">
+        <div class="col-6 col-md-3">
+            <button type="button" class="report-quick-action" onclick="getVehicleGasRecords(GetVehicleId().vehicleId, showAddGasRecordModal)"><i class="bi bi-fuel-pump"></i><span>@translator.Translate(userLanguage, "Add Fuel")</span></button>
+        </div>
+        <div class="col-6 col-md-3">
+            <button type="button" class="report-quick-action" onclick="getVehicleServiceRecords(GetVehicleId().vehicleId, showAddServiceRecordModal)"><i class="bi bi-card-checklist"></i><span>@translator.Translate(userLanguage, "Add Service")</span></button>
+        </div>
+        <div class="col-6 col-md-3">
+            <button type="button" class="report-quick-action" onclick="getVehicleReminders(GetVehicleId().vehicleId, showAddReminderModal)"><i class="bi bi-bell"></i><span>@translator.Translate(userLanguage, "Add Reminder")</span></button>
+        </div>
+        <div class="col-6 col-md-3">
+            <button type="button" class="report-quick-action" onclick="getVehiclePlanRecords(GetVehicleId().vehicleId, showAddPlanRecordModal)"><i class="bi bi-bar-chart-steps"></i><span>@translator.Translate(userLanguage, "Add Planned Work")</span></button>
+        </div>
+    </div>
     <div class="row hideOnPrint flex-wrap gap-1">
         <div class="col-md-3 col-12 border rounded">
             <div class="row pt-1">
