@@ -5,45 +5,64 @@ conversation history.
 
 ```
 PROJECT STATUS
-Current phase:      Phase 14 — V1 Hardening (Increment 3: Accessibility - modal aria-labelledby)
-Current task:       PHASE-14-03 (see docs/execution/PHASE_14.md) — wire aria-labelledby on every
-                     Bootstrap modal
-Status:             Complete. A background code-level accessibility audit (no browser available)
-                     found 4 issue categories across the Views tree; user chose the narrowest scope
-                     (modal aria-labelledby only) of the options offered. All 41 modal shells traced
-                     to their real content-providing partial via the actual AJAX call chain (not
-                     guessed from naming), 39 wired with correct aria-labelledby/aria-label, 2 left
-                     unresolved (documented, not guessed at). The batch-fix process itself surfaced
-                     two real pre-existing bugs (duplicate ids that could collide on the same page)
-                     and fixed both. Verified: dotnet build (0 errors), full test suite (10/10
-                     passing - confirms this UI-only change didn't regress app logic), and rendered
-                     HTML spot-checked across Vehicle/Home/Admin/Settings pages confirming every
-                     aria-labelledby resolves to a real id in the actually-rendered content.
-Last completed:      Phase 14 Increment 2 (automated tests) finished and pushed. User said "start
-                     phase 14" (ambiguous re: which increment - interpreted as "continue," picked
-                     accessibility as the next self-sufficient increment given no browser tool
-                     exists here, matching the established pattern of making a reasonable call
-                     rather than re-asking when the user's intent to continue was already clear).
-                     Ran a background Explore-agent code audit first (read-only, no changes) to
-                     scope the work before touching anything, then presented findings and let the
-                     user pick the fix scope rather than assuming "audit found it, so fix it all."
-Next task:           Phase 14 takes increments - icon-only button labels, keyboard-nav on primary
-                     click surfaces, form input labels, image alt text, mobile/responsive validation,
-                     and performance review all remain open (see DEFERRED.md's new Accessibility
-                     section for the un-fixed findings with file pointers). Ask the user for the next
-                     priority, or whether to pause here.
-Known blockers:      1. No browser/screenshot tool in this environment - accessibility work here was
-                        done via static code audit + curl-verified rendered HTML, not live
-                        screen-reader/keyboard testing. Real assistive-tech verification would need
-                        the user's help if that level of confidence is ever wanted.
+Current phase:      Phase 15 — Remote Access & Persistent Hosting (Increment 1: Windows Service
+                     hosting readiness)
+Current task:       PHASE-15-01 (see docs/execution/PHASE_15.md) — make the app safe to run as a
+                     persistent Windows Service, without changing the existing interactive dotnet run
+                     workflow
+Status:             Increment 1 complete. User asked to plan phone access with live sync to the PC
+                     app; since this is a single-server architecture with SignalR already
+                     broadcasting live updates to every connected client, "sync" needs no new
+                     data-layer work - only reachability. User explicitly authorized revisiting
+                     CLAUDE.md's locked "localhost only/no cloud deployment" and "no cloud sync"
+                     decisions, and chose Tailscale (private WireGuard network) over LAN-only access
+                     or public-internet hosting via AskUserQuestion. Plan (4 increments: Windows
+                     Service hosting, Tailscale + Kestrel loopback binding, auth enablement, PWA
+                     install verification) was written via EnterPlanMode/ExitPlanMode and approved.
+                     User then chose "code first" over "install Tailscale together first" when asked
+                     how to start. Increment 1 code change: added
+                     Microsoft.Extensions.Hosting.WindowsServices + UseWindowsService(); found and
+                     fixed a real gap not in the original plan - every data path in this app
+                     (StaticHelper.DbName/UserConfigPath/ServerConfigPath) is CWD-relative, and the
+                     Windows Service Control Manager defaults to a System32 working directory, so a
+                     service deployment would have silently created data/ under System32 without a
+                     WindowsServiceHelpers.IsWindowsService()-gated
+                     Directory.SetCurrentDirectory(AppContext.BaseDirectory) fix; also added
+                     DataProtection .PersistKeysToFileSystem("data/keys") since the default
+                     profile-based key storage isn't reliable under a service account. Verified:
+                     dotnet build (0 errors), dotnet test (10/10 passing), dotnet run + curl
+                     /health confirmed the interactive workflow is unaffected and data/keys/ was
+                     created correctly.
+Last completed:      Phase 14 Increment 3 (accessibility - modal aria-labelledby), see prior entries
+                     in docs/execution/PHASE_14.md. Phase 14's remaining areas (icon-button labels,
+                     keyboard nav, form labels, alt text, mobile/responsive validation, performance)
+                     are still open, not abandoned - Phase 15 was started because the user raised a
+                     new, higher-priority request (phone access), not because Phase 14 finished.
+Next task:           Phase 15 Increment 2: publish the app (dotnet publish -c Release), register it
+                     as a Windows Service (sc.exe create, start=auto, failure-restart policy), bind
+                     Kestrel to 127.0.0.1 only via the existing /Home/Setup "Server Endpoints" UI,
+                     install Tailscale on the PC and the user's phone (same tailnet), run
+                     `tailscale serve https / http://127.0.0.1:5299` on the PC, and verify reachability
+                     from the phone with home wifi OFF (mobile data only, to prove it's actually
+                     tailnet reachability). This increment needs the user physically present - admin
+                     elevation for sc.exe, and their phone for the Tailscale app/verification - it is
+                     NOT something to attempt unattended.
+Known blockers:      1. No browser/screenshot tool in this environment - Phase 14's remaining
+                        accessibility work would still need static-code-audit + curl verification,
+                        not live screen-reader/keyboard testing.
                      2. See docs/execution/DEFERRED.md for the full consolidated list of
-                        intentionally-punted items, including this increment's own un-fixed
-                        accessibility findings (icon buttons, keyboard nav, form labels, alt text,
-                        2 unresolved modals) with concrete file pointers so a future increment can
-                        start without re-auditing.
-Open decisions:      What to prioritize next within Phase 14 (or elsewhere) - ask the user rather
-                     than assume. Standing instruction: verify and approve each increment/phase
-                     before the next one starts.
+                        intentionally-punted items, including Phase 14's un-fixed accessibility
+                        findings (icon buttons, keyboard nav, form labels, alt text, 2 unresolved
+                        modals) with concrete file pointers so a future increment can start without
+                        re-auditing.
+Open decisions:      Whether to fix the two flagged-but-not-yet-fixed security gaps (no login
+                     rate-limiting/lockout, unsalted SHA-256 password hashing) before or after Phase
+                     15 Increment 3 turns on auth - current plan is to defer both (Tailscale's
+                     device-authorization layer already means reaching the login form requires
+                     control of a device already inside the tailnet) and record them in DEFERRED.md,
+                     but this hasn't been done yet since Increment 3 hasn't started. What to
+                     prioritize after Phase 15 (return to Phase 14's open areas, or something else) -
+                     ask the user rather than assume.
 Do not:              Assume Phase 14 is "done" - three increments complete (security/tests/modal
                      accessibility), several areas still open. Do not re-introduce a duplicate title
                      id when adding a new modal - grep for the exact id string across Views/ first;
@@ -82,17 +101,25 @@ Do not:              Assume Phase 14 is "done" - three increments complete (secu
                      directly from data/config/userConfig.json but is cached in-memory for up to 1
                      hour - restart the app after editing it. Tests: dotnet test
                      Tests/CarCareTracker.Tests.csproj from the repo root, fully isolated, safe
-                     anytime.
-Last validation:     dotnet build (0 errors); dotnet test (10/10 passing); rendered HTML spot-checked
-                     across Vehicle/Index tab partials (service, odometer), Home/Index, Admin/Index,
-                     Home Settings - every aria-labelledby confirmed resolving to a real id in the
-                     actually-rendered content; confirmed no remaining problematic duplicate
-                     modal-title ids anywhere in the Views tree (the 2 apparent duplicates that remain
-                     are both benign - different pages that never coexist, or mutually-exclusive
-                     @if/else branches within one partial) — 2026-08-17.
-Last commit:         fc8d7f4 — "Phase 14 (accessibility): wire aria-labelledby on all Bootstrap
-                     modals" — pushed 2026-08-17, awaiting user confirmation before the next
-                     increment.
+                     anytime. Every data/ path in this app (StaticHelper.DbName/UserConfigPath/
+                     ServerConfigPath) is CWD-relative, not ContentRootPath-relative - Program.cs now
+                     has a WindowsServiceHelpers.IsWindowsService()-gated
+                     Directory.SetCurrentDirectory(AppContext.BaseDirectory) fix for the Windows
+                     Service case specifically; do not remove or broaden that gate, and do not assume
+                     it also covers Docker or other deployment modes without checking their CWD
+                     behavior too. Never flip EnableAuth:true by hand-editing userConfig.json without
+                     credentials already set via the Settings "Enable Authentication" UI flow first
+                     (POST /Login/CreateLoginCreds) - it will lock everyone out; the UI flow sets
+                     EnableAuth and the credential hashes atomically. If ever locked out: stop the
+                     process/service, hand-edit EnableAuth:false back, restart.
+Last validation:     dotnet build (0 errors, 0 new warnings - 224 pre-existing nullable warnings
+                     unchanged); dotnet test Tests/CarCareTracker.Tests.csproj (10/10 passing, no
+                     regression); dotnet run --urls http://localhost:5299 --no-build (background) +
+                     curl http://localhost:5299/health returned {"status":"pass",...}, and
+                     data/keys/key-<guid>.xml was created, confirming the DataProtection change works
+                     and the interactive dev workflow is unaffected — 2026-08-18.
+Last commit:         (pending - Phase 15 Increment 1 changes not yet committed as of this STATE.md
+                     update; see git status for CarCareTracker.csproj/Program.cs/docs changes).
 ```
 
 ## Completed initiative: Zara + Magneto UI overhaul (separate from the roadmap above)

@@ -6,12 +6,24 @@ using CarCareTracker.Logic;
 using CarCareTracker.Middleware;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Hosting.WindowsServices;
 using System.Globalization;
 
+//data/ paths throughout this app (StaticHelper.DbName, UserConfigPath, etc.) are relative to the
+//process's current directory, not ContentRootPath. The Windows Service Control Manager launches
+//services with a default working directory of System32, not the published app's own folder, so
+//without this the service would look for (and create) data/ under System32 instead.
+if (WindowsServiceHelpers.IsWindowsService())
+{
+    Directory.SetCurrentDirectory(AppContext.BaseDirectory);
+}
+
 var builder = WebApplication.CreateBuilder(args);
+builder.Host.UseWindowsService();
 
 //Additional JsonFile
 builder.Configuration.AddJsonFile(StaticHelper.UserConfigPath, optional: true, reloadOnChange: true);
@@ -134,7 +146,11 @@ builder.Services.AddSignalR();
 
 //configure Auth
 builder.Services.AddHttpClient();
-builder.Services.AddDataProtection();
+//Default key storage persists to the interactive user's profile, which a Windows Service account
+//can't reliably rely on - without this, every service restart would silently generate new keys and
+//invalidate the auth cookie and anything else DataProtection-encrypted.
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine("data", "keys")));
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddAuthentication("AuthN").AddScheme<AuthenticationSchemeOptions, Authen>("AuthN", opts => { });
 builder.Services.AddAuthorization(options =>
