@@ -32,5 +32,11 @@
         /// triggers Done's auto-create-a-ServiceRecord side effect. Null = not resolved. See
         /// PHASE_17.md Increment 6.</summary>
         public DateTime? ResolvedDate { get; set; }
+        /// <summary>Set once the user marks an MOT-linked item as not significant enough to act on
+        /// (e.g. an informational note like "engine covers fitted") - orthogonal to Progress, same
+        /// treatment as ResolvedDate, but pulls the card into its own "Ignored" section of the Planner
+        /// board instead of leaving it in its normal swimlane with just a badge (Resolved's treatment).
+        /// Null = not ignored. See PHASE_17.md Increment 10.</summary>
+        public DateTime? IgnoredDate { get; set; }
     }
 }

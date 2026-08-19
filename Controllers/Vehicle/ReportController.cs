@@ -193,7 +193,8 @@ namespace CarCareTracker.Controllers
                 DVLAData = _dvlaAdapter.GetVehicleData(vehicleData.LicensePlate),
                 MotHistory = _dvsaAdapter.GetMotHistory(vehicleData.LicensePlate),
                 ExistingMotPlanKeys = motLinkedPlanRecords.Select(x => x.SourceMotKey).ToList(),
-                ResolvedMotPlanKeys = motLinkedPlanRecords.Where(x => x.ResolvedDate.HasValue).Select(x => x.SourceMotKey).ToList()
+                ResolvedMotPlanKeys = motLinkedPlanRecords.Where(x => x.ResolvedDate.HasValue).Select(x => x.SourceMotKey).ToList(),
+                IgnoredMotPlanKeys = motLinkedPlanRecords.Where(x => x.IgnoredDate.HasValue).Select(x => x.SourceMotKey).ToList()
             };
             return PartialView("Report/_Report", viewModel);
         }

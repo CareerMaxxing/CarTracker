@@ -777,3 +777,62 @@ looking frozen data in place as a silent fallback would be more misleading than 
 fallback if `DVSAConfig` were ever lost again (no "Mock" badge would warn the user it's frozen).
 
 **Phase 17 is now running on genuinely live DVSA data in production**, not mock, not a manual bridge.
+
+## Increment 10: "Ignored" section for insignificant items
+
+User feedback after using the live data: some MOT items aren't worth acting on at all (their examples:
+"engine covers fitted" and "MIL light on" - informational notes rather than real defects) and they
+wanted a distinct "Ignored" section in the Planner to set these aside, separate from "has it been
+resolved."
+
+### Design decision
+
+The user asked for "a section" - real visual separation, not just another badge. A genuine drag-and-
+drop 7th swimlane was ruled out for the same reason `ResolvedDate` wasn't a `PlanProgress` value back
+in Increment 6: the Kanban board's 6 lanes are wired through the mobile nav buttons, the column-
+visibility checkboxes, the right-click "Move To" context menu, and `PlanProgress`'s own API validation
+- all four would need touching for one new lane, disproportionate scope for a lightweight "set aside"
+status. Built instead as `PlanRecord.IgnoredDate` (orthogonal, mirroring `ResolvedDate` exactly), but
+with a real visual difference from Resolved: ignored items are pulled OUT of their normal swimlane
+into a dedicated "Ignored" section rendered below the main board - toggled only via explicit Ignore/
+Unignore actions, never drag-and-drop, so none of that shared machinery needed to change.
+
+### What was built
+
+- `PlanRecord.IgnoredDate` (nullable `DateTime`) + full round-trip (`PlanRecordInput`,
+  `GetPlanRecordForEditById`, `_PlanRecordModal.cshtml`, `planrecord.js`) - identical mechanism to
+  `ResolvedDate`. Template-save clearing extended to cover it too.
+- `PlanController.IgnoreMotAdvisory(vehicleId, advisoryText)` - unlike `AddMotAdvisoryToPlanner`, works
+  regardless of current state: creates a new already-ignored `PlanRecord` if none exists yet, or marks
+  an existing one (e.g. one already "In Planner") ignored instead of creating a duplicate - so ignoring
+  is always a single click from the MOT view, whatever state the advisory was already in.
+- `PlanController.MarkPlanRecordIgnored`/`UnmarkPlanRecordIgnored` - direct toggle from the Planner
+  Kanban card itself, mirroring the Resolved pair exactly (including the `existingRecord == null` guard
+  learned from Increment 6's bug).
+- `_PlanRecords.cshtml`: each of the 6 swimlane queries now excludes `IgnoredDate.HasValue` items; a
+  new section renders them separately below the main board, with their own count badge.
+- `_PlanRecordItem.cshtml`: strikethrough now also applies when ignored; the MOT-linked action area
+  shows exactly one of three states - **Ignored** (badge + unignore), **Resolved** (unchanged), or
+  **both Mark Resolved and Ignore** as two lightweight actions when neither yet applies.
+- `_GovernmentData.cshtml`: the advisories list gained a 4th state - **Ignored** (neutral badge,
+  strikethrough) alongside the existing Add to Planner / In Planner / Resolved, plus a small "eye-slash"
+  quick-ignore icon button next to both "Add to Planner" and the "In Planner" badge, so anything can be
+  dismissed in one click regardless of whether it's been added yet. The "(X/Y addressed)" summary count
+  now counts resolved **or** ignored - both mean the item no longer needs attention.
+
+### Verification
+
+- `dotnet build`/`dotnet test` - 0 new warnings/errors, 30/30 passing (25 pre-existing + 5 new,
+  covering both `IgnoreMotAdvisory` paths - create vs. mark-existing - plus the toggle/idempotency/
+  Progress-orthogonality guarantees already established for Resolved).
+- **Caught and fixed a real markup bug while building the new Kanban section**: the first attempt at
+  inserting the Ignored section left one extra stray `</div>`, which would have prematurely closed the
+  page's outer wrapper before the "add record"/context-menu controls at the bottom of the page -
+  caught by re-reading the file's div nesting immediately after the edit, before it was ever tested
+  live, not left for a browser to discover.
+- Dev instance, against the real BMW Z4 (vehicleId=1): added one advisory normally, ignored a second
+  one directly (not-yet-added path) - confirmed the header showed "1/2 addressed", the ignored row
+  showed the neutral badge, and the Planner board showed a new "Ignored" section (count 1) with the
+  item correctly **excluded** from the Idea lane (no duplication - verified the description text
+  appears exactly once across the whole board). Unignored it and confirmed the section disappeared
+  cleanly. Deleted both test records; dev restored to its pre-verification state.

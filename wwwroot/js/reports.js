@@ -486,3 +486,19 @@ function importAllMotAdvisoriesToPlanner(vehicleId) {
         }
     });
 }
+function ignoreMotAdvisory(vehicleId, advisoryText, e) {
+    if (e) {
+        $(e).prop('disabled', true);
+    }
+    $.post('/Vehicle/IgnoreMotAdvisory', { vehicleId: vehicleId, advisoryText: advisoryText }, function (data) {
+        if (data.success) {
+            successToast('Marked Ignored');
+            getVehicleReport(vehicleId);
+        } else {
+            errorToast(data.message);
+            if (e) {
+                $(e).prop('disabled', false);
+            }
+        }
+    });
+}

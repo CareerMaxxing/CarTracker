@@ -35,11 +35,14 @@
             WorstComment = g.Select(x => x.Comment).OrderByDescending(GetCommentSeverityRank).First(),
             Years = g.Select(x => GetTestYear(x.Test.CompletedDate)).Distinct().OrderBy(y => y).ToList(),
             AlreadyAdded = Model.ExistingMotPlanKeys.Contains(g.Key),
-            IsResolved = Model.ResolvedMotPlanKeys.Contains(g.Key)
+            IsResolved = Model.ResolvedMotPlanKeys.Contains(g.Key),
+            IsIgnored = Model.IgnoredMotPlanKeys.Contains(g.Key)
         })
         .OrderByDescending(g => g.Years.Max())
         .ToList();
-    var resolvedCount = openAdvisories.Count(x => x.IsResolved);
+    //"addressed" covers both actually-fixed and deliberately-not-worth-fixing - either way it no
+    //longer needs the user's attention, which is the point of the summary count.
+    var settledCount = openAdvisories.Count(x => x.IsResolved || x.IsIgnored);
 }
 @model VehicleGovernmentDataViewModel
 <div class="d-flex justify-content-between align-items-center">
@@ -85,7 +88,7 @@ else
             @if (openAdvisories.Any())
             {
                 <div class="d-flex justify-content-between align-items-center mt-1">
-                    <span class="small text-body-secondary">@translator.Translate(userLanguage, "Advisories & Failures") (@resolvedCount/@openAdvisories.Count @translator.Translate(userLanguage, "addressed"))</span>
+                    <span class="small text-body-secondary">@translator.Translate(userLanguage, "Advisories & Failures") (@settledCount/@openAdvisories.Count @translator.Translate(userLanguage, "addressed"))</span>
                     <a class="btn btn-sm btn-outline-secondary" data-vehicle-id="@vehicleId" onclick="importAllMotAdvisoriesToPlanner($(this).data('vehicle-id'))">@translator.Translate(userLanguage, "Import All to Planner")</a>
                 </div>
                 <ul class="mb-0 ps-3 small">
@@ -94,7 +97,7 @@ else
                         <li class="d-flex justify-content-between align-items-center gap-2 mb-1">
                             <span>
                                 <span class="status-badge @GetCommentBadgeClass(advisory.WorstComment)">@advisory.WorstComment.Type</span>
-                                @if (advisory.IsResolved)
+                                @if (advisory.IsResolved || advisory.IsIgnored)
                                 {
                                     <s>@advisory.WorstComment.Text</s>
                                 }
@@ -104,17 +107,27 @@ else
                                 }
                                 <span class="text-body-secondary">(@translator.Translate(userLanguage, "flagged"): @string.Join(", ", advisory.Years))</span>
                             </span>
-                            @if (advisory.IsResolved)
+                            @if (advisory.IsIgnored)
+                            {
+                                <span class="status-badge status-badge-neutral flex-shrink-0" title="@translator.Translate(userLanguage, "Not significant enough to act on")"><i class="bi bi-eye-slash"></i> @translator.Translate(userLanguage, "Ignored")</span>
+                            }
+                            else if (advisory.IsResolved)
                             {
                                 <span class="status-badge status-badge-success flex-shrink-0" title="@translator.Translate(userLanguage, "Marked resolved in the Planner")"><i class="bi bi-check-circle-fill"></i> @translator.Translate(userLanguage, "Resolved")</span>
                             }
                             else if (advisory.AlreadyAdded)
                             {
-                                <span class="status-badge status-badge-warning flex-shrink-0" title="@translator.Translate(userLanguage, "In the Planner, not yet marked resolved")"><i class="bi bi-hourglass-split"></i> @translator.Translate(userLanguage, "In Planner")</span>
+                                <span class="d-flex align-items-center gap-1 flex-shrink-0">
+                                    <span class="status-badge status-badge-warning" title="@translator.Translate(userLanguage, "In the Planner, not yet marked resolved")"><i class="bi bi-hourglass-split"></i> @translator.Translate(userLanguage, "In Planner")</span>
+                                    <a class="btn btn-sm btn-outline-secondary" data-vehicle-id="@vehicleId" data-advisory-text="@advisory.WorstComment.Text" onclick="ignoreMotAdvisory($(this).data('vehicle-id'), $(this).data('advisory-text'), this)" title="@translator.Translate(userLanguage, "Not significant - ignore")"><i class="bi bi-eye-slash"></i></a>
+                                </span>
                             }
                             else
                             {
-                                <a class="btn btn-sm btn-outline-primary flex-shrink-0" data-vehicle-id="@vehicleId" data-advisory-text="@advisory.WorstComment.Text" onclick="addMotAdvisoryToPlanner($(this).data('vehicle-id'), $(this).data('advisory-text'), this)">@translator.Translate(userLanguage, "Add to Planner")</a>
+                                <span class="d-flex align-items-center gap-1 flex-shrink-0">
+                                    <a class="btn btn-sm btn-outline-primary" data-vehicle-id="@vehicleId" data-advisory-text="@advisory.WorstComment.Text" onclick="addMotAdvisoryToPlanner($(this).data('vehicle-id'), $(this).data('advisory-text'), this)">@translator.Translate(userLanguage, "Add to Planner")</a>
+                                    <a class="btn btn-sm btn-outline-secondary" data-vehicle-id="@vehicleId" data-advisory-text="@advisory.WorstComment.Text" onclick="ignoreMotAdvisory($(this).data('vehicle-id'), $(this).data('advisory-text'), this)" title="@translator.Translate(userLanguage, "Not significant - ignore")"><i class="bi bi-eye-slash"></i></a>
+                                </span>
                             }
                         </li>
                     }

@@ -119,6 +119,26 @@ function unmarkPlanRecordResolved(planRecordId) {
         }
     });
 }
+function markPlanRecordIgnored(planRecordId) {
+    $.post(`/Vehicle/MarkPlanRecordIgnored?planRecordId=${planRecordId}`, function (data) {
+        if (data.success) {
+            successToast("Marked Ignored");
+            getVehiclePlanRecords(GetVehicleId().vehicleId);
+        } else {
+            errorToast(data.message);
+        }
+    });
+}
+function unmarkPlanRecordIgnored(planRecordId) {
+    $.post(`/Vehicle/UnmarkPlanRecordIgnored?planRecordId=${planRecordId}`, function (data) {
+        if (data.success) {
+            successToast("Unignored");
+            getVehiclePlanRecords(GetVehicleId().vehicleId);
+        } else {
+            errorToast(data.message);
+        }
+    });
+}
 function savePlanRecordToVehicle(isEdit) {
     //get values
     var formValues = getAndValidatePlanRecordValues();
@@ -243,6 +263,7 @@ function getAndValidatePlanRecordValues() {
     var reminderRecordId = getPlanRecordModelData().reminderRecordId;
     var sourceMotKey = getPlanRecordModelData().sourceMotKey;
     var resolvedDate = getPlanRecordModelData().resolvedDate;
+    var ignoredDate = getPlanRecordModelData().ignoredDate;
     //validation
     var hasError = false;
     var extraFields = getAndValidateExtraFields();
@@ -282,7 +303,8 @@ function getAndValidatePlanRecordValues() {
         reminderRecordIds: recurringReminderRecordId,
         copySuppliesAttachment: copySuppliesAttachments,
         sourceMotKey: sourceMotKey,
-        resolvedDate: resolvedDate
+        resolvedDate: resolvedDate,
+        ignoredDate: ignoredDate
     }
 }
 //drag and drop stuff.

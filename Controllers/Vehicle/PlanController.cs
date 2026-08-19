@@ -65,10 +65,11 @@ namespace CarCareTracker.Controllers
             }
             planRecord.Files = planRecord.Files.Select(x => { return new UploadedFiles { Name = x.Name, Location = _fileHelper.MoveFileFromTemp(x.Location, "documents/"), Type = x.Type }; }).ToList();
             //a template is a reusable recipe, not a link to one specific MOT advisory occurrence -
-            //never persist a source key or a resolved date onto a template, otherwise every record
-            //later created from it would incorrectly appear already-linked/already-resolved.
+            //never persist a source key or a resolved/ignored date onto a template, otherwise every
+            //record later created from it would incorrectly appear already-linked/already-settled.
             planRecord.SourceMotKey = string.Empty;
             planRecord.ResolvedDate = string.Empty;
+            planRecord.IgnoredDate = string.Empty;
             var result = _planRecordTemplateDataAccess.SavePlanRecordTemplateToVehicle(planRecord);
             return Json(OperationResponse.Conditional(result, string.Empty, StaticHelper.GenericErrorMessage));
         }
@@ -464,7 +465,8 @@ namespace CarCareTracker.Controllers
                 ReminderRecordIds = result.ReminderRecordIds,
                 ExtraFields = StaticHelper.AddExtraFields(result.ExtraFields, _extraFieldDataAccess.GetExtraFieldsById((int)ImportMode.PlanRecord).ExtraFields),
                 SourceMotKey = result.SourceMotKey,
-                ResolvedDate = result.ResolvedDate?.ToString("G") ?? string.Empty
+                ResolvedDate = result.ResolvedDate?.ToString("G") ?? string.Empty,
+                IgnoredDate = result.IgnoredDate?.ToString("G") ?? string.Empty
             };
             return PartialView("Plan/_PlanRecordModal", convertedResult);
         }
@@ -613,6 +615,90 @@ namespace CarCareTracker.Controllers
                 return Json(OperationResponse.Failed("Access Denied"));
             }
             existingRecord.ResolvedDate = null;
+            existingRecord.DateModified = DateTime.Now;
+            var result = _planRecordDataAccess.SavePlanRecordToVehicle(existingRecord);
+            return Json(OperationResponse.Conditional(result, string.Empty, StaticHelper.GenericErrorMessage));
+        }
+        /// <summary>Marks an MOT advisory as not significant enough to act on (e.g. an informational
+        /// note like "engine covers fitted") - creates the linked Planner item if one doesn't exist yet
+        /// (same dedup key as AddMotAdvisoryToPlanner), or marks an already-added one ignored if it
+        /// does, either way in one click directly from the MOT history view. See PHASE_17.md
+        /// Increment 10.</summary>
+        [TypeFilter(typeof(CollaboratorFilter))]
+        [HttpPost]
+        public IActionResult IgnoreMotAdvisory(int vehicleId, string advisoryText)
+        {
+            if (!_userLogic.UserCanEditVehicle(GetUserID(), vehicleId, HouseholdPermission.Edit))
+            {
+                return Json(OperationResponse.Failed("Access Denied"));
+            }
+            if (string.IsNullOrWhiteSpace(advisoryText))
+            {
+                return Json(OperationResponse.Failed(StaticHelper.GenericErrorMessage));
+            }
+            var sourceMotKey = StaticHelper.GetMotAdvisoryKey(vehicleId, advisoryText);
+            var existingRecord = _planRecordDataAccess.GetPlanRecordsByVehicleId(vehicleId).FirstOrDefault(x => x.SourceMotKey == sourceMotKey);
+            bool result;
+            if (existingRecord != null)
+            {
+                existingRecord.IgnoredDate = DateTime.Now;
+                existingRecord.DateModified = DateTime.Now;
+                result = _planRecordDataAccess.SavePlanRecordToVehicle(existingRecord);
+            }
+            else
+            {
+                var newPlanRecord = new PlanRecord
+                {
+                    VehicleId = vehicleId,
+                    DateCreated = DateTime.Now,
+                    DateModified = DateTime.Now,
+                    Description = advisoryText,
+                    ImportMode = ImportMode.ServiceRecord,
+                    Priority = PlanPriority.Normal,
+                    Progress = PlanProgress.Idea,
+                    SourceMotKey = sourceMotKey,
+                    IgnoredDate = DateTime.Now
+                };
+                result = _planRecordDataAccess.SavePlanRecordToVehicle(newPlanRecord);
+                if (result)
+                {
+                    _eventLogic.PublishEvent(GetUserID(), WebHookPayload.FromPlanRecord(newPlanRecord, "planrecord.add", User.Identity?.Name ?? string.Empty));
+                }
+            }
+            return Json(OperationResponse.Conditional(result, string.Empty, StaticHelper.GenericErrorMessage));
+        }
+        [TypeFilter(typeof(CollaboratorFilter))]
+        [HttpPost]
+        public IActionResult MarkPlanRecordIgnored(int planRecordId)
+        {
+            var existingRecord = _planRecordDataAccess.GetPlanRecordById(planRecordId);
+            if (existingRecord == null || existingRecord.Id == default)
+            {
+                return Json(OperationResponse.Failed(StaticHelper.GenericErrorMessage));
+            }
+            if (!_userLogic.UserCanEditVehicle(GetUserID(), existingRecord.VehicleId, HouseholdPermission.Edit))
+            {
+                return Json(OperationResponse.Failed("Access Denied"));
+            }
+            existingRecord.IgnoredDate = DateTime.Now;
+            existingRecord.DateModified = DateTime.Now;
+            var result = _planRecordDataAccess.SavePlanRecordToVehicle(existingRecord);
+            return Json(OperationResponse.Conditional(result, string.Empty, StaticHelper.GenericErrorMessage));
+        }
+        [TypeFilter(typeof(CollaboratorFilter))]
+        [HttpPost]
+        public IActionResult UnmarkPlanRecordIgnored(int planRecordId)
+        {
+            var existingRecord = _planRecordDataAccess.GetPlanRecordById(planRecordId);
+            if (existingRecord == null || existingRecord.Id == default)
+            {
+                return Json(OperationResponse.Failed(StaticHelper.GenericErrorMessage));
+            }
+            if (!_userLogic.UserCanEditVehicle(GetUserID(), existingRecord.VehicleId, HouseholdPermission.Edit))
+            {
+                return Json(OperationResponse.Failed("Access Denied"));
+            }
+            existingRecord.IgnoredDate = null;
             existingRecord.DateModified = DateTime.Now;
             var result = _planRecordDataAccess.SavePlanRecordToVehicle(existingRecord);
             return Json(OperationResponse.Conditional(result, string.Empty, StaticHelper.GenericErrorMessage));

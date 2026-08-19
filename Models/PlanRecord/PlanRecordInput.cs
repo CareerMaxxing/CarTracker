@@ -29,6 +29,10 @@
         /// like ReminderRecordId/SourceMotKey - never a direct form field. Empty = not resolved. See
         /// PlanRecord.ResolvedDate.</summary>
         public string ResolvedDate { get; set; } = string.Empty;
+        /// <summary>System-set (via MarkPlanRecordIgnored/UnmarkPlanRecordIgnored), round-tripped like
+        /// ReminderRecordId/SourceMotKey - never a direct form field. Empty = not ignored. See
+        /// PlanRecord.IgnoredDate.</summary>
+        public string IgnoredDate { get; set; } = string.Empty;
         public PlanRecord ToPlanRecord() { return new PlanRecord {
             Id = Id,
             VehicleId = VehicleId,
@@ -47,7 +51,8 @@
             ExtraFields = ExtraFields,
             RequisitionHistory = RequisitionHistory,
             SourceMotKey = SourceMotKey,
-            ResolvedDate = !string.IsNullOrWhiteSpace(ResolvedDate) && DateTime.TryParse(ResolvedDate, out var parsedResolvedDate) ? parsedResolvedDate : (DateTime?)null
+            ResolvedDate = !string.IsNullOrWhiteSpace(ResolvedDate) && DateTime.TryParse(ResolvedDate, out var parsedResolvedDate) ? parsedResolvedDate : (DateTime?)null,
+            IgnoredDate = !string.IsNullOrWhiteSpace(IgnoredDate) && DateTime.TryParse(IgnoredDate, out var parsedIgnoredDate) ? parsedIgnoredDate : (DateTime?)null
         }; }
         /// <summary>
         /// only used to hide view template button on plan create modal.
