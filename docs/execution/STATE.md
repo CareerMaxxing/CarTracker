@@ -10,10 +10,11 @@ Current phase:      Phase 17 — Real MOT History & Advisory Tracking — ✅ CO
                      2026-08-19 - the user's own DVSA API application was approved and credentials
                      activated same-day.
 Current task:       None - phase finished, including production deployment and real-credential
-                     activation. Increments 8-9 (curated-synonym grouping + resolved-status visibility;
-                     real-credential activation + a real defects-field-name bug found and fixed) came
-                     from direct user feedback after seeing the deployed feature live, and are also
-                     deployed. See docs/execution/PHASE_17.md for full increment-by-increment detail.
+                     activation. Increments 8-10 (curated-synonym grouping + resolved-status
+                     visibility; real-credential activation + a real defects-field-name bug found and
+                     fixed; an "Ignored" section for insignificant MOT items) all came from direct user
+                     feedback after seeing the deployed feature live, and are also deployed. See
+                     docs/execution/PHASE_17.md for full increment-by-increment detail.
 Status:              Increment 1 done and verified: DVSAConfig model + ServerConfig nested property +
                      IConfigHelper.GetDVSAConfig() (reads live per-call, no restart needed - matches
                      the existing MailConfig/OpenIDConfig convention) + Setup UI fields (Tenant Id/
@@ -161,9 +162,24 @@ Last validation:     Real DVSA credential activation (2026-08-19): user's own DV
                      Tailscale URL: new Phase 17 code confirmed live (DVSA Setup UI field present),
                      both real vehicles' data intact. All 6 code increments' full validation history
                      (build/test/curl detail per increment) remains in docs/execution/PHASE_17.md.
-Last commit:         218f745 — "Fix real DVSA API defect mapping (Increment 9)" — 2026-08-19. Real
-                     credentials themselves live only in production's serverConfig.json (outside the
-                     git repo, correctly never committed).
+Last validation (2): Phase 17 Increment 10 (2026-08-19) - user asked for a distinct "Ignored" section
+                     in the Planner for insignificant MOT items (their examples: engine covers fitted,
+                     MIL light on). Built as PlanRecord.IgnoredDate, orthogonal to Progress like
+                     ResolvedDate, but pulled into its own board section rather than staying in-lane
+                     with just a badge - a real 7th swimlane was ruled out as disproportionate scope
+                     (would touch the mobile nav, column-visibility checkboxes, "Move To" context menu,
+                     and PlanProgress's API validation). dotnet build/test: 30/30 passing (25 + 5 new).
+                     Caught and fixed a real markup bug immediately after writing it (an extra stray
+                     </div> that would have prematurely closed the page's outer wrapper) by re-reading
+                     the file's div nesting before ever testing live. Dev-verified against the real BMW
+                     Z4: ignored one advisory directly (not-yet-added path), confirmed the Planner board
+                     showed a new Ignored section with the item correctly excluded from its normal lane
+                     (no duplication), unignored it, confirmed the section disappeared cleanly. Deployed
+                     to production, verified via curl against both 127.0.0.1:5299 and the real
+                     https://legion.tail80af14.ts.net Tailscale URL.
+Last commit:         5aaa5eb — "Phase 17 Increment 10: Ignored section for insignificant MOT items" —
+                     2026-08-19. Real DVSA credentials themselves live only in production's
+                     serverConfig.json (outside the git repo, correctly never committed).
 ```
 
 ## Completed initiative: Zara + Magneto UI overhaul (separate from the roadmap above)
