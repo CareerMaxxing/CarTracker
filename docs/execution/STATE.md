@@ -77,6 +77,19 @@ Open decisions:      Whether to fix the two flagged-but-not-yet-fixed security g
                      but this hasn't been done yet since Increment 3 hasn't started. What to
                      prioritize after Phase 15 (return to Phase 14's open areas, or something else) -
                      ask the user rather than assume.
+Do not:              Assume static assets (JS/CSS) will actually reach a user's browser just because
+                     a deployment succeeded. Every script/link tag's ?v= cache-busting query string
+                     comes from StaticHelper.AssetCacheBustStamp (derived automatically from the
+                     deployed binary's own last-write time - changes on every publish, nothing to
+                     remember). It used to come from StaticHelper.VersionNumber, a hardcoded upstream
+                     release constant that stayed "1.7.0" through this entire fork's Phase 15-17
+                     session - every JS change was silently served from stale browser cache the whole
+                     time, discovered only when the user reported a brand-new button (MOT Ignored,
+                     Phase 17 Increment 10) doing nothing with no visible error (a stale page calling an
+                     undefined function throws silently). Fixed 2026-08-19 (commit 3005cf2). Do NOT
+                     reintroduce VersionNumber in a ?v= query string - that field is for actual app-
+                     version reporting only (health/info API endpoints, the Settings page's displayed
+                     version) and must stay separate from cache-busting.
 Do not:              Assume Phase 14 is "done" - three increments complete (security/tests/modal
                      accessibility), several areas still open. Do not re-introduce a duplicate title
                      id when adding a new modal - grep for the exact id string across Views/ first;
