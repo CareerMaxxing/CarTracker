@@ -6,13 +6,12 @@ conversation history.
 ```
 PROJECT STATUS
 Current phase:      Phase 17 — Real MOT History & Advisory Tracking — 🟡 IN PROGRESS
-Current task:       Increments 1-3 complete. Next: Increment 4 (advisory text normalization - a small,
-                     independently unit-testable helper that strips trailing parenthetical MOT
-                     reference codes/lowercases/trims advisory text and derives a stable dedup key per
-                     normalized-text cluster, built BEFORE Increment 5's Planner-linkage actions that
-                     depend on it - a Plan-agent review caught that building linkage first would key
-                     dedup at the wrong per-test-instance granularity). See docs/execution/PHASE_17.md
-                     for full increment-by-increment detail.
+Current task:       Increments 1-4 complete. Next: Increment 5 (advisory -> Planner linkage: per-
+                     advisory "Add to Planner" + bulk "Import all open advisories" actions, using
+                     StaticHelper.GetMotAdvisoryKey as the new PlanRecord.SourceMotKey field - kept out
+                     of PlanRecordInput/the edit modal, following the ReminderRecordId precedent -
+                     plus visual grouping of same-key advisories across years in the MOT history view).
+                     See docs/execution/PHASE_17.md for full increment-by-increment detail.
 Status:              Increment 1 done and verified: DVSAConfig model + ServerConfig nested property +
                      IConfigHelper.GetDVSAConfig() (reads live per-call, no restart needed - matches
                      the existing MailConfig/OpenIDConfig convention) + Setup UI fields (Tenant Id/
@@ -52,14 +51,13 @@ Last completed:      Phase 16 (Sidebar App Shell & Dashboard Redesign) - all 11 
                      form labels, alt text, mobile/responsive validation, performance) are still open,
                      not abandoned - Phase 15, 16, and 17 were all started because the user raised new,
                      higher-priority requests, not because Phase 14 finished.
-Next task:           Phase 17 Increment 4 (advisory text normalization helper - no UI/Planner change
-                     yet, just the pure function + tests). Still requires the user to complete their
-                     own DVSA API self-service registration before real (non-mock) data can be seen
-                     live - not blocking further increments from shipping, since the live-config
-                     fallback means each one ships and is fully testable against the existing mock
-                     regardless of that timing. Other open items, unchanged from before Phase 17
-                     started: Phase 14's remaining hardening areas (see Known blockers/DEFERRED.md),
-                     and AI/OCR invoice scanning (still fully deferred).
+Next task:           Phase 17 Increment 5 (advisory -> Planner linkage). Still requires the user to
+                     complete their own DVSA API self-service registration before real (non-mock) data
+                     can be seen live - not blocking further increments from shipping, since the
+                     live-config fallback means each one ships and is fully testable against the
+                     existing mock regardless of that timing. Other open items, unchanged from before
+                     Phase 17 started: Phase 14's remaining hardening areas (see Known blockers/
+                     DEFERRED.md), and AI/OCR invoice scanning (still fully deferred).
 Known blockers:      1. No browser/screenshot tool in this environment - Phase 14's remaining
                         accessibility work would still need static-code-audit + curl verification,
                         not live screen-reader/keyboard testing.
@@ -135,18 +133,14 @@ Do not:              Assume Phase 14 is "done" - three increments complete (secu
                      ran. dotnet run from the dev repo still works for development but now operates on
                      a separate, diverging dataset - be explicit with the user about which copy
                      they're looking at if this ever comes up.
-Last validation:     Phase 17 Increment 3 (2026-08-19): dotnet build (0 new warn/0 err), dotnet test
-                     (11/11 passing, no regressions), dev instance on port 5300 curl-verified
-                     /Vehicle/GetReportPartialView for both real dev vehicles - all 4 past tests render
-                     per vehicle (not just the latest), correctly colour-coded, tests with zero
-                     advisories correctly show no orphan empty list, both the DVLA-level and MOT-
-                     History-level Mock badges render independently. Not yet deployed to production -
-                     this is a display improvement on the same mock data already deployed, not a new
-                     user-visible capability the user is waiting on. Phase 17 Increments 1-2 + Phase
-                     15/16's full validation history remains in docs/execution/PHASE_17.md /
-                     PHASE_15.md / PHASE_16.md.
-Last commit:         5f9fb71 — "Phase 17 Increment 2: real DVSA adapter, live-config-selected" —
-                     2026-08-19. Increment 3 not yet committed as of this STATE.md update.
+Last validation:     Phase 17 Increment 4 (2026-08-19): dotnet build (0 new warn/0 err), dotnet test
+                     (17/17 passing including 6 new pure unit tests for
+                     StaticHelper.NormalizeMotAdvisoryText/GetMotAdvisoryKey - no WebApplicationFactory
+                     needed, dependency-free functions). No curl/UI verification needed - no HTTP
+                     surface yet by design. Phase 17 Increments 1-3 + Phase 15/16's full validation
+                     history remains in docs/execution/PHASE_17.md / PHASE_15.md / PHASE_16.md.
+Last commit:         b52378e — "Phase 17 Increment 3: full MOT history UI" — 2026-08-19. Increment 4
+                     not yet committed as of this STATE.md update.
 ```
 
 ## Completed initiative: Zara + Magneto UI overhaul (separate from the roadmap above)

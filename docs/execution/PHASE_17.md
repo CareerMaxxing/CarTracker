@@ -296,3 +296,65 @@ STOP CONDITION: None hit.
 - Not yet deployed to production - same reasoning as Increments 1-2 (no real-credential behavior
   change yet visible to the user; this increment is a pure display improvement on top of the same mock
   data they've already seen).
+
+## Increment 4: Advisory text normalization
+
+### Task packet
+
+```
+TASK ID: PHASE-17-04
+TITLE: Normalize MOT advisory text into a stable per-vehicle dedup key, before anything creates
+  Planner items from advisories
+OBJECTIVE: Give later increments a single, correct place to decide "is this the same real-world issue
+  as one flagged in an earlier test." A Plan-agent design review (run before Increment 1 started)
+  explicitly flagged the risk of building this AFTER the Planner-linkage actions (original plan order):
+  if "Add to Planner" ships first keyed by raw per-test comment text, a 3-year-recurring "front tyre
+  worn" advisory becomes 3 separate cards, and fixing the key format later is a breaking change for
+  already-created records. This increment closes that gap before it can happen.
+INPUTS: External/Implementations/Mock/MockDVSAAdapter.cs's AdvisoryPhrases (realistic example text,
+  no reference codes though - real DVSA text does include trailing codes like "(5.2.3)" per the API
+  docs read in Increment 2's research); Helper/StaticHelper.cs (confirmed the right home - a large
+  collection of pure, stateless static utility functions with an existing precedent method,
+  GetHash(string), reused directly rather than inventing a new hashing approach); PlanRecord.VehicleId
+  (confirmed the key must be scoped per-vehicle - the same wording on two different vehicles must not
+  collapse into one Planner item).
+ALLOWED SCOPE: Two new static functions on StaticHelper (NormalizeMotAdvisoryText,
+  GetMotAdvisoryKey(vehicleId, text)) + unit tests. No PlanRecord field yet, no UI, no controller
+  action - Increment 5 consumes this.
+NON-SCOPE: PlanRecord.SourceMotKey field, "Add to Planner" actions, recurring-advisory UI grouping
+  (all Increment 5).
+IMPLEMENTATION REQUIREMENTS: Strip a trailing parenthetical reference code, lowercase, collapse
+  internal whitespace - matching the plan's stated heuristic exactly (not a guarantee against every
+  possible DVSA re-wording, an explicitly acknowledged known limitation for a single-user personal app,
+  not over-built with fuzzy NLP matching).
+DELIVERABLES: Helper/StaticHelper.cs; Tests/MotAdvisoryNormalizationTests.cs (new).
+ACCEPTANCE CRITERIA:
+  1. dotnet build succeeds, 0 new warnings/errors.
+  2. dotnet test passes, including new unit tests proving: trailing reference codes are stripped;
+     case/whitespace differences collapse to the same key; genuinely different advisory text stays
+     different; blank input is handled; the same normalized text on two different vehicles produces
+     different keys (per-vehicle scoping actually works).
+VALIDATION COMMANDS: dotnet build CarCareTracker.csproj; dotnet test Tests/CarCareTracker.Tests.csproj.
+STOP CONDITION: None hit.
+```
+
+### What was built
+
+- `StaticHelper.NormalizeMotAdvisoryText(string text)` — strips a trailing `(...)` reference code,
+  lowercases, collapses internal whitespace; blank/whitespace-only input returns `string.Empty`.
+- `StaticHelper.GetMotAdvisoryKey(int vehicleId, string text)` — combines the vehicle id with the
+  normalized text and reuses the existing `GetHash` (SHA-256 hex) rather than inventing a new hashing
+  approach, so the same real-world issue recurring across multiple years of one vehicle's MOT tests
+  produces the same key, while the identical wording on a different vehicle does not.
+- `Tests/MotAdvisoryNormalizationTests.cs` (new) — 6 pure unit tests (no `WebApplicationFactory`
+  needed, since these are dependency-free functions) covering reference-code stripping, case/whitespace
+  insensitivity, distinct-text distinctness, blank input, and per-vehicle key scoping in both
+  directions (same text+vehicle -> same key; same text, different vehicle -> different key).
+
+### Verification
+
+- `dotnet build CarCareTracker.csproj` — 0 new warnings, 0 errors.
+- `dotnet test Tests/CarCareTracker.Tests.csproj` — 17/17 passing (11 pre-existing + 6 new), no
+  regressions.
+- No curl/UI verification needed - this increment has no HTTP surface yet, by design (Increment 5
+  consumes it).

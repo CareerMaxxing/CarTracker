@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Text.Unicode;
 
 namespace CarCareTracker.Helper
@@ -1080,6 +1081,30 @@ namespace CarCareTracker.Helper
             }
 
             return Sb.ToString();
+        }
+        /// <summary>
+        /// Normalizes MOT advisory/failure text so the same real-world issue flagged across multiple
+        /// years (DVSA re-word/re-number the same defect per test, e.g. a trailing "(5.2.3)" reference
+        /// code that changes between tests) collapses to the same value - strips a trailing
+        /// parenthetical code, lowercases, and collapses internal whitespace. Used to derive
+        /// PlanRecord.SourceMotKey - see PHASE_17.md Increment 4/5.
+        /// </summary>
+        public static string NormalizeMotAdvisoryText(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return string.Empty;
+            }
+            var normalized = Regex.Replace(text.Trim(), @"\s*\([^)]*\)\s*$", string.Empty);
+            normalized = Regex.Replace(normalized.Trim().ToLowerInvariant(), @"\s+", " ");
+            return normalized;
+        }
+        /// <summary>A stable per-vehicle dedup key for an MOT advisory, combining its normalized text
+        /// with the vehicle it belongs to (the same wording on two different vehicles must not
+        /// collapse into one Planner item).</summary>
+        public static string GetMotAdvisoryKey(int vehicleId, string text)
+        {
+            return GetHash($"{vehicleId}|{NormalizeMotAdvisoryText(text)}");
         }
         public static string TrimDecimal(decimal input, int maxDecimalPlace = 3, string format = "N")
         {
