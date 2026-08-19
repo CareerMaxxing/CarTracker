@@ -6,9 +6,14 @@ conversation history.
 ```
 PROJECT STATUS
 Current phase:      Phase 17 — Real MOT History & Advisory Tracking — ✅ COMPLETE, deployed to
-                     production, confirmed live via Tailscale
-Current task:       None - phase finished, including production deployment. See docs/execution/
-                     PHASE_17.md for full increment-by-increment detail.
+                     production, running on REAL DVSA API data (not mock, not the manual bridge) as of
+                     2026-08-19 - the user's own DVSA API application was approved and credentials
+                     activated same-day.
+Current task:       None - phase finished, including production deployment and real-credential
+                     activation. Increments 8-9 (curated-synonym grouping + resolved-status visibility;
+                     real-credential activation + a real defects-field-name bug found and fixed) came
+                     from direct user feedback after seeing the deployed feature live, and are also
+                     deployed. See docs/execution/PHASE_17.md for full increment-by-increment detail.
 Status:              Increment 1 done and verified: DVSAConfig model + ServerConfig nested property +
                      IConfigHelper.GetDVSAConfig() (reads live per-call, no restart needed - matches
                      the existing MailConfig/OpenIDConfig convention) + Setup UI fields (Tenant Id/
@@ -48,16 +53,13 @@ Last completed:      Phase 16 (Sidebar App Shell & Dashboard Redesign) - all 11 
                      form labels, alt text, mobile/responsive validation, performance) are still open,
                      not abandoned - Phase 15, 16, and 17 were all started because the user raised new,
                      higher-priority requests, not because Phase 14 finished.
-Next task:           None decided yet. Candidates: (1) guide the user through their own DVSA API
-                     self-service registration (their action, not something that can be done for them)
-                     so real MOT data starts flowing in automatically - the live-config fallback means
-                     no further code change is needed for that transition, they just need to save the
-                     credentials via /setup once they have them. (2) A defensive fix for the Kestrel-
-                     binding-can-be-silently-wiped issue found during this deployment (see DEFERRED.md).
-                     (3) Phase 14's remaining hardening areas (see Known blockers/DEFERRED.md). (4) The
-                     pre-existing Planner null-safety gap in DeletePlanRecordById/
-                     GetPlanRecordForEditById (DEFERRED.md). (5) AI/OCR invoice scanning (still fully
-                     deferred). Ask the user rather than assume priority order.
+Next task:           None decided yet - real DVSA data is now live, closing out the item that was here
+                     before. Remaining candidates: (1) A defensive fix for the Kestrel-binding-can-be-
+                     silently-wiped issue found during deployment (see DEFERRED.md). (2) Phase 14's
+                     remaining hardening areas (see Known blockers/DEFERRED.md). (3) The pre-existing
+                     Planner null-safety gap in DeletePlanRecordById/GetPlanRecordForEditById
+                     (DEFERRED.md). (4) AI/OCR invoice scanning (still fully deferred). Ask the user
+                     rather than assume priority order.
 Known blockers:      1. No browser/screenshot tool in this environment - Phase 14's remaining
                         accessibility work would still need static-code-audit + curl verification,
                         not live screen-reader/keyboard testing.
@@ -133,23 +135,35 @@ Do not:              Assume Phase 14 is "done" - three increments complete (secu
                      ran. dotnet run from the dev repo still works for development but now operates on
                      a separate, diverging dataset - be explicit with the user about which copy
                      they're looking at if this ever comes up.
-Last validation:     Phase 17 production deployment (2026-08-19, the real confirmation): sc.exe query
-                     confirmed STATE: 1 STOPPED before publish, dotnet publish scoped to
-                     CarCareTracker.csproj only, data folder + real vehicle database confirmed
+Last validation:     Real DVSA credential activation (2026-08-19): user's own DVSA API application was
+                     approved, credentials written directly to production's serverConfig.json (not
+                     through /setup - that form resubmits the whole config object and would have
+                     re-wiped the Kestrel binding). Live API call immediately succeeded (real OAuth
+                     token, correct vehicle data) but every test showed zero defects - traced to a real
+                     bug (the live API names its defect list "defects", not "rfrAndComments" as assumed
+                     from older docs) by fetching the raw API response directly with the real
+                     credentials, fixed with a dedicated wire-format DTO, redeployed, reverified: 56
+                     real defects now present across 22 tests via curl against both 127.0.0.1:5299 and
+                     the real Tailscale URL (which had also independently gone down and self-recovered
+                     mid-session - confirmed separately before trusting the app-level check again). The
+                     Increment 7 manual override file was deleted from production now that it's
+                     superseded - a stale real-looking fallback would be more misleading than mock if
+                     DVSAConfig were ever lost again. Earlier in the same session: Phase 17 production
+                     deployment - sc.exe query confirmed STATE: 1 STOPPED before publish, dotnet publish
+                     scoped to CarCareTracker.csproj only, data folder + real vehicle database confirmed
                      untouched, binary timestamp confirmed updated, sc.exe query confirmed STATE: 4
                      RUNNING after restart. First restart came up on the wrong port (5000, not 5299) -
                      a real pre-existing production issue (Kestrel binding silently wiped from
                      serverConfig.json before this session started) found and fixed via a second
                      stop/fix-config/start cycle, independently confirmed via sc.exe query both times
-                     (never just trusted the user's report). Final state independently verified via
+                     (never just trusted the user's report). That deployment was verified via
                      curl against BOTH 127.0.0.1:5299 AND the real https://legion.tail80af14.ts.net
                      Tailscale URL: new Phase 17 code confirmed live (DVSA Setup UI field present),
                      both real vehicles' data intact. All 6 code increments' full validation history
                      (build/test/curl detail per increment) remains in docs/execution/PHASE_17.md.
-Last commit:         5256f85 — "Phase 17 Increment 6: lighter mark-resolved status (final increment)"
-                     — 2026-08-19. The production deployment itself involved a config-file fix on the
-                     production server (data/config/serverConfig.json, outside the git repo) but no
-                     source code changes, so no new commit was needed for that step.
+Last commit:         218f745 — "Fix real DVSA API defect mapping (Increment 9)" — 2026-08-19. Real
+                     credentials themselves live only in production's serverConfig.json (outside the
+                     git repo, correctly never committed).
 ```
 
 ## Completed initiative: Zara + Magneto UI overhaul (separate from the roadmap above)

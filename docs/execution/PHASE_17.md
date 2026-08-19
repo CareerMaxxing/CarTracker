@@ -735,3 +735,45 @@ Files touched: `Helper/StaticHelper.cs`, `Models/GovernmentData/VehicleGovernmen
   flow against real data: added an advisory (flips to "In Planner"), marked it resolved (flips to
   "Resolved" with strikethrough, header count updates from 0/30 to 1/30), deleted it to clean up. Dev
   environment restored to its pre-verification state afterward.
+
+## Real DVSA credentials activated + Increment 9: defect field-name fix
+
+User's DVSA API self-service request was approved - they pasted real credentials (tenant/client id,
+client secret, API key) directly. Written straight to `data/config/serverConfig.json` on production
+rather than through the `/setup` form, since that form resubmits the *entire* config object and would
+have silently wiped the Kestrel port binding again (the same landmine from the earlier deployment
+incident) - editing the file directly avoided that risk entirely.
+
+**Real bug found immediately on activation**: the live API call succeeded (real OAuth token, real
+vehicle data - correct make/model/every test date and mileage matched the user's screenshots exactly),
+but every single test came back with zero advisories/defects. Root cause, confirmed by fetching the raw
+API response directly with the user's real credentials: the real `v1/trade/vehicles/registration/
+{registration}` endpoint names its per-test defect list `defects`, not `rfrAndComments` as the model
+had assumed based on older/deprecated API documentation research from Increment 2.
+`PropertyNameCaseInsensitive` only handles casing differences, not a genuinely different field name, so
+this had been silently deserializing to an always-empty list.
+
+Fixed with a dedicated wire-format DTO (`DVSAApiResponse`/`DVSAApiTest`/`DVSAApiDefect` inside
+`RealDVSAAdapter.cs`) matching the real shape exactly, explicitly mapped onto the existing
+`DVSAMotHistory` domain model - deliberately not just renaming the domain model's own property, since
+that would also change the app's own already-shipped `/api/vehicle/governmentdata` JSON output shape
+for no reason. Also normalizes the real API's full ISO datetime (`2026-08-03T17:52:59.000Z`) down to
+a clean date (`2026-08-03`) for display consistency with mock/manual data.
+
+**A genuinely useful side effect**: comparing the raw real response against the hand-transcribed
+Increment 7 override data confirmed the manual transcription had been accurate for all 19 visible
+tests, and the real API additionally supplied 3 earlier tests (2008-2010) that were cut off in the
+user's screenshots, plus the vehicle's real colour (Grey) and exact first-registered date - none of
+which had been guessable from the screenshots alone.
+
+**Verification**: dotnet build/test unaffected (25/25 still passing - this is adapter-internal, no
+model/interface change). Deployed to production (same stop/publish/start sequence), verified via curl
+against both `127.0.0.1:5299` and the real Tailscale URL (which had also gone down independently in
+between deployments - unrelated infrastructure issue, self-resolved, confirmed back with a plain
+`curl -o /dev/null` check before re-verifying the app itself): `isMockData:false`, 56 real defects
+correctly present across 22 tests, matching the raw API response exactly. The now-superseded Increment
+7 manual override file (`dvsaMotOverrides.json`) was deleted from production - leaving stale-but-real-
+looking frozen data in place as a silent fallback would be more misleading than the honest mock
+fallback if `DVSAConfig` were ever lost again (no "Mock" badge would warn the user it's frozen).
+
+**Phase 17 is now running on genuinely live DVSA data in production**, not mock, not a manual bridge.
