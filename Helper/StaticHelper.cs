@@ -19,6 +19,11 @@ namespace CarCareTracker.Helper
         public const string DbName = "data/cartracker.db";
         public const string UserConfigPath = "data/config/userConfig.json";
         public const string ServerConfigPath = "data/config/serverConfig.json";
+        /// <summary>Optional, manually-maintained real MOT history data, keyed by registration - a
+        /// temporary bridge for real (not mock) data before real DVSA API credentials exist. Never
+        /// committed (data/ is gitignored - this is real personal vehicle data). See
+        /// RealDVSAAdapter.cs / PHASE_17.md.</summary>
+        public const string DVSAMotOverridesPath = "data/config/dvsaMotOverrides.json";
         public const string LegacyUserConfigPath = "config/userConfig.json";
         public const string LegacyServerConfigPath = "config/serverConfig.json";
         public const string AdditionalWidgetsPath = "data/widgets.html";

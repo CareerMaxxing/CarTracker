@@ -630,3 +630,35 @@ cleared while a non-default port is in active use) - not fixed here, since it's 
 unrelated to Phase 17's actual scope, but flagged here rather than left to be rediscovered blind.
 
 **Phase 17 is now fully complete and live in production.**
+
+## Increment 7: Temporary manual MOT data override
+
+User request, after seeing the deployed feature still showing mock data: they've requested real DVSA
+API access (pending, self-service, not yet arrived) and want their **actual real MOT history** shown
+in the meantime rather than the mock generator's fake data, since they're about to send it directly.
+
+### What was built
+
+- `StaticHelper.DVSAMotOverridesPath` (`data/config/dvsaMotOverrides.json`) - an optional, manually-
+  maintained JSON file, `{ "<registration>": <DVSAMotHistory> }`, never committed (`data/` is
+  gitignored - this is real personal vehicle data, same rule as the LiteDB itself).
+- `RealDVSAAdapter.GetMotHistory` now checks, in order: (1) the real API if `DVSAConfig` is fully
+  configured - unchanged from Increment 2; (2) this manual override file, matched by registration with
+  whitespace/casing normalized; (3) the existing mock fallback. Once the user's real DVSA credentials
+  arrive and are saved, step 1 takes over automatically - **the override is superseded with no cleanup
+  needed**, matching the user's own framing ("when I get it we will replace the data").
+- Real, user-provided historical data is marked `IsMockData = false` (honest - it's genuinely their
+  real car's real MOT history, just manually entered rather than live-fetched), so the "Mock" badge
+  correctly disappears once populated.
+
+### Verification
+
+- `dotnet build` - 0 new warnings/errors. `dotnet test` - 22/22 still passing (no interface/behavior
+  change for the existing configured/unconfigured paths).
+- Dev instance: wrote a throwaway override entry for the real BMW Z4's plate ("P15 RJK"), confirmed
+  `/api/vehicle/governmentdata` returned the override content with `isMockData:false` while DVLA data
+  (untouched, still locked-mock) was unaffected; deleted the file and confirmed mock fallback resumed
+  correctly (`isMockData:true` again). Throwaway file only - never committed.
+- The user's actual MOT history data, once received, gets transcribed directly into
+  `C:\Services\CarTracker\data\config\dvsaMotOverrides.json` on the production server - not part of
+  this commit (real personal data, correctly outside the git repo).

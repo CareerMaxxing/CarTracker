@@ -53,18 +53,52 @@ namespace CarCareTracker.External.Implementations.Real
                 && !string.IsNullOrWhiteSpace(dvsaConfig.ClientId)
                 && !string.IsNullOrWhiteSpace(dvsaConfig.ClientSecret)
                 && !string.IsNullOrWhiteSpace(dvsaConfig.ApiKey);
-            if (!isConfigured)
+            if (isConfigured)
             {
-                return _mockAdapter.GetMotHistory(normalized);
+                try
+                {
+                    return FetchRealMotHistory(normalized, dvsaConfig);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Unable to retrieve real DVSA MOT history for {Registration}", normalized);
+                    return new DVSAMotHistory { Found = false, Registration = normalized.ToUpperInvariant(), IsMockData = false };
+                }
+            }
+            var manualOverride = GetManualOverride(normalized);
+            if (manualOverride != null)
+            {
+                return manualOverride;
+            }
+            return _mockAdapter.GetMotHistory(normalized);
+        }
+
+        /// <summary>Temporary bridge for real (not mock) data before real DVSA API credentials exist -
+        /// see StaticHelper.DVSAMotOverridesPath. Superseded automatically the moment DVSAConfig is
+        /// configured (checked above this call), so nothing needs cleaning up once the real API is
+        /// wired up.</summary>
+        private DVSAMotHistory? GetManualOverride(string registrationNumber)
+        {
+            if (!File.Exists(StaticHelper.DVSAMotOverridesPath))
+            {
+                return null;
             }
             try
             {
-                return FetchRealMotHistory(normalized, dvsaConfig);
+                var json = File.ReadAllText(StaticHelper.DVSAMotOverridesPath);
+                var overrides = JsonSerializer.Deserialize<Dictionary<string, DVSAMotHistory>>(json, JsonOptions);
+                if (overrides == null)
+                {
+                    return null;
+                }
+                var normalizedKey = new string(registrationNumber.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
+                var match = overrides.FirstOrDefault(x => new string(x.Key.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant() == normalizedKey);
+                return match.Value;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unable to retrieve real DVSA MOT history for {Registration}", normalized);
-                return new DVSAMotHistory { Found = false, Registration = normalized.ToUpperInvariant(), IsMockData = false };
+                _logger.LogError(ex, "Unable to read manual DVSA MOT override data for {Registration}", registrationNumber);
+                return null;
             }
         }
 
