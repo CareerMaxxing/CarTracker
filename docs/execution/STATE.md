@@ -6,30 +6,43 @@ conversation history.
 ```
 PROJECT STATUS
 Current phase:      Phase 17 — Real MOT History & Advisory Tracking — 🟡 IN PROGRESS
-Current task:       Increment 1 (DVSA credential plumbing) complete. Next: Increment 2 (RealDVSAAdapter
-                     - OAuth2 token fetch/cache + the actual API call, live-config-selected in place of
-                     MockDVSAAdapter, plus the small DVSAMotComment.Dangerous field addition and the
-                     CLAUDE.md locked-decision update). See docs/execution/PHASE_17.md for full
-                     increment-by-increment detail.
-Status:             Increment 1 done and verified: DVSAConfig model + ServerConfig nested property +
+Current task:       Increments 1-2 complete. Next: Increment 3 (full MOT history UI - every past test,
+                     not just latest, colour-coded advisory/failure types, plus fixing a pre-existing
+                     Mock-badge bug found during Plan review: _GovernmentData.cshtml's "Mock" badge
+                     checks DVLAData.Found instead of IsMockData). See docs/execution/PHASE_17.md for
+                     full increment-by-increment detail.
+Status:              Increment 1 done and verified: DVSAConfig model + ServerConfig nested property +
                      IConfigHelper.GetDVSAConfig() (reads live per-call, no restart needed - matches
                      the existing MailConfig/OpenIDConfig convention) + Setup UI fields (Tenant Id/
                      Client Id/Client Secret/API Key + a Skip toggle) added to the existing
-                     "Miscellaneous" wizard page rather than a new wizard page. Build clean (0 warn/0
-                     err), all 10 pre-existing tests still pass, curl-verified the fields render, a
-                     throwaway POST round-tripped correctly into data/config/serverConfig.json (reset
-                     to {} afterward - throwaway test data, not real config). A Plan-agent design
-                     review ran before this increment started and reshaped the plan meaningfully: found
-                     PlanProgress is load-bearing in the Kanban board (6 hardcoded swimlanes,
-                     Views/Vehicle/Plan/_PlanRecords.cshtml lines 9-14) and the API's validation
-                     (Controllers/API/PlanController.cs) - confirmed the later "mark resolved" concept
-                     (Increment 6) must be an orthogonal field, not a 7th enum value; found Postgres
-                     stores PlanRecord as a single jsonb blob (no EF Core/migrations anywhere) so new
-                     POCO fields are free on both backends; found the dedup-key field (Increment 5)
-                     should follow the ReminderRecordId precedent (system-internal, excluded from the
-                     user-facing edit form) rather than go in the user-editable ExtraFields; reordered
-                     the advisory-text-normalization step to happen BEFORE the Planner-linkage actions
-                     that depend on it, not after.
+                     "Miscellaneous" wizard page rather than a new wizard page.
+                     Increment 2 done and verified: RealDVSAAdapter is now the one registered
+                     IDVSAAdapter (Program.cs), reading GetDVSAConfig() live per-call - falls back
+                     transparently to the untouched MockDVSAAdapter when any of the 4 fields is blank,
+                     otherwise does the real OAuth2 client-credentials flow (login.microsoftonline.com,
+                     token cached/refreshed ~1min before its ~1200s expiry) + the real MOT History API
+                     call (confirmed live via WebFetch: GET https://history.mot.api.gov.uk/v1/trade/
+                     vehicles/registration/{registration}, headers Authorization: Bearer + x-api-key),
+                     deserializing straight into the existing DVSAMotHistory model
+                     (PropertyNameCaseInsensitive - no separate DTO needed). Added
+                     DVSAMotComment.Dangerous (the one real field gap vs the live API, confirmed via
+                     doc fetch). Real failure-path proven end-to-end: fake-but-complete credentials
+                     caused a genuine request to reach Microsoft's real OAuth endpoint and get a real
+                     400 back, caught and logged, degraded to Found:false with HTTP 200 still returned
+                     - no crash. CLAUDE.md's locked-decision bullet updated to record the DVSA sign-off
+                     (DVLA explicitly still requires its own separate sign-off). New regression test
+                     Tests/DVSAAdapterFallbackTests.cs added (11/11 passing).
+                     A Plan-agent design review ran before Increment 1 started and reshaped the whole
+                     phase's plan meaningfully: found PlanProgress is load-bearing in the Kanban board
+                     (6 hardcoded swimlanes, Views/Vehicle/Plan/_PlanRecords.cshtml lines 9-14) and the
+                     API's validation (Controllers/API/PlanController.cs) - confirmed the later "mark
+                     resolved" concept (Increment 6) must be an orthogonal field, not a 7th enum value;
+                     found Postgres stores PlanRecord as a single jsonb blob (no EF Core/migrations
+                     anywhere) so new POCO fields are free on both backends; found the dedup-key field
+                     (Increment 5) should follow the ReminderRecordId precedent (system-internal,
+                     excluded from the user-facing edit form) rather than go in the user-editable
+                     ExtraFields; reordered the advisory-text-normalization step to happen BEFORE the
+                     Planner-linkage actions that depend on it, not after.
 Last completed:      Phase 16 (Sidebar App Shell & Dashboard Redesign) - all 11 increments, deployed to
                      production, confirmed live by the user. Phase 15 (Remote Access & Persistent
                      Hosting) before that - all 5 increments resolved (4 explicitly declined by the
@@ -37,16 +50,17 @@ Last completed:      Phase 16 (Sidebar App Shell & Dashboard Redesign) - all 11 
                      form labels, alt text, mobile/responsive validation, performance) are still open,
                      not abandoned - Phase 15, 16, and 17 were all started because the user raised new,
                      higher-priority requests, not because Phase 14 finished.
-Next task:           Phase 17 Increment 2 (RealDVSAAdapter). Requires reconfirming the exact current
-                     DVSA MOT History API REST endpoint path against live docs at
-                     documentation.history.mot.api.gov.uk at implementation time - prior research did
-                     not fully pin this down (an older/deprecated doc showed a different host/path).
-                     Also requires the user to complete their own DVSA API self-service registration
-                     before real-data behavior can be end-to-end verified - not blocking on Increment 2
-                     itself shipping, since the live-config fallback means it ships and is fully
-                     testable against the existing mock regardless of that timing. Other open items,
-                     unchanged from before Phase 17 started: Phase 14's remaining hardening areas (see
-                     Known blockers/DEFERRED.md), and AI/OCR invoice scanning (still fully deferred).
+Next task:           Phase 17 Increment 3 (full MOT history UI: every past test rendered in
+                     _GovernmentData.cshtml, not just the latest via .FirstOrDefault(); colour-coded
+                     advisory/failure types; fix the pre-existing Mock-badge bug). The real DVSA
+                     endpoint question from before Increment 2 is now resolved and implemented - no
+                     longer open. Still requires the user to complete their own DVSA API self-service
+                     registration before real (non-mock) data can be seen live - not blocking further
+                     increments from shipping, since the live-config fallback means each one ships and
+                     is fully testable against the existing mock regardless of that timing. Other open
+                     items, unchanged from before Phase 17 started: Phase 14's remaining hardening
+                     areas (see Known blockers/DEFERRED.md), and AI/OCR invoice scanning (still fully
+                     deferred).
 Known blockers:      1. No browser/screenshot tool in this environment - Phase 14's remaining
                         accessibility work would still need static-code-audit + curl verification,
                         not live screen-reader/keyboard testing.
@@ -122,21 +136,19 @@ Do not:              Assume Phase 14 is "done" - three increments complete (secu
                      ran. dotnet run from the dev repo still works for development but now operates on
                      a separate, diverging dataset - be explicit with the user about which copy
                      they're looking at if this ever comes up.
-Last validation:     Phase 17 Increment 1 (2026-08-19): dotnet build (0 warn/0 err after killing a
-                     stale dev-instance process from a prior session holding the build lock), dotnet
-                     test (10/10 passing, no regressions), dev instance on port 5300 (not the
-                     production 5299 service) curl-verified /setup renders the 4 new fields + skip
-                     toggle, a throwaway POST round-tripped into data/config/serverConfig.json
-                     correctly and was reset to {} afterward, GetDVSAConfig() confirmed to return a
-                     non-null default when unconfigured. Not yet deployed to production - this
-                     increment is plumbing-only, no user-visible behavior change; production deployment
-                     is planned once a coherent, user-facing subset of Phase 17 is ready. Phase 15 +
-                     Phase 16's full validation history (including the 2026-08-19 production deployment
-                     that confirmed Phase 16 live on the user's phone) remains in docs/execution/
-                     PHASE_15.md / PHASE_16.md.
-Last commit:         Phase 17 Increment 1 not yet committed as of this STATE.md update - see
-                     docs/execution/PHASE_17.md. Prior commit: 52256f2 — "Phase 16 truly complete:
-                     production deployment confirmed live by user" — 2026-08-19.
+Last validation:     Phase 17 Increment 2 (2026-08-19): dotnet build (0 new warn/0 err), dotnet test
+                     (11/11 passing including the new DVSAAdapterFallbackTests), dev instance on port
+                     5300 curl-verified against both real dev vehicles (BMW Z4 id=1, Volvo S80 id=2)
+                     that unconfigured behavior is byte-identical to pre-increment mock output, and a
+                     genuine real-network failure-path test (fake-but-complete credentials -> real
+                     login.microsoftonline.com 400 -> caught/logged -> graceful Found:false, HTTP 200,
+                     no crash) confirmed via the server log. serverConfig.json reset to {} afterward
+                     (throwaway test data). Not yet deployed to production - still no user-visible
+                     behavior change without real credentials the user hasn't registered for yet. Phase
+                     17 Increment 1 + Phase 15/16's full validation history remains in docs/execution/
+                     PHASE_17.md / PHASE_15.md / PHASE_16.md.
+Last commit:         90f43fe — "Phase 17 Increment 1: DVSA credential plumbing" — 2026-08-19. Increment
+                     2 not yet committed as of this STATE.md update.
 ```
 
 ## Completed initiative: Zara + Magneto UI overhaul (separate from the roadmap above)

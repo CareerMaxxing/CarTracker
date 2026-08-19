@@ -39,8 +39,12 @@ project follows (see `docs/execution/ROADMAP.md` for the phase list derived from
   phone is just another client of the same one server on the home PC, reachable via Tailscale. No
   data layer changed. Revisited with the human owner's explicit sign-off in conversation (Phase 15).
 - **AI/OCR**: deferred. Do not implement in V1.
-- **Government data (DVLA/DVSA)**: mocked adapters only until explicitly told to integrate real
-  credentials.
+- **Government data (DVLA/DVSA)**: DVLA remains mocked-only. DVSA (MOT History) was revisited with
+  the human owner's explicit sign-off (Phase 17, `AskUserQuestion`) - it now uses the real DVSA MOT
+  History API when `DVSAConfig` credentials are configured via the Setup UI (`Helper/ConfigHelper.cs`
+  `GetDVSAConfig()`, read live per-call), falling back to the existing deterministic mock adapter
+  otherwise (`External/Implementations/Real/RealDVSAAdapter.cs`). Do not add real credentials for
+  DVLA without the same explicit sign-off.
 - **Foundation**: build on LubeLogger's existing domain model and codebase; do not rebuild generic
   vehicle-management functionality from scratch.
 - **UI**: a major UI/UX overhaul is in scope, but existing functionality must be preserved through
@@ -87,7 +91,7 @@ less.
 - Add cloud infrastructure, sync services, or native mobile infrastructure without an explicit
   requirement.
 - Implement AI/OCR in V1.
-- Use real DVLA/DVSA credentials during the mocked-adapter phase.
+- Use real DVLA credentials without the same explicit sign-off DVSA already received in Phase 17.
 - Continue working indefinitely after the current phase's defined scope is complete.
 - Declare a task or phase complete without evidence (build passing, tests passing, acceptance
   criteria checked one by one).

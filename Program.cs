@@ -1,5 +1,6 @@
 using CarCareTracker.External.Implementations;
 using CarCareTracker.External.Implementations.Mock;
+using CarCareTracker.External.Implementations.Real;
 using CarCareTracker.External.Interfaces;
 using CarCareTracker.Helper;
 using CarCareTracker.Logic;
@@ -113,9 +114,13 @@ else
     builder.Services.AddSingleton<IDBHealthCheck, DBHealthCheck>();
 }
 
-//configure government data adapters (mocked only - see CLAUDE.md's locked decision)
+//configure government data adapters
+//DVLA remains mocked-only per CLAUDE.md's locked decision (not yet revisited).
 builder.Services.AddSingleton<IDVLAAdapter, MockDVLAAdapter>();
-builder.Services.AddSingleton<IDVSAAdapter, MockDVSAAdapter>();
+//DVSA uses real API data when DVSAConfig credentials are configured (read live, per-call), falling
+//back to the deterministic mock otherwise - see RealDVSAAdapter.cs and CLAUDE.md (revisited with the
+//user's explicit sign-off in Phase 17).
+builder.Services.AddSingleton<IDVSAAdapter, RealDVSAAdapter>();
 
 //configure helpers
 builder.Services.AddSingleton<IFileHelper, FileHelper>();

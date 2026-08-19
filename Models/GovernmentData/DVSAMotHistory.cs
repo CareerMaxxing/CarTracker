@@ -32,5 +32,6 @@ namespace CarCareTracker.Models
         public string Text { get; set; } = string.Empty;
         /// <summary>"ADVISORY", "MINOR", "MAJOR", "DANGEROUS", or "FAIL" per the real API.</summary>
         public string Type { get; set; } = string.Empty;
+        public bool Dangerous { get; set; }
     }
 }
