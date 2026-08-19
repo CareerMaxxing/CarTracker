@@ -662,3 +662,24 @@ in the meantime rather than the mock generator's fake data, since they're about 
 - The user's actual MOT history data, once received, gets transcribed directly into
   `C:\Services\CarTracker\data\config\dvsaMotOverrides.json` on the production server - not part of
   this commit (real personal data, correctly outside the git repo).
+
+### Real data loaded (2026-08-19)
+
+User sent screenshots of the real gov.uk MOT history check for the BMW Z4 (P15 RJK) - 19 tests spanning
+2011-2026 transcribed by hand into `dvsaMotOverrides.json` on production, verified live via curl against
+both `127.0.0.1:5299` and the real Tailscale URL (`isMockData:false`, correct make/model/test count).
+One earliest visible entry (24 May 2010, PASS) was deliberately omitted - its MOT test number and
+expiry were cut off in the screenshots, and fabricating them wasn't an option for data meant to replace
+fake mock data with something genuinely accurate.
+
+**Real-world caveat surfaced by loading actual DVSA text** (not visible with the mock generator's
+identical repeated phrases): the recurring-advisory grouping (Increment 5) collapses raw comments
+sharing byte-identical normalized text - real DVSA testers reword the same underlying issue between
+tests (e.g. "Front Play in steering rack inner joint(s) both" one year vs "...both sides" the next),
+so those show as separate rows rather than one recurring one. 56 raw advisory/failure lines across the
+19 tests collapsed to 47 unique grouped rows - the dedup does catch genuinely-identical repeats (e.g.
+verbatim-identical brake-hose/undertray phrasing repeated across adjacent tests), just not
+same-issue-different-wording ones. This matches the plan's originally-flagged known limitation
+("DVSA advisory wording isn't always byte-identical year to year... not over-built with fuzzy NLP
+matching for a single-user personal app") - not a bug, just now visible with real text instead of
+clean mock data.
