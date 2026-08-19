@@ -88,10 +88,18 @@ html {
 
 .swimlane {
     height: 100%;
+    /* a real minimum width so a column label like "Parts Sourced" never has to fit into less space
+       than it needs - crushing N columns into one viewport width (the old flex-grow-1-with-no-wrap
+       behavior) is what forced the header font below to truncate. See PHASE_17.md's Increment 11. */
+    min-width: 11rem;
 }
 .swimlane-container {
     height: 100%;
     padding-bottom: 0.25rem;
+    /* once columns hit their min-width above, scroll sideways for more instead of shrinking further -
+       the standard Kanban-board pattern (Trello etc.), and legible at any viewport width. */
+    overflow-x: auto;
+    flex-wrap: nowrap;
 }
 
 .showOnPrint {
@@ -950,6 +958,14 @@ html[data-bs-theme="dark"] .swal2-validation-message {
     padding-left: 0.5rem;
     padding-right: 0.5rem;
     padding-top: 0.25rem;
+}
+.swimlane-header .display-7 {
+    /* .display-7 is a page-heading-scale class (~1.6-2rem) - much too large for a column label
+       ("Parts Sourced") that also needs to fit a count badge beside it in the same 5vh header row.
+       Override just in this context rather than touching .display-7 itself, which is used elsewhere
+       for actual headings. */
+    font-size: 1rem;
+    font-weight: 600;
 }
 .kiosk-card:hover {
     box-shadow: var(--ct-shadow-md);

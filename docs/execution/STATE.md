@@ -5,16 +5,15 @@ conversation history.
 
 ```
 PROJECT STATUS
-Current phase:      Phase 17 — Real MOT History & Advisory Tracking — ✅ COMPLETE, deployed to
-                     production, running on REAL DVSA API data (not mock, not the manual bridge) as of
-                     2026-08-19 - the user's own DVSA API application was approved and credentials
-                     activated same-day.
-Current task:       None - phase finished, including production deployment and real-credential
-                     activation. Increments 8-10 (curated-synonym grouping + resolved-status
-                     visibility; real-credential activation + a real defects-field-name bug found and
-                     fixed; an "Ignored" section for insignificant MOT items) all came from direct user
-                     feedback after seeing the deployed feature live, and are also deployed. See
-                     docs/execution/PHASE_17.md for full increment-by-increment detail.
+Current phase:      Phase 18 — Post-Deployment Functionality Review — 🟡 IN PROGRESS. Phase 17 (Real
+                     MOT History & Advisory Tracking) is ✅ COMPLETE, deployed, running on real DVSA
+                     data since 2026-08-19 - see PHASE_17.md.
+Current task:       Phase 18 Increment 1 (Kanban board CSS fix) complete and deployed. Two findings
+                     (Parts vs Supplies redundancy; Calendar-vs-Timeline scope) documented in
+                     PHASE_18.md, awaiting the user's direction before any code changes - both are real
+                     architectural/scope decisions, not implementation details to guess at. See
+                     docs/execution/PHASE_18.md for full detail, and its "Root cause found" section for
+                     the app-wide cache-busting fix this phase started with.
 Status:              Increment 1 done and verified: DVSAConfig model + ServerConfig nested property +
                      IConfigHelper.GetDVSAConfig() (reads live per-call, no restart needed - matches
                      the existing MailConfig/OpenIDConfig convention) + Setup UI fields (Tenant Id/
