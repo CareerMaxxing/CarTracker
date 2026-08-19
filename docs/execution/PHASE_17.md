@@ -484,3 +484,118 @@ STOP CONDITION: None hit.
   the user would actually want to use; deployment is planned once Increment 6 (the "mark resolved"
   status and cleanup pass) completes the full loop the user asked for, so there's one coherent thing to
   review rather than a half-finished feature.
+
+## Increment 6: Lighter "mark resolved" status
+
+### Task packet
+
+```
+TASK ID: PHASE-17-06
+TITLE: Orthogonal "mark resolved" status for MOT-linked Planner items - the final increment
+OBJECTIVE: Let the user cross off an MOT advisory once it's actually been addressed, without routing
+  through PlanProgress.Done (which auto-creates a ServiceRecord - the wrong behavior when the real fix
+  was already logged separately, or wasn't a "service" at all). Also close the loop on the user's
+  original ask: their tyres, already replaced in real life, need a one-time way to be marked resolved
+  the moment this feature exists, not treated as new open work.
+INPUTS: The earlier Plan-agent review's finding that PlanProgress is load-bearing in exactly 6
+  hardcoded Kanban swimlanes (Views/Vehicle/Plan/_PlanRecords.cshtml) and the API's validation
+  (Controllers/API/PlanController.cs) - confirms a 7th enum value isn't viable, must be an orthogonal
+  field; Increment 5's SourceMotKey round-trip mechanism (ReminderRecordId-style: JS-tracked, never a
+  raw form field, preserved across ordinary edits) as the pattern to repeat for ResolvedDate;
+  Views/Vehicle/Plan/_PlanRecordItem.cshtml (the Kanban card partial - confirmed the existing Done
+  styling precedent: <s>strikethrough</s> + a non-drag/click-to-delete behavior that must NOT be
+  copied for resolved-but-not-Done items, since resolving must stay independent of Progress entirely).
+ALLOWED SCOPE: PlanRecord.ResolvedDate (nullable DateTime); the same round-trip plumbing as
+  SourceMotKey (PlanRecordInput, modal JS, GetPlanRecordForEditById, template-save clearing); two new
+  PlanController actions (MarkPlanRecordResolved/UnmarkPlanRecordResolved); _PlanRecordItem.cshtml
+  (strikethrough independent of Progress + a Mark Resolved/Resolved toggle scoped to MOT-linked cards
+  only, i.e. non-empty SourceMotKey); new planrecord.js functions.
+NON-SCOPE: A dedicated separate "cleanup pass" modal/checklist UI - deliberately not built (see below).
+IMPLEMENTATION REQUIREMENTS:
+  - ResolvedDate must NOT change Progress or trigger any Done-pipeline side effect - verified directly
+    (see below) rather than just asserted.
+  - The toggle button lives on the card itself (not the shared context-menu system, which only receives
+    planRecordId/currentSwimLane today and would need broader changes to also carry SourceMotKey/
+    ResolvedDate per-card) using event.stopPropagation() so it doesn't also trigger the card's own
+    click-to-edit handler - a simpler, more isolated change than extending the shared menu.
+  - "One-time manual cleanup pass" is satisfied by the Kanban board itself, not a separate UI: after a
+    bulk import, every newly-created MOT-linked card already carries a "Mark Resolved" toggle right on
+    it, in the same board the user already reviews - reusing the existing surface rather than building
+    a parallel checklist modal for what is fundamentally the same review task.
+DELIVERABLES: Models/PlanRecord/PlanRecord.cs, PlanRecordInput.cs; Controllers/Vehicle/PlanController.cs;
+  Views/Vehicle/Plan/_PlanRecordModal.cshtml, _PlanRecordItem.cshtml; wwwroot/js/planrecord.js;
+  Tests/PlanRecordResolvedStatusTests.cs (new); docs/execution/DEFERRED.md (a real pre-existing bug
+  found along the way, logged rather than silently fixed out-of-scope - see below).
+ACCEPTANCE CRITERIA:
+  1. dotnet build succeeds, 0 new warnings/errors.
+  2. dotnet test passes, including new tests proving: mark then unmark both succeed; marking an
+     already-resolved item again is harmless (not an error); a nonexistent planRecordId fails
+     gracefully (not a 500 - this caught a real bug, see below); resolving never changes Progress.
+  3. curl against a real dev vehicle's MOT-linked PlanRecord confirms, in order: the card renders with
+     no strikethrough and a "Mark Resolved" button beforehand; marking resolved adds `<s>` strikethrough
+     and flips the button to a "Resolved" badge while the card's onclick/draggable/context-menu swim
+     lane stay exactly as before (still "Idea", still opens the edit modal, still draggable); the edit
+     modal shows a non-empty resolvedDate; **saving the record through the ordinary edit-and-save flow
+     with an unrelated field changed (cost 0 -> 25) preserves resolvedDate unchanged** - the actual
+     round-trip risk this mechanism exists to prevent; deleting the record cleans up correctly.
+VALIDATION COMMANDS: dotnet build CarCareTracker.csproj; dotnet test Tests/CarCareTracker.Tests.csproj;
+  dotnet run --urls http://localhost:5300 --no-build; curl through the full add -> resolve -> ordinary-
+  edit -> verify-preserved -> delete sequence against vehicleId=1's real MOT data.
+STOP CONDITION: None hit.
+```
+
+### What was built
+
+- `PlanRecord.ResolvedDate` (nullable `DateTime`) + the full round-trip through `PlanRecordInput`
+  (string-typed on the input, matching `DateCreated`/`DateModified`'s existing convention),
+  `GetPlanRecordForEditById`, `_PlanRecordModal.cshtml`'s `getPlanRecordModelData()`, and
+  `planrecord.js`'s `getAndValidatePlanRecordValues()` - the exact same JS-tracked, never-a-raw-form-
+  field mechanism as `SourceMotKey`/`ReminderRecordId`.
+- `SavePlanRecordTemplateToVehicleId` now also clears `ResolvedDate` (alongside the `SourceMotKey`
+  clear from Increment 5) before persisting a template, for the same reason.
+- `PlanController.MarkPlanRecordResolved(planRecordId)` / `UnmarkPlanRecordResolved(planRecordId)` -
+  set/clear `ResolvedDate` directly on the existing record via `SavePlanRecordToVehicle`, touching
+  nothing about `Progress`.
+- **Real bug found and fixed while testing**: both new actions initially copied the existing
+  `GetPlanRecordById(id).Id == default` pattern used elsewhere in this controller
+  (`DeletePlanRecordById`, `GetPlanRecordForEditById`) to detect a missing record - but the LiteDB
+  implementation's `table.FindById()` returns `null`, not a default empty object, for a nonexistent id,
+  so this pattern NullReferenceExceptions (500) instead of failing gracefully. Caught by
+  `MarkResolved_NonexistentPlanRecord_Fails` actually failing on first run - fixed in both new actions
+  with an explicit `existingRecord == null` guard. The two pre-existing call sites carrying the same
+  latent bug were left untouched (out of this increment's scope) and logged in `DEFERRED.md` instead
+  of silently fixed, so it isn't lost.
+- `_PlanRecordItem.cshtml`: strikethrough now applies when `Progress == Done` **or** `ResolvedDate.
+  HasValue`, independent of each other. For cards with a non-empty `SourceMotKey`, a badge/toggle shows
+  "Mark Resolved" (neutral) or "Resolved" (success, checkmark) with `event.stopPropagation()` so
+  clicking it doesn't also open the edit modal - deliberately built on the card itself rather than
+  extending the shared right-click context-menu system, which doesn't currently carry per-card
+  `SourceMotKey`/`ResolvedDate` data.
+- `planrecord.js`: `markPlanRecordResolved`/`unmarkPlanRecordResolved`, both refreshing the board via
+  the existing `getVehiclePlanRecords(vehicleId)` on success.
+- `Tests/PlanRecordResolvedStatusTests.cs` (new) - 3 integration tests: mark/unmark both succeed and
+  marking twice is harmless; a nonexistent id fails gracefully; resolving leaves `Progress` unchanged
+  (still "Idea").
+- `docs/execution/DEFERRED.md`: logged the pre-existing null-safety gap in `DeletePlanRecordById`/
+  `GetPlanRecordForEditById` found while fixing the same pattern in this increment's own new code.
+
+### Verification
+
+- `dotnet build CarCareTracker.csproj` — 0 new warnings, 0 errors.
+- `dotnet test Tests/CarCareTracker.Tests.csproj` — 22/22 passing (19 pre-existing + 3 new; one of the
+  3 failed on first run against real HTTP 500s before the null-check fix, then passed after - a genuine
+  bug caught by the test, not a test written to match already-correct behavior).
+- Dev instance on port 5300. Full curl sequence against the real BMW Z4 (vehicleId=1): added an
+  advisory, confirmed the Kanban card rendered with no strikethrough and a "Mark Resolved" button;
+  marked it resolved and confirmed strikethrough + "Resolved" badge appeared while `onclick`/
+  `draggable`/the context-menu's swim-lane argument (still `'Idea'`) stayed completely unchanged -
+  direct proof resolving never touches `Progress`; confirmed the edit modal's `resolvedDate` JS
+  variable was populated; **saved the record through the ordinary edit-and-save flow with its cost
+  changed from 0 to 25, and confirmed `resolvedDate` survived unchanged** - the specific round-trip
+  failure mode this mechanism exists to prevent, directly exercised and proven fixed; deleted the
+  record and confirmed cleanup. Dev environment restored to its pre-verification state afterward.
+- **This is the last increment of Phase 17.** The full loop the user asked for now works end-to-end:
+  real (or mock-fallback) MOT history -> every past test visible -> recurring advisories grouped
+  across years -> one-click add to Planner (single or bulk) -> mark resolved once addressed, all
+  without disturbing the existing Done/ServiceRecord pipeline. Production deployment is the next step,
+  not yet done - nothing in Phase 17 has reached the user's phone/production service yet.

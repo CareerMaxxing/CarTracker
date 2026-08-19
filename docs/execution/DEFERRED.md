@@ -72,6 +72,19 @@ doc that first identified it, with enough context to pick back up cold.
   extended for it. Round-tripping a plan record through CSV export/import currently loses its
   `ActualCost` value. See `PHASE_06.md`.
 
+## Planner null-safety (found during Phase 17 — Real MOT History & Advisory Tracking)
+
+- **`GetPlanRecordById` can return `null` (LiteDB's `table.FindById` for a missing id), but several
+  existing MVC actions dereference the result without a null check** — `DeletePlanRecordById` and
+  `GetPlanRecordForEditById` (`Controllers/Vehicle/PlanController.cs`) both access
+  `existingRecord.VehicleId`/`result.VehicleId` immediately after the lookup with no null guard, so a
+  request with a stale/nonexistent `planRecordId` would 500 instead of failing gracefully. Found while
+  writing Increment 6's `MarkPlanRecordResolved`/`UnmarkPlanRecordResolved` (which copy the exact same
+  lookup pattern) - those two new actions were fixed with a `existingRecord == null` guard before this
+  was caught by a test, but the two pre-existing actions were left untouched (out of Increment 6's
+  scope - a targeted null-check fix there is low-risk and worth doing as a quick follow-up, not a
+  reason to expand this phase). See `PHASE_17.md`.
+
 ## Government Data (from Phase 8 — Government Data)
 
 - **MOT-status Garage dashboard badge** — Phase 3's `DashboardMetric` opt-in badge system

@@ -26,5 +26,11 @@
         /// user-editable (same treatment as ReminderRecordId), only round-tripped so ordinary edits
         /// don't lose the linkage. See PHASE_17.md Increment 5.</summary>
         public string SourceMotKey { get; set; } = string.Empty;
+        /// <summary>Set once the user marks an MOT-linked item resolved via the lighter status -
+        /// orthogonal to Progress/PlanProgress (which stays reserved for the Idea..Done pipeline and
+        /// its Kanban lanes, hardcoded as exactly 6 swimlanes) so resolving an MOT advisory never
+        /// triggers Done's auto-create-a-ServiceRecord side effect. Null = not resolved. See
+        /// PHASE_17.md Increment 6.</summary>
+        public DateTime? ResolvedDate { get; set; }
     }
 }

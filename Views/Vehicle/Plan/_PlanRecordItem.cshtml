@@ -10,7 +10,7 @@
 <div class="taskCard @(Model.Progress == PlanProgress.Done ? "nodrag" : "") user-select-none mt-2" draggable="@(Model.Progress == PlanProgress.Done ? "false" : "true")" ondragstart="dragStart(event, @Model.Id)" onclick="@(Model.Progress == PlanProgress.Done ? $"deletePlanRecord({Model.Id}, true)" : $"showEditPlanRecordModal({Model.Id})")" oncontextmenu="@($"showPlanTableContextMenu(this, {Model.Id}, '{Model.Progress}')")" onmouseup="stopEvent()" ontouchstart="detectPlanItemLongTouch(this, @Model.Id, '@Model.Progress')" ontouchend="detectPlanItemTouchEndPremature(this)">
     <div class="card-body">
         <div class="d-flex gap-2 align-items-center">
-            @if (Model.Progress == PlanProgress.Done)
+            @if (Model.Progress == PlanProgress.Done || Model.ResolvedDate.HasValue)
             {
                 <span class="taskCard-title text-truncate"><s>@Model.Description</s></span>
             } else
@@ -54,6 +54,17 @@
                 @if (Model.ReminderRecordId != default || Model.ReminderRecordIds.Any())
                 {
                     <span class="status-badge status-badge-spotlight"><i class="bi bi-bell-fill"></i></span>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.SourceMotKey))
+                {
+                    if (Model.ResolvedDate.HasValue)
+                    {
+                        <a class="status-badge status-badge-success" title="@translator.Translate(userLanguage, "Resolved")" onclick="event.stopPropagation(); unmarkPlanRecordResolved(@Model.Id)"><i class="bi bi-check-circle-fill"></i> @translator.Translate(userLanguage, "Resolved")</a>
+                    }
+                    else
+                    {
+                        <a class="status-badge status-badge-neutral" title="@translator.Translate(userLanguage, "Mark Resolved")" onclick="event.stopPropagation(); markPlanRecordResolved(@Model.Id)"><i class="bi bi-check-circle"></i> @translator.Translate(userLanguage, "Mark Resolved")</a>
+                    }
                 }
             </div>
             <div>

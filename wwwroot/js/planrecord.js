@@ -99,6 +99,26 @@ function deletePlanRecord(planRecordId, noModal) {
         }
     });
 }
+function markPlanRecordResolved(planRecordId) {
+    $.post(`/Vehicle/MarkPlanRecordResolved?planRecordId=${planRecordId}`, function (data) {
+        if (data.success) {
+            successToast("Marked Resolved");
+            getVehiclePlanRecords(GetVehicleId().vehicleId);
+        } else {
+            errorToast(data.message);
+        }
+    });
+}
+function unmarkPlanRecordResolved(planRecordId) {
+    $.post(`/Vehicle/UnmarkPlanRecordResolved?planRecordId=${planRecordId}`, function (data) {
+        if (data.success) {
+            successToast("Resolution Cleared");
+            getVehiclePlanRecords(GetVehicleId().vehicleId);
+        } else {
+            errorToast(data.message);
+        }
+    });
+}
 function savePlanRecordToVehicle(isEdit) {
     //get values
     var formValues = getAndValidatePlanRecordValues();
@@ -222,6 +242,7 @@ function getAndValidatePlanRecordValues() {
     var planRecordId = getPlanRecordModelData().id;
     var reminderRecordId = getPlanRecordModelData().reminderRecordId;
     var sourceMotKey = getPlanRecordModelData().sourceMotKey;
+    var resolvedDate = getPlanRecordModelData().resolvedDate;
     //validation
     var hasError = false;
     var extraFields = getAndValidateExtraFields();
@@ -260,7 +281,8 @@ function getAndValidatePlanRecordValues() {
         reminderRecordId: reminderRecordId,
         reminderRecordIds: recurringReminderRecordId,
         copySuppliesAttachment: copySuppliesAttachments,
-        sourceMotKey: sourceMotKey
+        sourceMotKey: sourceMotKey,
+        resolvedDate: resolvedDate
     }
 }
 //drag and drop stuff.

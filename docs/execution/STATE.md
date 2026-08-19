@@ -6,12 +6,11 @@ conversation history.
 ```
 PROJECT STATUS
 Current phase:      Phase 17 — Real MOT History & Advisory Tracking — 🟡 IN PROGRESS
-Current task:       Increments 1-5 complete. Next: Increment 6 (lighter "mark resolved" status - a new
-                     orthogonal PlanRecord.ResolvedDate field, NOT a PlanProgress value per the earlier
-                     Plan-agent review that found the Kanban board hardcodes exactly 6 swimlanes - plus
-                     the one-time manual cleanup pass UI for advisories already resolved before the
-                     feature existed, e.g. the user's tyres). This is the last increment - completes
-                     the full loop the user originally asked for. See docs/execution/PHASE_17.md for
+Current task:       All 6 increments complete (code-wise). Phase 17 is functionally done and fully
+                     verified against real dev data, but has NOT been deployed to production yet - the
+                     user's phone/production service is still on pre-Phase-17 code. Next task is the
+                     production deployment (elevated stop/publish/start sequence, same as Phase 15/16),
+                     which needs the user physically at their PC. See docs/execution/PHASE_17.md for
                      full increment-by-increment detail.
 Status:              Increment 1 done and verified: DVSAConfig model + ServerConfig nested property +
                      IConfigHelper.GetDVSAConfig() (reads live per-call, no restart needed - matches
@@ -52,17 +51,17 @@ Last completed:      Phase 16 (Sidebar App Shell & Dashboard Redesign) - all 11 
                      form labels, alt text, mobile/responsive validation, performance) are still open,
                      not abandoned - Phase 15, 16, and 17 were all started because the user raised new,
                      higher-priority requests, not because Phase 14 finished.
-Next task:           Phase 17 Increment 6 (lighter resolved status + one-time cleanup pass) - the final
-                     increment of this phase. Still requires the user to complete their own DVSA API
-                     self-service registration before real (non-mock) data can be seen live - not
-                     blocking Increment 6 from shipping, since the live-config fallback means it ships
-                     and is fully testable against the existing mock regardless of that timing. Once
-                     Increment 6 lands, this phase needs its first production deployment (nothing in
-                     Phase 17 has been deployed yet - Increments 1-4 had no user-visible change, and
-                     Increment 5's new functionality was deliberately held back from deployment until
-                     the full loop is complete, per the plan). Other open items, unchanged from before
-                     Phase 17 started: Phase 14's remaining hardening areas (see Known blockers/
-                     DEFERRED.md), and AI/OCR invoice scanning (still fully deferred).
+Next task:           Deploy Phase 17 to production (elevated sc.exe stop -> dotnet publish
+                     CarCareTracker.csproj -c Release -o "C:/Services/CarTracker" -> sc.exe start,
+                     independently verified via curl against both 127.0.0.1:5299 and the real
+                     https://legion.tail80af14.ts.net Tailscale URL) - needs the user at their PC.
+                     After that: guide the user through their own DVSA API self-service registration
+                     (their action, not something that can be done for them) so real MOT data starts
+                     flowing in automatically (the live-config fallback means no further code change is
+                     needed for that transition). Other open items, unchanged from before Phase 17
+                     started: Phase 14's remaining hardening areas (see Known blockers/DEFERRED.md),
+                     the pre-existing Planner null-safety gap logged in DEFERRED.md, and AI/OCR invoice
+                     scanning (still fully deferred).
 Known blockers:      1. No browser/screenshot tool in this environment - Phase 14's remaining
                         accessibility work would still need static-code-audit + curl verification,
                         not live screen-reader/keyboard testing.
@@ -138,19 +137,22 @@ Do not:              Assume Phase 14 is "done" - three increments complete (secu
                      ran. dotnet run from the dev repo still works for development but now operates on
                      a separate, diverging dataset - be explicit with the user about which copy
                      they're looking at if this ever comes up.
-Last validation:     Phase 17 Increment 5 (2026-08-19): dotnet build (0 new warn/0 err), dotnet test
-                     (19/19 passing including 2 new integration tests for the dedup/idempotency
-                     behavior of AddMotAdvisoryToPlanner/ImportAllMotAdvisoriesToPlanner), dev instance
-                     on port 5300 curl-verified against the real BMW Z4 (vehicleId=1): the grouped
-                     "Advisories & Failures" section correctly collapsed 4 raw per-test advisory
-                     occurrences into 2 rows with correct "(flagged: year, year)" lists - the exact
-                     recurring-advisory behavior the user asked for - then add/import/delete round-
-                     tripped correctly against real data (Added badges appear and disappear correctly),
-                     dev environment restored to its pre-verification state afterward. Phase 17
-                     Increments 1-4 + Phase 15/16's full validation history remains in
-                     docs/execution/PHASE_17.md / PHASE_15.md / PHASE_16.md.
-Last commit:         34ccc0a — "Phase 17 Increment 4: advisory text normalization" — 2026-08-19.
-                     Increment 5 not yet committed as of this STATE.md update.
+Last validation:     Phase 17 Increment 6 (2026-08-19, final increment): dotnet build (0 new warn/0
+                     err), dotnet test (22/22 passing including 3 new tests - one of which genuinely
+                     failed on first run against a real HTTP 500, caught a real null-safety bug, then
+                     passed after the fix, not written to match already-correct behavior). Dev instance
+                     on port 5300, full curl sequence against the real BMW Z4 (vehicleId=1): added an
+                     advisory, confirmed no strikethrough/a "Mark Resolved" button beforehand, marked
+                     it resolved and confirmed strikethrough + "Resolved" badge appeared while
+                     onclick/draggable/the context menu's swim-lane argument (still 'Idea') stayed
+                     completely unchanged - direct proof resolving never touches Progress - then saved
+                     the record through the ORDINARY edit-and-save flow with its cost changed 0->25 and
+                     confirmed resolvedDate survived unchanged (the specific round-trip failure mode
+                     this mechanism exists to prevent), then deleted it. Dev environment restored to
+                     its pre-verification state afterward. All 6 increments of Phase 17 now complete
+                     and verified; full validation history in docs/execution/PHASE_17.md.
+Last commit:         b58279e — "Phase 17 Increment 5: advisory to Planner linkage" — 2026-08-19.
+                     Increment 6 not yet committed as of this STATE.md update.
 ```
 
 ## Completed initiative: Zara + Magneto UI overhaul (separate from the roadmap above)

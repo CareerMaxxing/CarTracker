@@ -65,9 +65,10 @@ namespace CarCareTracker.Controllers
             }
             planRecord.Files = planRecord.Files.Select(x => { return new UploadedFiles { Name = x.Name, Location = _fileHelper.MoveFileFromTemp(x.Location, "documents/"), Type = x.Type }; }).ToList();
             //a template is a reusable recipe, not a link to one specific MOT advisory occurrence -
-            //never persist a source key onto a template, otherwise every record later created from it
-            //would incorrectly appear already-linked to an advisory it has nothing to do with.
+            //never persist a source key or a resolved date onto a template, otherwise every record
+            //later created from it would incorrectly appear already-linked/already-resolved.
             planRecord.SourceMotKey = string.Empty;
+            planRecord.ResolvedDate = string.Empty;
             var result = _planRecordTemplateDataAccess.SavePlanRecordTemplateToVehicle(planRecord);
             return Json(OperationResponse.Conditional(result, string.Empty, StaticHelper.GenericErrorMessage));
         }
@@ -462,7 +463,8 @@ namespace CarCareTracker.Controllers
                 ReminderRecordId = result.ReminderRecordId,
                 ReminderRecordIds = result.ReminderRecordIds,
                 ExtraFields = StaticHelper.AddExtraFields(result.ExtraFields, _extraFieldDataAccess.GetExtraFieldsById((int)ImportMode.PlanRecord).ExtraFields),
-                SourceMotKey = result.SourceMotKey
+                SourceMotKey = result.SourceMotKey,
+                ResolvedDate = result.ResolvedDate?.ToString("G") ?? string.Empty
             };
             return PartialView("Plan/_PlanRecordModal", convertedResult);
         }
@@ -575,6 +577,45 @@ namespace CarCareTracker.Controllers
                 }
             }
             return Json(OperationResponse.Succeed($"Added {addedCount} advisory item(s) to the Planner", new { addedCount }));
+        }
+        /// <summary>The lighter "mark resolved" status - orthogonal to PlanProgress, so crossing off an
+        /// MOT-linked item never triggers the Done pipeline's auto-create-a-ServiceRecord side effect
+        /// and never needs a matching Kanban swimlane. See PHASE_17.md Increment 6.</summary>
+        [TypeFilter(typeof(CollaboratorFilter))]
+        [HttpPost]
+        public IActionResult MarkPlanRecordResolved(int planRecordId)
+        {
+            var existingRecord = _planRecordDataAccess.GetPlanRecordById(planRecordId);
+            if (existingRecord == null || existingRecord.Id == default)
+            {
+                return Json(OperationResponse.Failed(StaticHelper.GenericErrorMessage));
+            }
+            if (!_userLogic.UserCanEditVehicle(GetUserID(), existingRecord.VehicleId, HouseholdPermission.Edit))
+            {
+                return Json(OperationResponse.Failed("Access Denied"));
+            }
+            existingRecord.ResolvedDate = DateTime.Now;
+            existingRecord.DateModified = DateTime.Now;
+            var result = _planRecordDataAccess.SavePlanRecordToVehicle(existingRecord);
+            return Json(OperationResponse.Conditional(result, string.Empty, StaticHelper.GenericErrorMessage));
+        }
+        [TypeFilter(typeof(CollaboratorFilter))]
+        [HttpPost]
+        public IActionResult UnmarkPlanRecordResolved(int planRecordId)
+        {
+            var existingRecord = _planRecordDataAccess.GetPlanRecordById(planRecordId);
+            if (existingRecord == null || existingRecord.Id == default)
+            {
+                return Json(OperationResponse.Failed(StaticHelper.GenericErrorMessage));
+            }
+            if (!_userLogic.UserCanEditVehicle(GetUserID(), existingRecord.VehicleId, HouseholdPermission.Edit))
+            {
+                return Json(OperationResponse.Failed("Access Denied"));
+            }
+            existingRecord.ResolvedDate = null;
+            existingRecord.DateModified = DateTime.Now;
+            var result = _planRecordDataAccess.SavePlanRecordToVehicle(existingRecord);
+            return Json(OperationResponse.Conditional(result, string.Empty, StaticHelper.GenericErrorMessage));
         }
     }
 }
