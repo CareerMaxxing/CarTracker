@@ -21,5 +21,10 @@
         public decimal ActualCost { get; set; }
         public List<ExtraField> ExtraFields { get; set; } = new List<ExtraField>();
         public List<SupplyUsageHistory> RequisitionHistory { get; set; } = new List<SupplyUsageHistory>();
+        /// <summary>System-set link back to the MOT advisory this item was created from
+        /// (StaticHelper.GetMotAdvisoryKey) - empty for ordinary Planner items. Never directly
+        /// user-editable (same treatment as ReminderRecordId), only round-tripped so ordinary edits
+        /// don't lose the linkage. See PHASE_17.md Increment 5.</summary>
+        public string SourceMotKey { get; set; } = string.Empty;
     }
 }

@@ -221,6 +221,7 @@ function getAndValidatePlanRecordValues() {
     var vehicleId = GetVehicleId().vehicleId;
     var planRecordId = getPlanRecordModelData().id;
     var reminderRecordId = getPlanRecordModelData().reminderRecordId;
+    var sourceMotKey = getPlanRecordModelData().sourceMotKey;
     //validation
     var hasError = false;
     var extraFields = getAndValidateExtraFields();
@@ -258,7 +259,8 @@ function getAndValidatePlanRecordValues() {
         deletedRequisitionHistory: deletedSupplyUsageHistory,
         reminderRecordId: reminderRecordId,
         reminderRecordIds: recurringReminderRecordId,
-        copySuppliesAttachment: copySuppliesAttachments
+        copySuppliesAttachment: copySuppliesAttachments,
+        sourceMotKey: sourceMotKey
     }
 }
 //drag and drop stuff.

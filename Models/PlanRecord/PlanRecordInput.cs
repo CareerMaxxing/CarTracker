@@ -22,15 +22,18 @@
         public List<SupplyUsageHistory> RequisitionHistory { get; set; } = new List<SupplyUsageHistory>();
         public List<SupplyUsageHistory> DeletedRequisitionHistory { get; set; } = new List<SupplyUsageHistory>();
         public bool CopySuppliesAttachment { get; set; } = false;
-        public PlanRecord ToPlanRecord() { return new PlanRecord { 
-            Id = Id, 
-            VehicleId = VehicleId, 
+        /// <summary>System-set, round-tripped like ReminderRecordId - never a direct form field. See
+        /// PlanRecord.SourceMotKey.</summary>
+        public string SourceMotKey { get; set; } = string.Empty;
+        public PlanRecord ToPlanRecord() { return new PlanRecord {
+            Id = Id,
+            VehicleId = VehicleId,
             ReminderRecordId = ReminderRecordId,
             ReminderRecordIds = ReminderRecordIds,
-            DateCreated = DateTime.Parse(DateCreated), 
+            DateCreated = DateTime.Parse(DateCreated),
             DateModified = DateTime.Parse(DateModified),
-            Description = Description, 
-            Notes = Notes, 
+            Description = Description,
+            Notes = Notes,
             Files = Files,
             ImportMode = ImportMode,
             Cost = Cost,
@@ -38,7 +41,8 @@
             Priority = Priority,
             Progress = Progress,
             ExtraFields = ExtraFields,
-            RequisitionHistory = RequisitionHistory
+            RequisitionHistory = RequisitionHistory,
+            SourceMotKey = SourceMotKey
         }; }
         /// <summary>
         /// only used to hide view template button on plan create modal.

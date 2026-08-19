@@ -28,8 +28,11 @@ namespace CarCareTracker.Controllers
             }
             var result = new VehicleGovernmentDataViewModel
             {
+                VehicleId = vehicle.Id,
                 DVLAData = _dvlaAdapter.GetVehicleData(vehicle.LicensePlate),
-                MotHistory = _dvsaAdapter.GetMotHistory(vehicle.LicensePlate)
+                MotHistory = _dvsaAdapter.GetMotHistory(vehicle.LicensePlate),
+                ExistingMotPlanKeys = _planRecordDataAccess.GetPlanRecordsByVehicleId(vehicle.Id)
+                    .Select(x => x.SourceMotKey).Where(x => !string.IsNullOrEmpty(x)).ToList()
             };
             return Json(result);
         }

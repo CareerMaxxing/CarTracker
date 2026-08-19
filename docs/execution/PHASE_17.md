@@ -358,3 +358,129 @@ STOP CONDITION: None hit.
   regressions.
 - No curl/UI verification needed - this increment has no HTTP surface yet, by design (Increment 5
   consumes it).
+
+## Increment 5: Advisory -> Planner linkage
+
+### Task packet
+
+```
+TASK ID: PHASE-17-05
+TITLE: "Add to Planner" (single + bulk) actions, recurring-advisory grouping in the MOT history view
+OBJECTIVE: Let the user turn an MOT advisory into a tracked Planner item with one click - a single
+  advisory, or the whole vehicle's open advisories in bulk - deduped by StaticHelper.GetMotAdvisoryKey
+  so a recurring issue (the user's tyres example) collapses into exactly one Planner item regardless of
+  how many tests flagged it, and re-running import/add never creates duplicates.
+INPUTS: Increment 4's StaticHelper.GetMotAdvisoryKey; PlanRecord.cs/PlanRecordInput.cs/
+  _PlanRecordModal.cshtml/planrecord.js (the ReminderRecordId round-trip mechanism - confirmed by
+  reading the actual save flow that it's a JS-tracked value captured from the modal's initial
+  server-rendered state via getPlanRecordModelData(), re-submitted on every save, never a directly
+  user-editable form field - SourceMotKey follows this exact mechanism, not a full exclusion from
+  PlanRecordInput as originally summarized); Controllers/Vehicle/PlanController.cs's
+  SavePlanRecordToVehicleId (the pattern to mirror for the two new actions - UserCanEditVehicle
+  security check, _planRecordDataAccess.SavePlanRecordToVehicle, WebHookPayload.FromPlanRecord event);
+  IPlanRecordDataAccess.GetPlanRecordsByVehicleId (already sufficient for in-memory dedup checks - no
+  new data-access method needed, this is a personal app with a handful of Planner items per vehicle,
+  not thousands).
+ALLOWED SCOPE: PlanRecord.SourceMotKey field; PlanRecordInput round-trip (input field, ToPlanRecord(),
+  GetPlanRecordForEditById's reverse mapping, modal JS, planrecord.js); two new PlanController actions
+  (AddMotAdvisoryToPlanner, ImportAllMotAdvisoriesToPlanner); VehicleGovernmentDataViewModel.VehicleId
+  + ExistingMotPlanKeys; both controllers populating VehicleGovernmentDataViewModel
+  (ReportController.GetReportPartialView, GovernmentDataController.GetGovernmentDataForVehicle);
+  _GovernmentData.cshtml (grouped "Advisories & Failures" section + bulk import button); new
+  reports.js functions.
+NON-SCOPE: The lighter "mark resolved" status and its one-time cleanup pass (Increment 6).
+IMPLEMENTATION REQUIREMENTS:
+  - One advisory = one PlanRecord (confirmed correct granularity by the earlier Plan-agent review -
+    bundling multiple advisories per test would force all-or-nothing resolution later).
+  - SourceMotKey must never be settable through the free-text edit form - only ever set by the new
+    "Add to Planner"/bulk-import actions, then preserved (not reset to empty) on ordinary subsequent
+    edits via the same JS-variable round-trip ReminderRecordId already uses.
+  - Real edge case found and fixed while wiring the round-trip: "Save as Template" reuses the same
+    getAndValidatePlanRecordValues() payload, which would have carried a stale SourceMotKey onto a
+    reusable template - every future record created from that template would incorrectly appear
+    already-linked to an advisory it has nothing to do with. Fixed by clearing SourceMotKey
+    server-side in SavePlanRecordTemplateToVehicleId before persisting the template.
+  - Recurring advisories must collapse in the UI too, not just in the dedup key: group all
+    RfrAndComments across a vehicle's entire MOT history by GetMotAdvisoryKey, show the worst-severity
+    badge across occurrences plus which years it was flagged, one "Add to Planner"/"Added" state per
+    group - not one row (and one confusing partially-rejected button click) per raw per-test occurrence.
+  - Text passed from the view into the "Add to Planner" action is carried via a data-* attribute (jQuery
+    .data(), HTML-attribute-encoded by Razor automatically) rather than inlined into the onclick JS call
+    - avoids manual JS-string-escaping of arbitrary advisory text entirely.
+DELIVERABLES: Models/PlanRecord/PlanRecord.cs, PlanRecordInput.cs; Controllers/Vehicle/PlanController.cs;
+  Controllers/Vehicle/ReportController.cs; Controllers/API/GovernmentDataController.cs; Models/
+  GovernmentData/VehicleGovernmentDataViewModel.cs; Views/Vehicle/Plan/_PlanRecordModal.cshtml;
+  Views/Vehicle/Report/_GovernmentData.cshtml; wwwroot/js/planrecord.js; wwwroot/js/reports.js;
+  Tests/MotAdvisoryPlannerLinkageTests.cs (new).
+ACCEPTANCE CRITERIA:
+  1. dotnet build succeeds, 0 new warnings/errors.
+  2. dotnet test passes, including new integration tests proving: adding the same advisory twice is
+     rejected the second time (exactly 1 PlanRecord exists); bulk import skips an already-added
+     advisory and only adds the remaining unique ones (correct addedCount); a second bulk import call
+     adds zero (full idempotency).
+  3. curl against a real dev vehicle (BMW Z4 id=1, which has two advisories each recurring across two
+     of its four mock tests) confirms: the grouped section shows exactly 2 rows (not 4), each with the
+     correct "(flagged: year, year)" list and worst-severity badge; clicking Add/Import correctly
+     flips the row to an "Added" badge and removes the button; deleting the created PlanRecords
+     correctly makes the buttons reappear (round-trip proven in both directions).
+VALIDATION COMMANDS: dotnet build CarCareTracker.csproj; dotnet test Tests/CarCareTracker.Tests.csproj;
+  dotnet run --urls http://localhost:5300 --no-build; curl the report partial and the two new POST
+  actions against vehicleId=1, then clean up any created PlanRecords via DeletePlanRecordById.
+STOP CONDITION: None hit.
+```
+
+### What was built
+
+- `PlanRecord.SourceMotKey` (new field) + the full round-trip through `PlanRecordInput`
+  (`ToPlanRecord()`, `GetPlanRecordForEditById`'s reverse mapping, `_PlanRecordModal.cshtml`'s
+  `getPlanRecordModelData()`, `planrecord.js`'s `getAndValidatePlanRecordValues()`) - mirrors
+  `ReminderRecordId`'s exact existing mechanism (a JS-tracked value invisible to the user but preserved
+  across ordinary saves), not a full exclusion as first summarized.
+- **Real bug caught and fixed while wiring this**: `SavePlanRecordTemplateToVehicleId` now explicitly
+  clears `SourceMotKey` before persisting a template, since "Save as Template" reuses the same payload
+  builder and would otherwise have let a template silently carry a stale advisory link forward onto
+  every record later created from it.
+- `PlanController.AddMotAdvisoryToPlanner(vehicleId, advisoryText)` - creates one `PlanRecord`
+  (`ImportMode.ServiceRecord`, `PlanPriority.Normal`, `PlanProgress.Idea`) keyed by
+  `GetMotAdvisoryKey(vehicleId, advisoryText)`, rejecting the call if that key already has a linked
+  record for this vehicle.
+- `PlanController.ImportAllMotAdvisoriesToPlanner(vehicleId)` - iterates every comment across the
+  vehicle's entire real (or mock) MOT history, creates one `PlanRecord` per unique key not already
+  present (checked against both existing records and keys already added earlier in the same loop),
+  returns the count actually added.
+- `VehicleGovernmentDataViewModel.VehicleId` + `ExistingMotPlanKeys` - both government-data-serving
+  controllers (`ReportController.GetReportPartialView`, `GovernmentDataController.
+  GetGovernmentDataForVehicle`) now also query existing `PlanRecord.SourceMotKey`s so the view can
+  render "Added" without a second round trip.
+- `_GovernmentData.cshtml`: a new "Advisories & Failures" section, grouped by `GetMotAdvisoryKey` across
+  the vehicle's whole MOT history (not per-test), each row showing the worst-severity badge seen, the
+  years it was flagged (e.g. "flagged: 2023, 2025"), and either an "Add to Planner" button or an
+  "Added" badge - plus a bulk "Import All to Planner" button. The existing per-test chronological list
+  from Increment 3 is unchanged below it. Advisory text reaches the JS handlers via `data-*` attributes
+  (Razor's automatic HTML-attribute encoding), not inlined into `onclick`, avoiding manual JS-string
+  escaping of arbitrary text.
+- `reports.js`: `addMotAdvisoryToPlanner`/`importAllMotAdvisoriesToPlanner`, both refreshing the report
+  panel via the existing `getVehicleReport(vehicleId)` on success.
+- `Tests/MotAdvisoryPlannerLinkageTests.cs` (new) - 2 integration tests against a deliberately-chosen
+  deterministic mock plate ("MOTPLAN003", 3 distinct advisories) proving single-add dedup and bulk-import
+  dedup/idempotency end-to-end through the real DI-wired controllers.
+
+### Verification
+
+- `dotnet build CarCareTracker.csproj` — 0 new warnings, 0 errors.
+- `dotnet test Tests/CarCareTracker.Tests.csproj` — 19/19 passing (17 pre-existing + 2 new), no
+  regressions.
+- Dev instance on port 5300. Curl-verified against the real BMW Z4 (vehicleId=1, whose mock data has
+  "Nearside front brake pad(s) worn below 1.5mm" recurring in 2024+2026 and "Nearside headlamp aim
+  slightly high" recurring in 2023+2025): the grouped section correctly showed exactly 2 rows (not 4),
+  each with the correct "(flagged: ...)" year list and severity badge - **direct proof of the exact
+  recurring-advisory-collapse behavior the user originally asked for** (their tyres example). Added one
+  advisory via the single-add action, bulk-imported the other (`addedCount:1`, correctly skipping the
+  already-added one), confirmed both rows flipped to "Added" badges with buttons removed, then deleted
+  both created `PlanRecord`s and confirmed the buttons correctly reappeared - the round-trip verified in
+  both directions against real data, not just the throwaway test plate. Dev environment restored to its
+  pre-verification state afterward.
+- Not yet deployed to production - this is the first increment with real new user-facing functionality
+  the user would actually want to use; deployment is planned once Increment 6 (the "mark resolved"
+  status and cleanup pass) completes the full loop the user asked for, so there's one coherent thing to
+  review rather than a half-finished feature.

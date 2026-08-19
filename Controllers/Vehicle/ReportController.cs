@@ -184,11 +184,14 @@ namespace CarCareTracker.Controllers
             viewModel.ReportHeaderForVehicle.AverageMPG = $"{averageMPG} {mpgViewModel.Unit}";
             viewModel.ReportHeaderForVehicle.MaxOdometer = maxMileage;
             viewModel.ReportHeaderForVehicle.DistanceTraveled = odometerRecords.Sum(x => x.DistanceTraveled);
-            //government data (mocked) - see IDVLAAdapter.cs/IDVSAAdapter.cs
+            //government data - see IDVLAAdapter.cs/IDVSAAdapter.cs (DVLA mocked, DVSA real-or-mock per Increment 2)
             viewModel.GovernmentDataForVehicle = new VehicleGovernmentDataViewModel
             {
+                VehicleId = vehicleData.Id,
                 DVLAData = _dvlaAdapter.GetVehicleData(vehicleData.LicensePlate),
-                MotHistory = _dvsaAdapter.GetMotHistory(vehicleData.LicensePlate)
+                MotHistory = _dvsaAdapter.GetMotHistory(vehicleData.LicensePlate),
+                ExistingMotPlanKeys = _planRecordDataAccess.GetPlanRecordsByVehicleId(vehicleData.Id)
+                    .Select(x => x.SourceMotKey).Where(x => !string.IsNullOrEmpty(x)).ToList()
             };
             return PartialView("Report/_Report", viewModel);
         }

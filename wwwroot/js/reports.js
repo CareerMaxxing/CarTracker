@@ -460,3 +460,29 @@ function getCostDataTablePage(pageNumber) {
         rightNavButton.attr('disabled', false);
     }
 }
+function addMotAdvisoryToPlanner(vehicleId, advisoryText, e) {
+    if (e) {
+        $(e).prop('disabled', true);
+    }
+    $.post('/Vehicle/AddMotAdvisoryToPlanner', { vehicleId: vehicleId, advisoryText: advisoryText }, function (data) {
+        if (data.success) {
+            successToast('Added to Planner');
+            getVehicleReport(vehicleId);
+        } else {
+            errorToast(data.message);
+            if (e) {
+                $(e).prop('disabled', false);
+            }
+        }
+    });
+}
+function importAllMotAdvisoriesToPlanner(vehicleId) {
+    $.post('/Vehicle/ImportAllMotAdvisoriesToPlanner', { vehicleId: vehicleId }, function (data) {
+        if (data.success) {
+            successToast(data.message);
+            getVehicleReport(vehicleId);
+        } else {
+            errorToast(data.message);
+        }
+    });
+}

@@ -64,6 +64,10 @@ namespace CarCareTracker.Controllers
                 return Json(OperationResponse.Failed("A template with that description already exists for this vehicle"));
             }
             planRecord.Files = planRecord.Files.Select(x => { return new UploadedFiles { Name = x.Name, Location = _fileHelper.MoveFileFromTemp(x.Location, "documents/"), Type = x.Type }; }).ToList();
+            //a template is a reusable recipe, not a link to one specific MOT advisory occurrence -
+            //never persist a source key onto a template, otherwise every record later created from it
+            //would incorrectly appear already-linked to an advisory it has nothing to do with.
+            planRecord.SourceMotKey = string.Empty;
             var result = _planRecordTemplateDataAccess.SavePlanRecordTemplateToVehicle(planRecord);
             return Json(OperationResponse.Conditional(result, string.Empty, StaticHelper.GenericErrorMessage));
         }
@@ -457,7 +461,8 @@ namespace CarCareTracker.Controllers
                 RequisitionHistory = result.RequisitionHistory,
                 ReminderRecordId = result.ReminderRecordId,
                 ReminderRecordIds = result.ReminderRecordIds,
-                ExtraFields = StaticHelper.AddExtraFields(result.ExtraFields, _extraFieldDataAccess.GetExtraFieldsById((int)ImportMode.PlanRecord).ExtraFields)
+                ExtraFields = StaticHelper.AddExtraFields(result.ExtraFields, _extraFieldDataAccess.GetExtraFieldsById((int)ImportMode.PlanRecord).ExtraFields),
+                SourceMotKey = result.SourceMotKey
             };
             return PartialView("Plan/_PlanRecordModal", convertedResult);
         }
@@ -481,6 +486,95 @@ namespace CarCareTracker.Controllers
                 _eventLogic.PublishEvent(GetUserID(), WebHookPayload.FromPlanRecord(existingRecord, "planrecord.delete", User.Identity?.Name ?? string.Empty));
             }
             return Json(OperationResponse.Conditional(result, string.Empty, StaticHelper.GenericErrorMessage));
+        }
+        /// <summary>Creates one Planner item from a single MOT advisory/failure comment, deduped per
+        /// vehicle by StaticHelper.GetMotAdvisoryKey - calling this twice for the same underlying issue
+        /// (including a re-worded recurrence in a later test) is a no-op the second time. See
+        /// PHASE_17.md Increment 5.</summary>
+        [TypeFilter(typeof(CollaboratorFilter))]
+        [HttpPost]
+        public IActionResult AddMotAdvisoryToPlanner(int vehicleId, string advisoryText)
+        {
+            if (!_userLogic.UserCanEditVehicle(GetUserID(), vehicleId, HouseholdPermission.Edit))
+            {
+                return Json(OperationResponse.Failed("Access Denied"));
+            }
+            if (string.IsNullOrWhiteSpace(advisoryText))
+            {
+                return Json(OperationResponse.Failed(StaticHelper.GenericErrorMessage));
+            }
+            var sourceMotKey = StaticHelper.GetMotAdvisoryKey(vehicleId, advisoryText);
+            var alreadyAdded = _planRecordDataAccess.GetPlanRecordsByVehicleId(vehicleId).Any(x => x.SourceMotKey == sourceMotKey);
+            if (alreadyAdded)
+            {
+                return Json(OperationResponse.Failed("This advisory has already been added to the Planner"));
+            }
+            var newPlanRecord = new PlanRecord
+            {
+                VehicleId = vehicleId,
+                DateCreated = DateTime.Now,
+                DateModified = DateTime.Now,
+                Description = advisoryText,
+                ImportMode = ImportMode.ServiceRecord,
+                Priority = PlanPriority.Normal,
+                Progress = PlanProgress.Idea,
+                SourceMotKey = sourceMotKey
+            };
+            var result = _planRecordDataAccess.SavePlanRecordToVehicle(newPlanRecord);
+            if (result)
+            {
+                _eventLogic.PublishEvent(GetUserID(), WebHookPayload.FromPlanRecord(newPlanRecord, "planrecord.add", User.Identity?.Name ?? string.Empty));
+            }
+            return Json(OperationResponse.Conditional(result, string.Empty, StaticHelper.GenericErrorMessage));
+        }
+        /// <summary>Creates one Planner item per unique open MOT advisory across a vehicle's entire
+        /// history in one call - a recurring issue flagged across multiple tests still only produces
+        /// one item (same dedup key), and advisories already added (from a prior single or bulk import)
+        /// are skipped, not duplicated. See PHASE_17.md Increment 5.</summary>
+        [TypeFilter(typeof(CollaboratorFilter))]
+        [HttpPost]
+        public IActionResult ImportAllMotAdvisoriesToPlanner(int vehicleId)
+        {
+            if (!_userLogic.UserCanEditVehicle(GetUserID(), vehicleId, HouseholdPermission.Edit))
+            {
+                return Json(OperationResponse.Failed("Access Denied"));
+            }
+            var vehicle = _dataAccess.GetVehicleById(vehicleId);
+            if (vehicle == null || vehicle.Id == default)
+            {
+                return Json(OperationResponse.Failed("Vehicle not found"));
+            }
+            var motHistory = _dvsaAdapter.GetMotHistory(vehicle.LicensePlate);
+            var existingKeys = _planRecordDataAccess.GetPlanRecordsByVehicleId(vehicleId)
+                .Select(x => x.SourceMotKey)
+                .Where(x => !string.IsNullOrEmpty(x))
+                .ToHashSet();
+            var addedCount = 0;
+            foreach (var comment in motHistory.MotTests.SelectMany(x => x.RfrAndComments))
+            {
+                var sourceMotKey = StaticHelper.GetMotAdvisoryKey(vehicleId, comment.Text);
+                if (!existingKeys.Add(sourceMotKey))
+                {
+                    continue; //already added, either before this call or earlier within this same loop.
+                }
+                var newPlanRecord = new PlanRecord
+                {
+                    VehicleId = vehicleId,
+                    DateCreated = DateTime.Now,
+                    DateModified = DateTime.Now,
+                    Description = comment.Text,
+                    ImportMode = ImportMode.ServiceRecord,
+                    Priority = PlanPriority.Normal,
+                    Progress = PlanProgress.Idea,
+                    SourceMotKey = sourceMotKey
+                };
+                if (_planRecordDataAccess.SavePlanRecordToVehicle(newPlanRecord))
+                {
+                    addedCount++;
+                    _eventLogic.PublishEvent(GetUserID(), WebHookPayload.FromPlanRecord(newPlanRecord, "planrecord.add", User.Identity?.Name ?? string.Empty));
+                }
+            }
+            return Json(OperationResponse.Succeed($"Added {addedCount} advisory item(s) to the Planner", new { addedCount }));
         }
     }
 }
