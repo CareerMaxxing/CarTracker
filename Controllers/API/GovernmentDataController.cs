@@ -26,13 +26,15 @@ namespace CarCareTracker.Controllers
                 Response.StatusCode = 404;
                 return Json(OperationResponse.Failed("Vehicle not found"));
             }
+            var motLinkedPlanRecords = _planRecordDataAccess.GetPlanRecordsByVehicleId(vehicle.Id)
+                .Where(x => !string.IsNullOrEmpty(x.SourceMotKey)).ToList();
             var result = new VehicleGovernmentDataViewModel
             {
                 VehicleId = vehicle.Id,
                 DVLAData = _dvlaAdapter.GetVehicleData(vehicle.LicensePlate),
                 MotHistory = _dvsaAdapter.GetMotHistory(vehicle.LicensePlate),
-                ExistingMotPlanKeys = _planRecordDataAccess.GetPlanRecordsByVehicleId(vehicle.Id)
-                    .Select(x => x.SourceMotKey).Where(x => !string.IsNullOrEmpty(x)).ToList()
+                ExistingMotPlanKeys = motLinkedPlanRecords.Select(x => x.SourceMotKey).ToList(),
+                ResolvedMotPlanKeys = motLinkedPlanRecords.Where(x => x.ResolvedDate.HasValue).Select(x => x.SourceMotKey).ToList()
             };
             return Json(result);
         }

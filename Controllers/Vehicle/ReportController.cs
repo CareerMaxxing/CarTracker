@@ -185,13 +185,15 @@ namespace CarCareTracker.Controllers
             viewModel.ReportHeaderForVehicle.MaxOdometer = maxMileage;
             viewModel.ReportHeaderForVehicle.DistanceTraveled = odometerRecords.Sum(x => x.DistanceTraveled);
             //government data - see IDVLAAdapter.cs/IDVSAAdapter.cs (DVLA mocked, DVSA real-or-mock per Increment 2)
+            var motLinkedPlanRecords = _planRecordDataAccess.GetPlanRecordsByVehicleId(vehicleData.Id)
+                .Where(x => !string.IsNullOrEmpty(x.SourceMotKey)).ToList();
             viewModel.GovernmentDataForVehicle = new VehicleGovernmentDataViewModel
             {
                 VehicleId = vehicleData.Id,
                 DVLAData = _dvlaAdapter.GetVehicleData(vehicleData.LicensePlate),
                 MotHistory = _dvsaAdapter.GetMotHistory(vehicleData.LicensePlate),
-                ExistingMotPlanKeys = _planRecordDataAccess.GetPlanRecordsByVehicleId(vehicleData.Id)
-                    .Select(x => x.SourceMotKey).Where(x => !string.IsNullOrEmpty(x)).ToList()
+                ExistingMotPlanKeys = motLinkedPlanRecords.Select(x => x.SourceMotKey).ToList(),
+                ResolvedMotPlanKeys = motLinkedPlanRecords.Where(x => x.ResolvedDate.HasValue).Select(x => x.SourceMotKey).ToList()
             };
             return PartialView("Report/_Report", viewModel);
         }

@@ -683,3 +683,55 @@ same-issue-different-wording ones. This matches the plan's originally-flagged kn
 ("DVSA advisory wording isn't always byte-identical year to year... not over-built with fuzzy NLP
 matching for a single-user personal app") - not a bug, just now visible with real text instead of
 clean mock data.
+
+## Increment 8: Curated-synonym grouping + resolved-status visibility
+
+User feedback after seeing their real data: (1) the grouping still wasn't recognizing genuinely-the-
+same issue across different wording (their example: "brake pipes" vs "brake lines"); (2) the advisories
+list only showed whether something had been added to the Planner, not whether it had actually been
+*resolved* there - they want to be able to tell "has everything been addressed, yes or no" at a glance.
+Asked which grouping approach they wanted (curated synonym list vs. keeping exact-text-only matching,
+given the real trade-off between catching more real recurrences and risking an incorrect merge) - user
+chose the curated synonym list.
+
+### What was built
+
+- **A real, previously-latent bug found and fixed**: `NormalizeMotAdvisoryText`'s original trailing-
+  code stripper (`\s*\([^)]*\)\s*$`) cannot match nested parens - and real DVSA codes nest, e.g.
+  `(1.1.12 (b) (ii))`. `[^)]*` cannot span the inner `)`, so the whole pattern silently failed to match
+  at all on any code with a sub-reference, leaving it stuck in the normalized text and breaking dedup
+  for a large fraction of real advisories. Caught immediately by a new unit test exercising exactly this
+  shape. Fixed by truncating from the first `(` to end of string instead of trying to match a balanced
+  closing group - simpler and handles arbitrary nesting depth by construction.
+- `NormalizeMotAdvisoryText` now also strips side/position qualifiers (nearside/offside/front/rear/
+  both/both sides) and canonicalizes a small, deliberately narrow synonym set (pipe/hose/line -> one
+  term) before hashing - directly targeting the user's own example, not general fuzzy matching. Only
+  the dedup *key* changes; `WorstComment.Text` (what's actually displayed) is never rewritten, so a
+  bad normalization decision can only affect which rows merge, never garble visible text.
+- `VehicleGovernmentDataViewModel.ResolvedMotPlanKeys` (new, alongside the existing
+  `ExistingMotPlanKeys`) - both government-data controllers now compute the linked-PlanRecord list once
+  and derive both from it.
+- `_GovernmentData.cshtml`'s advisories list now has three states instead of two: **Add to Planner**
+  (not linked yet) / **In Planner** (linked, `ResolvedDate` still null) / **Resolved** (linked and
+  resolved - strikethrough text + checkmark badge, same visual language as the Planner Kanban card). A
+  new header count, "Advisories & Failures (X/Y addressed)", answers the user's stated goal directly
+  without needing to scan every row.
+
+Files touched: `Helper/StaticHelper.cs`, `Models/GovernmentData/VehicleGovernmentDataViewModel.cs`,
+`Controllers/Vehicle/ReportController.cs`, `Controllers/API/GovernmentDataController.cs`,
+`Views/Vehicle/Report/_GovernmentData.cshtml`, `Tests/MotAdvisoryNormalizationTests.cs`.
+
+### Verification
+
+- `dotnet build` - 0 new warnings/errors. `dotnet test` - 25/25 passing (22 pre-existing + 3 new: side-
+  qualifier merging, pipe/hose/line synonym merging, and a "same component, different defect must NOT
+  merge" guard - the last one caught the nested-paren bug on first run, then passed after the fix).
+- Dev instance, using a copy of the real transcribed BMW Z4 data: raw advisory/failure line count (56)
+  now collapses to 30 unique rows (down from 47 before this increment - the nested-paren fix alone
+  recovered most of that). Directly confirmed the user's own example: "Brake hose slightly deteriorated
+  (1.1.12 (b) (ii))" now correctly shows "(flagged: 2015, 2024, 2026)", merging three different years'
+  wording variants into one row - while genuinely-different brake pipe corrosion descriptions
+  ("...front to rear" vs "...flexi to flexi") correctly stayed separate. Exercised the full three-state
+  flow against real data: added an advisory (flips to "In Planner"), marked it resolved (flips to
+  "Resolved" with strikethrough, header count updates from 0/30 to 1/30), deleted it to clean up. Dev
+  environment restored to its pre-verification state afterward.

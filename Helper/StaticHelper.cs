@@ -1087,12 +1087,25 @@ namespace CarCareTracker.Helper
 
             return Sb.ToString();
         }
+        /// <summary>Vehicle-side/position qualifiers stripped during MOT advisory normalization - the
+        /// same underlying job (e.g. "replace the brake pipes") is one real-world task regardless of
+        /// which side/end DVSA happened to flag first. See NormalizeMotAdvisoryText.</summary>
+        private static readonly Regex MotAdvisoryPositionWords = new Regex(
+            @"\b(nearside|offside|both sides|both|front|rear|sides?)\b", RegexOptions.Compiled);
+        /// <summary>A small, deliberately conservative set of interchangeable MOT component terms
+        /// (e.g. "brake pipe"/"brake line"/"brake hose" all describe the same physical part) - only
+        /// the specific synonyms confirmed in real advisory text, not a general thesaurus. Only the
+        /// dedup key is affected; the advisory's own displayed text is never rewritten. See
+        /// NormalizeMotAdvisoryText.</summary>
+        private static readonly Regex MotAdvisoryComponentSynonyms = new Regex(
+            @"\b(pipes?|hoses?|lines?)\b", RegexOptions.Compiled);
         /// <summary>
         /// Normalizes MOT advisory/failure text so the same real-world issue flagged across multiple
-        /// years (DVSA re-word/re-number the same defect per test, e.g. a trailing "(5.2.3)" reference
-        /// code that changes between tests) collapses to the same value - strips a trailing
-        /// parenthetical code, lowercases, and collapses internal whitespace. Used to derive
-        /// PlanRecord.SourceMotKey - see PHASE_17.md Increment 4/5.
+        /// tests collapses to the same value, even when DVSA re-words it between tests: strips a
+        /// trailing parenthetical reference code (e.g. "(5.2.3)"), lowercases, strips side/position
+        /// qualifiers (nearside/offside/front/rear/both sides), canonicalizes a small set of known
+        /// component synonyms (pipe/hose/line), and collapses internal whitespace. Used to derive
+        /// PlanRecord.SourceMotKey - see PHASE_17.md Increment 4/5/8.
         /// </summary>
         public static string NormalizeMotAdvisoryText(string text)
         {
@@ -1100,8 +1113,13 @@ namespace CarCareTracker.Helper
             {
                 return string.Empty;
             }
-            var normalized = Regex.Replace(text.Trim(), @"\s*\([^)]*\)\s*$", string.Empty);
-            normalized = Regex.Replace(normalized.Trim().ToLowerInvariant(), @"\s+", " ");
+            //strip everything from the first "(" onward, not just a single flat "(...)" group - real
+            //DVSA codes nest, e.g. "(1.1.12 (b) (ii))", which a single-level "[^)]*" match can't close.
+            var normalized = Regex.Replace(text.Trim(), @"\s*\(.*$", string.Empty);
+            normalized = normalized.Trim().ToLowerInvariant();
+            normalized = MotAdvisoryPositionWords.Replace(normalized, string.Empty);
+            normalized = MotAdvisoryComponentSynonyms.Replace(normalized, "pipe");
+            normalized = Regex.Replace(normalized, @"\s+", " ").Trim();
             return normalized;
         }
         /// <summary>A stable per-vehicle dedup key for an MOT advisory, combining its normalized text

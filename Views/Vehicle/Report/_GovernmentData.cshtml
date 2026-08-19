@@ -34,10 +34,12 @@
             Key = g.Key,
             WorstComment = g.Select(x => x.Comment).OrderByDescending(GetCommentSeverityRank).First(),
             Years = g.Select(x => GetTestYear(x.Test.CompletedDate)).Distinct().OrderBy(y => y).ToList(),
-            AlreadyAdded = Model.ExistingMotPlanKeys.Contains(g.Key)
+            AlreadyAdded = Model.ExistingMotPlanKeys.Contains(g.Key),
+            IsResolved = Model.ResolvedMotPlanKeys.Contains(g.Key)
         })
         .OrderByDescending(g => g.Years.Max())
         .ToList();
+    var resolvedCount = openAdvisories.Count(x => x.IsResolved);
 }
 @model VehicleGovernmentDataViewModel
 <div class="d-flex justify-content-between align-items-center">
@@ -83,7 +85,7 @@ else
             @if (openAdvisories.Any())
             {
                 <div class="d-flex justify-content-between align-items-center mt-1">
-                    <span class="small text-body-secondary">@translator.Translate(userLanguage, "Advisories & Failures")</span>
+                    <span class="small text-body-secondary">@translator.Translate(userLanguage, "Advisories & Failures") (@resolvedCount/@openAdvisories.Count @translator.Translate(userLanguage, "addressed"))</span>
                     <a class="btn btn-sm btn-outline-secondary" data-vehicle-id="@vehicleId" onclick="importAllMotAdvisoriesToPlanner($(this).data('vehicle-id'))">@translator.Translate(userLanguage, "Import All to Planner")</a>
                 </div>
                 <ul class="mb-0 ps-3 small">
@@ -92,12 +94,23 @@ else
                         <li class="d-flex justify-content-between align-items-center gap-2 mb-1">
                             <span>
                                 <span class="status-badge @GetCommentBadgeClass(advisory.WorstComment)">@advisory.WorstComment.Type</span>
-                                @advisory.WorstComment.Text
+                                @if (advisory.IsResolved)
+                                {
+                                    <s>@advisory.WorstComment.Text</s>
+                                }
+                                else
+                                {
+                                    @advisory.WorstComment.Text
+                                }
                                 <span class="text-body-secondary">(@translator.Translate(userLanguage, "flagged"): @string.Join(", ", advisory.Years))</span>
                             </span>
-                            @if (advisory.AlreadyAdded)
+                            @if (advisory.IsResolved)
                             {
-                                <span class="status-badge status-badge-success flex-shrink-0"><i class="bi bi-check-lg"></i> @translator.Translate(userLanguage, "Added")</span>
+                                <span class="status-badge status-badge-success flex-shrink-0" title="@translator.Translate(userLanguage, "Marked resolved in the Planner")"><i class="bi bi-check-circle-fill"></i> @translator.Translate(userLanguage, "Resolved")</span>
+                            }
+                            else if (advisory.AlreadyAdded)
+                            {
+                                <span class="status-badge status-badge-warning flex-shrink-0" title="@translator.Translate(userLanguage, "In the Planner, not yet marked resolved")"><i class="bi bi-hourglass-split"></i> @translator.Translate(userLanguage, "In Planner")</span>
                             }
                             else
                             {
