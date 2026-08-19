@@ -219,3 +219,80 @@ STOP CONDITION: None hit - the only open question (exact endpoint path) was reso
   reset to `{}` afterward (throwaway test data).
 - Not yet deployed to production - same reasoning as Increment 1 (no user-visible behavior change
   without real credentials, which the user hasn't registered for yet).
+
+## Increment 3: Full MOT history UI
+
+### Task packet
+
+```
+TASK ID: PHASE-17-03
+TITLE: Show every past MOT test (not just the latest), colour-coded by advisory/failure severity;
+  fix a pre-existing Mock-badge bug found during Plan review
+OBJECTIVE: Stop discarding MotHistory.MotTests down to a single .FirstOrDefault() - the full history
+  already exists in the data model and adapter output (confirmed since Phase 8's mock), the only real
+  gap was the view. Also fix the "Mock" badge checking DVLAData.Found (always true once a plate is
+  set) instead of IsMockData (now meaningfully different per-source since Increment 2).
+INPUTS: Views/Vehicle/Report/_GovernmentData.cshtml (the only file needing structural change);
+  wwwroot/css/site.css (confirmed status-badge-success/warning/danger/neutral all exist - no new CSS
+  needed); Views/Vehicle/Report/_Report.cshtml (confirmed the only view including this partial, no JS
+  anywhere depends on its internal structure - safe to restructure freely).
+ALLOWED SCOPE: _GovernmentData.cshtml only. No controller/model change - VehicleGovernmentDataViewModel
+  already carries the full MotTests list, just wasn't being rendered.
+NON-SCOPE: Planner linkage, recurring-advisory grouping (Increments 4-5), resolved status
+  (Increment 6).
+IMPLEMENTATION REQUIREMENTS:
+  - Render every test in Model.MotHistory.MotTests (newest first), not just .FirstOrDefault().
+  - Each test's overall result badge (PASSED/FAILED) unchanged in meaning; each rfrAndComments entry
+    gets its own badge for its Type (DANGEROUS/FAIL/MAJOR -> danger, ADVISORY/MINOR -> warning,
+    anything else -> neutral) plus its text, replacing the old plain-text-only list.
+  - Split the single top-of-card "Mock" badge into two independent ones: the existing one now checks
+    DVLAData.IsMockData (DVLA stays permanently mocked, so this will always show for now, but is now
+    correct by construction rather than by coincidence); a new one next to a "MOT History" sub-header
+    checks MotHistory.IsMockData specifically, since MOT can now be real while DVLA stays mocked -
+    users need to know which specific data source they're looking at.
+  - Gate the whole MOT History section on Model.MotHistory.Found (not just "list happens to be non-
+    empty") so a real API 404/failure (Increment 2's graceful-degradation path) shows nothing rather
+    than a misleading empty section.
+DELIVERABLES: Views/Vehicle/Report/_GovernmentData.cshtml.
+ACCEPTANCE CRITERIA:
+  1. dotnet build succeeds, 0 new warnings/errors.
+  2. dotnet test passes, no regressions.
+  3. curl against /Vehicle/GetReportPartialView for both real dev vehicles shows ALL past tests (4 for
+     the BMW, 4 for the Volvo), not just the latest, each correctly colour-coded, with tests that have
+     no advisories correctly showing no orphan empty list.
+  4. Both the DVLA-level and MOT-History-level Mock badges render independently and correctly.
+VALIDATION COMMANDS: dotnet build CarCareTracker.csproj; dotnet test Tests/CarCareTracker.Tests.csproj;
+  dotnet run --urls http://localhost:5300 --no-build; curl /Vehicle/GetReportPartialView?vehicleId=1
+  and ?vehicleId=2, grep the rendered HTML for the expected badges/test count.
+STOP CONDITION: None hit.
+```
+
+### What was built
+
+- `Views/Vehicle/Report/_GovernmentData.cshtml` rewritten: `Model.MotHistory.MotTests
+  .OrderByDescending(x => x.CompletedDate)` (no more `.FirstOrDefault()`) renders every past test, each
+  in its own block with its PASSED/FAILED badge, date/odometer line, and a colour-coded badge per
+  advisory/failure comment (`GetCommentBadgeClass` - danger for DANGEROUS/FAIL/MAJOR/`comment.Dangerous`,
+  warning for ADVISORY/MINOR, neutral otherwise) followed by the comment text.
+- The single "Mock" badge is now two independent ones: the original (top of card) checks
+  `DVLAData.IsMockData` instead of the previous `DVLAData.Found` bug; a new one sits beside a "MOT
+  History" sub-header and checks `MotHistory.IsMockData` specifically - meaningful now that MOT can be
+  real while DVLA stays permanently mocked.
+- The whole MOT History section is gated on `Model.MotHistory.Found` (not just a non-empty list), so
+  a real API failure (Increment 2's `Found:false` graceful-degradation path) correctly shows nothing
+  rather than an empty, misleadingly-present section.
+
+### Verification
+
+- `dotnet build CarCareTracker.csproj` — 0 new warnings, 0 errors.
+- `dotnet test Tests/CarCareTracker.Tests.csproj` — 11/11 passing, no regressions.
+- Dev instance on port 5300. Curl-verified `/Vehicle/GetReportPartialView` for both real dev vehicles:
+  - BMW Z4 (id=1): all 4 past tests render (2023 PASSED/ADVISORY, 2024 FAILED/MAJOR, 2025 PASSED/
+    ADVISORY, 2026 FAILED/MAJOR), newest first, each badge correctly coloured (danger for
+    FAILED/MAJOR, warning for ADVISORY, success for PASSED), both Mock badges present.
+  - Volvo S80 (id=2): all 4 past tests render (2021-2024, three with zero advisories correctly showing
+    no `<ul>` at all, one 2024 entry with a single ADVISORY badge+text), confirming the empty-comments
+    case renders cleanly with no orphan markup.
+- Not yet deployed to production - same reasoning as Increments 1-2 (no real-credential behavior
+  change yet visible to the user; this increment is a pure display improvement on top of the same mock
+  data they've already seen).

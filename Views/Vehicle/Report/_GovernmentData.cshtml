@@ -1,16 +1,30 @@
 @using CarCareTracker.Helper
+@using CarCareTracker.Models
 @inject IConfigHelper config
 @inject ITranslationHelper translator
 @{
     var userConfig = config.GetUserConfig(User);
     var userLanguage = userConfig.UserLanguage;
+    string GetMotResultBadgeClass(string testResult) => testResult == "PASSED" ? "status-badge-success" : "status-badge-danger";
+    string GetCommentBadgeClass(DVSAMotComment comment)
+    {
+        if (comment.Dangerous || comment.Type == "DANGEROUS" || comment.Type == "FAIL" || comment.Type == "MAJOR")
+        {
+            return "status-badge-danger";
+        }
+        if (comment.Type == "ADVISORY" || comment.Type == "MINOR")
+        {
+            return "status-badge-warning";
+        }
+        return "status-badge-neutral";
+    }
 }
 @model VehicleGovernmentDataViewModel
 <div class="d-flex justify-content-between align-items-center">
     <span class="lead text-truncate">@translator.Translate(userLanguage, "Government Data")</span>
-    @if (Model.DVLAData.Found)
+    @if (Model.DVLAData.IsMockData)
     {
-        <span class="status-badge status-badge-neutral" title="@translator.Translate(userLanguage, "Mocked data - not a real DVLA/DVSA lookup")">@translator.Translate(userLanguage, "Mock")</span>
+        <span class="status-badge status-badge-neutral" title="@translator.Translate(userLanguage, "Mocked data - not a real DVLA lookup")">@translator.Translate(userLanguage, "Mock")</span>
     }
 </div>
 <hr />
@@ -37,25 +51,39 @@ else
             @translator.Translate(userLanguage, "Tax Due"): @Model.DVLAData.TaxDueDate
         </div>
         @{
-            var latestTest = Model.MotHistory.MotTests.OrderByDescending(x => x.CompletedDate).FirstOrDefault();
+            var motTestsNewestFirst = Model.MotHistory.MotTests.OrderByDescending(x => x.CompletedDate).ToList();
         }
-        @if (latestTest != null)
+        @if (Model.MotHistory.Found && motTestsNewestFirst.Any())
         {
             <hr class="my-1" />
-            <div class="small">
-                <div class="d-flex align-items-center gap-1 flex-wrap">
-                    <span class="fw-semibold">@translator.Translate(userLanguage, "Last MOT Test"):</span>
-                    <span class="status-badge @(latestTest.TestResult == "PASSED" ? "status-badge-success" : "status-badge-danger")">@latestTest.TestResult</span>
-                    <span class="text-body-secondary">(@latestTest.CompletedDate, @latestTest.OdometerValue @latestTest.OdometerUnit)</span>
-                </div>
-                @if (latestTest.RfrAndComments.Any())
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="fw-semibold small">@translator.Translate(userLanguage, "MOT History")</span>
+                @if (Model.MotHistory.IsMockData)
                 {
-                    <ul class="mb-0 ps-3">
-                        @foreach (var comment in latestTest.RfrAndComments)
+                    <span class="status-badge status-badge-neutral" title="@translator.Translate(userLanguage, "Mocked data - not a real DVSA lookup")">@translator.Translate(userLanguage, "Mock")</span>
+                }
+            </div>
+            <div class="d-flex flex-column gap-2 small">
+                @foreach (var test in motTestsNewestFirst)
+                {
+                    <div>
+                        <div class="d-flex align-items-center gap-1 flex-wrap">
+                            <span class="status-badge @GetMotResultBadgeClass(test.TestResult)">@test.TestResult</span>
+                            <span class="text-body-secondary">(@test.CompletedDate, @test.OdometerValue @test.OdometerUnit)</span>
+                        </div>
+                        @if (test.RfrAndComments.Any())
                         {
-                            <li>@comment.Text</li>
+                            <ul class="mb-0 ps-3">
+                                @foreach (var comment in test.RfrAndComments)
+                                {
+                                    <li>
+                                        <span class="status-badge @GetCommentBadgeClass(comment)">@comment.Type</span>
+                                        @comment.Text
+                                    </li>
+                                }
+                            </ul>
                         }
-                    </ul>
+                    </div>
                 }
             </div>
         }

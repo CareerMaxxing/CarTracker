@@ -6,11 +6,13 @@ conversation history.
 ```
 PROJECT STATUS
 Current phase:      Phase 17 — Real MOT History & Advisory Tracking — 🟡 IN PROGRESS
-Current task:       Increments 1-2 complete. Next: Increment 3 (full MOT history UI - every past test,
-                     not just latest, colour-coded advisory/failure types, plus fixing a pre-existing
-                     Mock-badge bug found during Plan review: _GovernmentData.cshtml's "Mock" badge
-                     checks DVLAData.Found instead of IsMockData). See docs/execution/PHASE_17.md for
-                     full increment-by-increment detail.
+Current task:       Increments 1-3 complete. Next: Increment 4 (advisory text normalization - a small,
+                     independently unit-testable helper that strips trailing parenthetical MOT
+                     reference codes/lowercases/trims advisory text and derives a stable dedup key per
+                     normalized-text cluster, built BEFORE Increment 5's Planner-linkage actions that
+                     depend on it - a Plan-agent review caught that building linkage first would key
+                     dedup at the wrong per-test-instance granularity). See docs/execution/PHASE_17.md
+                     for full increment-by-increment detail.
 Status:              Increment 1 done and verified: DVSAConfig model + ServerConfig nested property +
                      IConfigHelper.GetDVSAConfig() (reads live per-call, no restart needed - matches
                      the existing MailConfig/OpenIDConfig convention) + Setup UI fields (Tenant Id/
@@ -50,17 +52,14 @@ Last completed:      Phase 16 (Sidebar App Shell & Dashboard Redesign) - all 11 
                      form labels, alt text, mobile/responsive validation, performance) are still open,
                      not abandoned - Phase 15, 16, and 17 were all started because the user raised new,
                      higher-priority requests, not because Phase 14 finished.
-Next task:           Phase 17 Increment 3 (full MOT history UI: every past test rendered in
-                     _GovernmentData.cshtml, not just the latest via .FirstOrDefault(); colour-coded
-                     advisory/failure types; fix the pre-existing Mock-badge bug). The real DVSA
-                     endpoint question from before Increment 2 is now resolved and implemented - no
-                     longer open. Still requires the user to complete their own DVSA API self-service
-                     registration before real (non-mock) data can be seen live - not blocking further
-                     increments from shipping, since the live-config fallback means each one ships and
-                     is fully testable against the existing mock regardless of that timing. Other open
-                     items, unchanged from before Phase 17 started: Phase 14's remaining hardening
-                     areas (see Known blockers/DEFERRED.md), and AI/OCR invoice scanning (still fully
-                     deferred).
+Next task:           Phase 17 Increment 4 (advisory text normalization helper - no UI/Planner change
+                     yet, just the pure function + tests). Still requires the user to complete their
+                     own DVSA API self-service registration before real (non-mock) data can be seen
+                     live - not blocking further increments from shipping, since the live-config
+                     fallback means each one ships and is fully testable against the existing mock
+                     regardless of that timing. Other open items, unchanged from before Phase 17
+                     started: Phase 14's remaining hardening areas (see Known blockers/DEFERRED.md),
+                     and AI/OCR invoice scanning (still fully deferred).
 Known blockers:      1. No browser/screenshot tool in this environment - Phase 14's remaining
                         accessibility work would still need static-code-audit + curl verification,
                         not live screen-reader/keyboard testing.
@@ -136,19 +135,18 @@ Do not:              Assume Phase 14 is "done" - three increments complete (secu
                      ran. dotnet run from the dev repo still works for development but now operates on
                      a separate, diverging dataset - be explicit with the user about which copy
                      they're looking at if this ever comes up.
-Last validation:     Phase 17 Increment 2 (2026-08-19): dotnet build (0 new warn/0 err), dotnet test
-                     (11/11 passing including the new DVSAAdapterFallbackTests), dev instance on port
-                     5300 curl-verified against both real dev vehicles (BMW Z4 id=1, Volvo S80 id=2)
-                     that unconfigured behavior is byte-identical to pre-increment mock output, and a
-                     genuine real-network failure-path test (fake-but-complete credentials -> real
-                     login.microsoftonline.com 400 -> caught/logged -> graceful Found:false, HTTP 200,
-                     no crash) confirmed via the server log. serverConfig.json reset to {} afterward
-                     (throwaway test data). Not yet deployed to production - still no user-visible
-                     behavior change without real credentials the user hasn't registered for yet. Phase
-                     17 Increment 1 + Phase 15/16's full validation history remains in docs/execution/
-                     PHASE_17.md / PHASE_15.md / PHASE_16.md.
-Last commit:         90f43fe — "Phase 17 Increment 1: DVSA credential plumbing" — 2026-08-19. Increment
-                     2 not yet committed as of this STATE.md update.
+Last validation:     Phase 17 Increment 3 (2026-08-19): dotnet build (0 new warn/0 err), dotnet test
+                     (11/11 passing, no regressions), dev instance on port 5300 curl-verified
+                     /Vehicle/GetReportPartialView for both real dev vehicles - all 4 past tests render
+                     per vehicle (not just the latest), correctly colour-coded, tests with zero
+                     advisories correctly show no orphan empty list, both the DVLA-level and MOT-
+                     History-level Mock badges render independently. Not yet deployed to production -
+                     this is a display improvement on the same mock data already deployed, not a new
+                     user-visible capability the user is waiting on. Phase 17 Increments 1-2 + Phase
+                     15/16's full validation history remains in docs/execution/PHASE_17.md /
+                     PHASE_15.md / PHASE_16.md.
+Last commit:         5f9fb71 — "Phase 17 Increment 2: real DVSA adapter, live-config-selected" —
+                     2026-08-19. Increment 3 not yet committed as of this STATE.md update.
 ```
 
 ## Completed initiative: Zara + Magneto UI overhaul (separate from the roadmap above)
