@@ -119,15 +119,74 @@ namespace CarCareTracker.External.Implementations.Real
             response.EnsureSuccessStatusCode();
 
             using var stream = response.Content.ReadAsStream();
-            //the model's shape already mirrors the real API response - see DVSAMotHistory.cs
-            var motHistory = JsonSerializer.Deserialize<DVSAMotHistory>(stream, JsonOptions) ?? new DVSAMotHistory();
-            motHistory.Found = true;
-            motHistory.IsMockData = false;
-            if (string.IsNullOrWhiteSpace(motHistory.Registration))
+            var apiResponse = JsonSerializer.Deserialize<DVSAApiResponse>(stream, JsonOptions) ?? new DVSAApiResponse();
+            return MapToMotHistory(apiResponse, registrationNumber);
+        }
+
+        /// <summary>Maps the real API's wire shape onto the app's own domain model - deliberately kept
+        /// as its own DTO rather than deserializing directly into DVSAMotHistory, since the two do NOT
+        /// actually match field-for-field (confirmed against a live response): the real API names its
+        /// per-test list "defects", not "rfrAndComments" as originally assumed from older/deprecated
+        /// docs - PropertyNameCaseInsensitive only handles casing, not a different name entirely, so
+        /// that mismatch silently deserialized to an always-empty list. Keeping a dedicated wire DTO
+        /// also means the app's own /api/vehicle/governmentdata response shape (which already shipped
+        /// as "rfrAndComments") never has to change just because the real API calls something
+        /// differently.</summary>
+        private static DVSAMotHistory MapToMotHistory(DVSAApiResponse apiResponse, string registrationNumber)
+        {
+            return new DVSAMotHistory
             {
-                motHistory.Registration = registrationNumber.ToUpperInvariant();
-            }
-            return motHistory;
+                Found = true,
+                IsMockData = false,
+                Registration = string.IsNullOrWhiteSpace(apiResponse.Registration) ? registrationNumber.ToUpperInvariant() : apiResponse.Registration,
+                Make = apiResponse.Make,
+                Model = apiResponse.Model,
+                FirstUsedDate = apiResponse.FirstUsedDate,
+                FuelType = apiResponse.FuelType,
+                PrimaryColour = apiResponse.PrimaryColour,
+                MotTests = apiResponse.MotTests.Select(t => new DVSAMotTest
+                {
+                    CompletedDate = t.CompletedDate.Length >= 10 ? t.CompletedDate.Substring(0, 10) : t.CompletedDate,
+                    TestResult = t.TestResult,
+                    ExpiryDate = t.ExpiryDate ?? string.Empty,
+                    OdometerValue = t.OdometerValue,
+                    OdometerUnit = t.OdometerUnit.ToLowerInvariant(),
+                    MotTestNumber = t.MotTestNumber,
+                    RfrAndComments = t.Defects.Select(d => new DVSAMotComment
+                    {
+                        Text = d.Text,
+                        Type = d.Type,
+                        Dangerous = d.Dangerous
+                    }).ToList()
+                }).ToList()
+            };
+        }
+
+        private class DVSAApiResponse
+        {
+            public string Registration { get; set; } = string.Empty;
+            public string Make { get; set; } = string.Empty;
+            public string Model { get; set; } = string.Empty;
+            public string FirstUsedDate { get; set; } = string.Empty;
+            public string FuelType { get; set; } = string.Empty;
+            public string PrimaryColour { get; set; } = string.Empty;
+            public List<DVSAApiTest> MotTests { get; set; } = new List<DVSAApiTest>();
+        }
+        private class DVSAApiTest
+        {
+            public string CompletedDate { get; set; } = string.Empty;
+            public string TestResult { get; set; } = string.Empty;
+            public string? ExpiryDate { get; set; }
+            public string OdometerValue { get; set; } = string.Empty;
+            public string OdometerUnit { get; set; } = string.Empty;
+            public string MotTestNumber { get; set; } = string.Empty;
+            public List<DVSAApiDefect> Defects { get; set; } = new List<DVSAApiDefect>();
+        }
+        private class DVSAApiDefect
+        {
+            public string Text { get; set; } = string.Empty;
+            public string Type { get; set; } = string.Empty;
+            public bool Dangerous { get; set; }
         }
 
         private string GetAccessToken(HttpClient httpClient, DVSAConfig dvsaConfig)
