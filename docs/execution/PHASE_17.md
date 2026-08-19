@@ -597,5 +597,36 @@ STOP CONDITION: None hit.
 - **This is the last increment of Phase 17.** The full loop the user asked for now works end-to-end:
   real (or mock-fallback) MOT history -> every past test visible -> recurring advisories grouped
   across years -> one-click add to Planner (single or bulk) -> mark resolved once addressed, all
-  without disturbing the existing Done/ServiceRecord pipeline. Production deployment is the next step,
-  not yet done - nothing in Phase 17 has reached the user's phone/production service yet.
+  without disturbing the existing Done/ServiceRecord pipeline.
+
+## Production deployment
+
+Deployed 2026-08-19, same elevated stop/publish/start sequence as Phase 15/16: `sc.exe query` confirmed
+STATE: 1 STOPPED before publish, `dotnet publish CarCareTracker.csproj -c Release -o
+"C:/Services/CarTracker"` (scoped to the main project only), data folder and real vehicle database
+confirmed untouched (timestamps unchanged), binary timestamp confirmed updated.
+
+**A real, pre-existing production issue was found and fixed along the way, unrelated to any Phase 17
+code change**: after the restart, the service came back up listening on ASP.NET Core's default port
+5000, not 127.0.0.1:5299 - unreachable both locally and via Tailscale (`tailscale serve` only proxies
+127.0.0.1:5299). Root cause: the port binding was never hardcoded in `Program.cs` - it lives in
+`data/config/serverConfig.json`'s `Kestrel` section (`{"Endpoints":{"Http":{"Url":
+"http://127.0.0.1:5299"}}}`, set up during Phase 15 and documented in `PHASE_15.md`), and that file had
+been reduced to `{}` at some point before this session (last-modified 01:02 that morning, hours before
+today's deployment work started) - most likely an earlier `/setup` wizard save that didn't have the
+Kestrel/HTTPS fields populated and nulled the section out via `SaveServerConfig`'s existing "clear if
+empty" logic. This was a **dormant landmine**: the service had simply not been restarted since that
+config was lost, so the binding loss was invisible until this deployment's restart exposed it. Restored
+the known-good Kestrel config from `PHASE_15.md`'s own historical record, stopped/started the service a
+second time, and confirmed correct via curl against both `127.0.0.1:5299` and the real
+`https://legion.tail80af14.ts.net` Tailscale URL: new Phase 17 code live (DVSA Setup UI field present),
+both real vehicles' data intact (BMW Z4 "P15 RJK", second vehicle "FT60AOW").
+
+**Lesson for future deployments**: this Setup-wizard-can-silently-null-the-Kestrel-binding risk is not
+specific to Phase 17 - any future `/setup` save on production without the HTTPS/Kestrel page's fields
+populated will wipe this binding again, and it will stay silently broken until the next service
+restart. Worth a defensive fix at some point (e.g. warn before saving if `KestrelAppConfig` would be
+cleared while a non-default port is in active use) - not fixed here, since it's a pre-existing gap
+unrelated to Phase 17's actual scope, but flagged here rather than left to be rediscovered blind.
+
+**Phase 17 is now fully complete and live in production.**

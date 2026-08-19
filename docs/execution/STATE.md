@@ -5,13 +5,10 @@ conversation history.
 
 ```
 PROJECT STATUS
-Current phase:      Phase 17 — Real MOT History & Advisory Tracking — 🟡 IN PROGRESS
-Current task:       All 6 increments complete (code-wise). Phase 17 is functionally done and fully
-                     verified against real dev data, but has NOT been deployed to production yet - the
-                     user's phone/production service is still on pre-Phase-17 code. Next task is the
-                     production deployment (elevated stop/publish/start sequence, same as Phase 15/16),
-                     which needs the user physically at their PC. See docs/execution/PHASE_17.md for
-                     full increment-by-increment detail.
+Current phase:      Phase 17 — Real MOT History & Advisory Tracking — ✅ COMPLETE, deployed to
+                     production, confirmed live via Tailscale
+Current task:       None - phase finished, including production deployment. See docs/execution/
+                     PHASE_17.md for full increment-by-increment detail.
 Status:              Increment 1 done and verified: DVSAConfig model + ServerConfig nested property +
                      IConfigHelper.GetDVSAConfig() (reads live per-call, no restart needed - matches
                      the existing MailConfig/OpenIDConfig convention) + Setup UI fields (Tenant Id/
@@ -51,17 +48,16 @@ Last completed:      Phase 16 (Sidebar App Shell & Dashboard Redesign) - all 11 
                      form labels, alt text, mobile/responsive validation, performance) are still open,
                      not abandoned - Phase 15, 16, and 17 were all started because the user raised new,
                      higher-priority requests, not because Phase 14 finished.
-Next task:           Deploy Phase 17 to production (elevated sc.exe stop -> dotnet publish
-                     CarCareTracker.csproj -c Release -o "C:/Services/CarTracker" -> sc.exe start,
-                     independently verified via curl against both 127.0.0.1:5299 and the real
-                     https://legion.tail80af14.ts.net Tailscale URL) - needs the user at their PC.
-                     After that: guide the user through their own DVSA API self-service registration
-                     (their action, not something that can be done for them) so real MOT data starts
-                     flowing in automatically (the live-config fallback means no further code change is
-                     needed for that transition). Other open items, unchanged from before Phase 17
-                     started: Phase 14's remaining hardening areas (see Known blockers/DEFERRED.md),
-                     the pre-existing Planner null-safety gap logged in DEFERRED.md, and AI/OCR invoice
-                     scanning (still fully deferred).
+Next task:           None decided yet. Candidates: (1) guide the user through their own DVSA API
+                     self-service registration (their action, not something that can be done for them)
+                     so real MOT data starts flowing in automatically - the live-config fallback means
+                     no further code change is needed for that transition, they just need to save the
+                     credentials via /setup once they have them. (2) A defensive fix for the Kestrel-
+                     binding-can-be-silently-wiped issue found during this deployment (see DEFERRED.md).
+                     (3) Phase 14's remaining hardening areas (see Known blockers/DEFERRED.md). (4) The
+                     pre-existing Planner null-safety gap in DeletePlanRecordById/
+                     GetPlanRecordForEditById (DEFERRED.md). (5) AI/OCR invoice scanning (still fully
+                     deferred). Ask the user rather than assume priority order.
 Known blockers:      1. No browser/screenshot tool in this environment - Phase 14's remaining
                         accessibility work would still need static-code-audit + curl verification,
                         not live screen-reader/keyboard testing.
@@ -137,22 +133,23 @@ Do not:              Assume Phase 14 is "done" - three increments complete (secu
                      ran. dotnet run from the dev repo still works for development but now operates on
                      a separate, diverging dataset - be explicit with the user about which copy
                      they're looking at if this ever comes up.
-Last validation:     Phase 17 Increment 6 (2026-08-19, final increment): dotnet build (0 new warn/0
-                     err), dotnet test (22/22 passing including 3 new tests - one of which genuinely
-                     failed on first run against a real HTTP 500, caught a real null-safety bug, then
-                     passed after the fix, not written to match already-correct behavior). Dev instance
-                     on port 5300, full curl sequence against the real BMW Z4 (vehicleId=1): added an
-                     advisory, confirmed no strikethrough/a "Mark Resolved" button beforehand, marked
-                     it resolved and confirmed strikethrough + "Resolved" badge appeared while
-                     onclick/draggable/the context menu's swim-lane argument (still 'Idea') stayed
-                     completely unchanged - direct proof resolving never touches Progress - then saved
-                     the record through the ORDINARY edit-and-save flow with its cost changed 0->25 and
-                     confirmed resolvedDate survived unchanged (the specific round-trip failure mode
-                     this mechanism exists to prevent), then deleted it. Dev environment restored to
-                     its pre-verification state afterward. All 6 increments of Phase 17 now complete
-                     and verified; full validation history in docs/execution/PHASE_17.md.
-Last commit:         b58279e — "Phase 17 Increment 5: advisory to Planner linkage" — 2026-08-19.
-                     Increment 6 not yet committed as of this STATE.md update.
+Last validation:     Phase 17 production deployment (2026-08-19, the real confirmation): sc.exe query
+                     confirmed STATE: 1 STOPPED before publish, dotnet publish scoped to
+                     CarCareTracker.csproj only, data folder + real vehicle database confirmed
+                     untouched, binary timestamp confirmed updated, sc.exe query confirmed STATE: 4
+                     RUNNING after restart. First restart came up on the wrong port (5000, not 5299) -
+                     a real pre-existing production issue (Kestrel binding silently wiped from
+                     serverConfig.json before this session started) found and fixed via a second
+                     stop/fix-config/start cycle, independently confirmed via sc.exe query both times
+                     (never just trusted the user's report). Final state independently verified via
+                     curl against BOTH 127.0.0.1:5299 AND the real https://legion.tail80af14.ts.net
+                     Tailscale URL: new Phase 17 code confirmed live (DVSA Setup UI field present),
+                     both real vehicles' data intact. All 6 code increments' full validation history
+                     (build/test/curl detail per increment) remains in docs/execution/PHASE_17.md.
+Last commit:         5256f85 — "Phase 17 Increment 6: lighter mark-resolved status (final increment)"
+                     — 2026-08-19. The production deployment itself involved a config-file fix on the
+                     production server (data/config/serverConfig.json, outside the git repo) but no
+                     source code changes, so no new commit was needed for that step.
 ```
 
 ## Completed initiative: Zara + Magneto UI overhaul (separate from the roadmap above)

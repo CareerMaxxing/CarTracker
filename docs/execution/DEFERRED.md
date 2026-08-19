@@ -85,6 +85,21 @@ doc that first identified it, with enough context to pick back up cold.
   scope - a targeted null-check fix there is low-risk and worth doing as a quick follow-up, not a
   reason to expand this phase). See `PHASE_17.md`.
 
+## Setup wizard can silently drop the production Kestrel binding (found during Phase 17 deployment)
+
+- **`/setup`'s "Server Endpoints" page can silently null out `KestrelAppConfig` on save if the
+  HTTPS/Kestrel fields aren't populated** (`Helper/ConfigHelper.cs`'s `SaveServerConfig`, the existing
+  "clear if both Http and HttpsInlineCertFile are null" logic) - this is exactly what happened to
+  production between Phase 15 (which set `Kestrel.Endpoints.Http.Url` to bind the Windows Service to
+  `127.0.0.1:5299`) and the Phase 17 deployment: the binding was gone by the time of Phase 17's
+  restart, and stayed silently broken (service kept running on its last-bound port until the next
+  restart, which is why nothing noticed until the service was actually stopped/started again). Restored
+  manually during the Phase 17 deployment - see `PHASE_17.md`'s "Production deployment" section for the
+  full incident. **Candidate fix**: warn (or refuse) before saving `/setup` if it would clear
+  `KestrelAppConfig` while the app is currently listening on a non-default port, so a routine settings
+  save can't silently break the production binding again. Not fixed here - found outside Phase 17's
+  actual scope, logged rather than expanded into.
+
 ## Government Data (from Phase 8 — Government Data)
 
 - **MOT-status Garage dashboard badge** — Phase 3's `DashboardMetric` opt-in badge system
