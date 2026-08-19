@@ -16,6 +16,14 @@ namespace CarCareTracker.Helper
     public static class StaticHelper
     {
         public const string VersionNumber = "1.7.0";
+        /// <summary>Cache-busting token for static assets (?v= query string on script/link tags) -
+        /// deliberately separate from VersionNumber (a manually-bumped upstream release number that
+        /// stayed "1.7.0" through every deployment of this fork's entire Phase 15-17 session, so every
+        /// JS/CSS change was silently served from stale browser cache with no way to tell). Derived
+        /// from the deployed binary's own last-write time, so it changes automatically on every
+        /// publish with nothing to remember - see docs/execution/DEFERRED.md for the incident this
+        /// fixes.</summary>
+        public static readonly string AssetCacheBustStamp = File.GetLastWriteTimeUtc(System.Reflection.Assembly.GetExecutingAssembly().Location).Ticks.ToString();
         public const string DbName = "data/cartracker.db";
         public const string UserConfigPath = "data/config/userConfig.json";
         public const string ServerConfigPath = "data/config/serverConfig.json";

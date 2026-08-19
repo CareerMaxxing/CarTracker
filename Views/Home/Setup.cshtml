@@ -8,7 +8,7 @@
     var userLanguage = config.GetServerLanguage();
 }
 @section Scripts {
-    <script src="~/js/serversettings.js?v=@StaticHelper.VersionNumber"></script>
+    <script src="~/js/serversettings.js?v=@StaticHelper.AssetCacheBustStamp"></script>
 }
 @section Nav {
     @await Html.PartialAsync("_SimpleNavBar", (translator.Translate(userLanguage, "Server Settings Configurator"), (string?)null))
